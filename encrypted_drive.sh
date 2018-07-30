@@ -64,7 +64,7 @@ check_directories() {
 }
 
 check_mounted() {
-  /sbin/mount | /usr/bin/grep $enc_drive/decrypted
+  mount | grep $enc_drive/decrypted
   rc=$?
   if [ $rc -eq 0 ]; then
     echo "[INFO] $enc_drive/decrypted is mounted already!"
