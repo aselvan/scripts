@@ -10,8 +10,8 @@
 # Version: 1.0
 # Date:    Feb 7, 2015
 
-default_rule_set="/etc/pf.conf"
-rule_set="${HOME}/bin/pf/pf_rules_simple.conf"
+anchor_name="realpage.com"
+rule_set="/etc/pf.conf"
 
 usage() {
   echo "Usage: $0 <start|stop|status|allstatus|addtable|showtable|deletetable>"
@@ -31,10 +31,8 @@ start_firewall() {
 
 stop_firewall() {
   # flush our existing rules
+  /sbin/pfctl -a $anchor_name -F all
   /sbin/pfctl -F all
-
-  # load default rules
-  /sbin/pfctl -f $default_rule_set
 }
 
 # ---- main -----
@@ -60,13 +58,19 @@ do
      break
   elif [ "$1" = "status" ]; then
      echo "Listing firewall rules ..."
+     echo "--- Global rules ---"
      /sbin/pfctl -sr
-     /sbin/pfctl -a white_list -sr
-     /sbin/pfctl -t dynamic_ips -T show
+     echo "--- Anchor $anchor_name rules ---"
+     /sbin/pfctl -a $anchor_name -sr
+     echo "--- Whitelist rules ---"
+     /sbin/pfctl -a $anchor_name/white_list -sr
+     echo "--- Dynamic table list (if any) ---"
+     /sbin/pfctl -a $anchor_name -t dynamic_ips -T show
      break
   elif [ "$1" = "allstatus" ]; then
      echo "Listing firewall rules ..."
      /sbin/pfctl -sa
+     /sbin/pfctl -a $anchor_name -sa
      break
   elif [ "$1" = "addtable" ]; then
      shift 1
@@ -75,7 +79,7 @@ do
         usage
      fi
      echo "Adding $1 to the dynamic_ips table..."
-     pfctl -t dynamic_ips -T add $1
+     pfctl -a $anchor_name -t dynamic_ips -T add $1
      break
   elif [ "$1" = "deletetable" ]; then
      shift 1
@@ -84,11 +88,11 @@ do
         usage
      fi
      echo "Deleting $1 from the dynamic_ips table..."
-     pfctl -t dynamic_ips -T delete $1
+     pfctl -a $anchor_name -t dynamic_ips -T delete $1
      break
   elif [ "$1" = "showtable" ]; then
      echo "Showing dynamic_ips table..."
-     pfctl -t dynamic_ips -T show
+     pfctl -a $anchor_name -t dynamic_ips -T show
      break
   else
      usage
