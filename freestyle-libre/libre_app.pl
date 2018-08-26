@@ -42,7 +42,8 @@ my $db_user     = "";
 my $db_password = "";
 my $insert_sql = "insert into bgtable (timestamp, bg) values (?,?)";
 my $debug=0;
-
+my $today = `date +%m/%d/%Y" "%l:%M:%S" "%p`;
+chomp $today;
 my $minBGcount=30;
 my $type='libre';
 my $fname;
@@ -239,8 +240,6 @@ sub read_db_data {
 }
 
 sub export_data {
-  my $today = `date +%m/%d/%Y" "%l:%M:%S" "%p`;
-  chomp $today;
   # open export file for wriging
   open(my $fh, '>',$export_fname);
   print $fh "# Libre Freestyle CSV data export, v1.0\n";
@@ -310,7 +309,7 @@ sub compute_a1c_weekly {
   my @bgData;
   my $bgCount;
 
-  print "--- A1C going back to $weeks weeks --- \n";
+  print "--- A1C going back to $weeks weeks from $today --- \n";
   print "Week\tCount\tAverage\tSD\tA1C\n";
   while ($weeks > 0) {
     my $week_from = sprintf("datetime('now' , '-%d days')",$weeks * 6);
@@ -335,7 +334,7 @@ sub compute_a1c_days {
   my @bgData;
   my $bgCount;
 
-  print "--- A1C going back to $days days  --- \n";
+  print "--- A1C going back to $days days from $today --- \n";
   print "Days\tCount\tAverage\tSD\tA1C\n";
   while ($days > 0) {
     my $days_from = sprintf("datetime('now' , '-%d days')",$days);
