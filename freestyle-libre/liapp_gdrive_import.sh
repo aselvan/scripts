@@ -89,14 +89,16 @@ for csv in $csv_files ; do
 done
 
 # also export to our format
+echo "Exporting to: $libre_export_filename" >> $log_file
 $libre_app --export $libre_export_filename >>$log_file 2>&1
 
 # move files to backup directory in gdrive
 $rclone copy --include /*.csv $local_dir liapp:/backup >>$log_file 2>&1
 $rclone delete --include /*.csv liapp: >>$log_file 2>&1
 
-# backup the sqlite db to gdrive
-$rclone copy --include /*.sqlite . liapp:
+# backup everything to gdrive (note: current dir where we keep everything)
+echo "Backing up everything in `pwd` to liapp:/save in gdrive" >> $log_file
+$rclone copy . liapp:/save
 
 # remove tmp data as well
 rm -f $local_dir/*.csv >>$log_file 2>&1
