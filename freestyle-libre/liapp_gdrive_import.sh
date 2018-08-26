@@ -81,15 +81,15 @@ fi
 # first backup DB 
 cp libre-db.sqlite libre-db.sqlite.backup >>$log_file 2>&1
 
-# also export to our format
-$libre_app --export $libre_export_filename >>$log_file 2>&1
-
 # now import all liapp from gdrive
 csv_files=`ls -1 $local_dir/*.csv`
 for csv in $csv_files ; do
   echo "Importing $csv ..." >>$log_file 2>&1
   $libre_app --type liapp --import $csv >>$log_file 2>&1
 done
+
+# also export to our format
+$libre_app --export $libre_export_filename >>$log_file 2>&1
 
 # move files to backup directory in gdrive
 $rclone copy --include /*.csv $local_dir liapp:/backup >>$log_file 2>&1
