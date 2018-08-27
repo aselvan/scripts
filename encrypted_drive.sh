@@ -34,7 +34,7 @@
 #
 # NOTE: Change the default enc_drive below to your drive/path before using this script.
 #
-enc_drive="/Volumes/FAT64G"
+enc_drive="/Volumes/exfat64g2"
 options_list="c:d:lmuh"
 option=0
 file_to_copy=""
