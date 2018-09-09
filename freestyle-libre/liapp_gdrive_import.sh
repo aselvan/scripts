@@ -83,10 +83,13 @@ cp libre-db.sqlite libre-db.sqlite.backup >>$log_file 2>&1
 
 # now import all liapp from gdrive
 csv_files=`ls -1 $local_dir/*.csv`
+count=0
 for csv in $csv_files ; do
-  echo "Importing $csv ..." >>$log_file 2>&1
+  count=$((count+1))
+  echo "    Importing $csv ..." >>$log_file 2>&1
   $libre_app --type liapp --import $csv >>$log_file 2>&1
 done
+echo "Imported: $count files" >> $log_file
 
 # also export to our format
 echo "Exporting to: $libre_export_filename" >> $log_file
