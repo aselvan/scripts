@@ -18,6 +18,16 @@
 #   libre_app.pl --import <liapp_data_file> --type liap 
 #   libre_app.pl 
 #
+# Here is the simple schema used in the sqlite DB
+#
+#    sqlite> select * from sqlite_master;
+#    table|bgtable|bgtable|2|CREATE TABLE `bgtable` (
+#	      `timestamp`	TEXT CHECK(datetime(timestamp) is not null),
+#	      `bg`	INTEGER NOT NULL,
+#	      PRIMARY KEY(`timestamp`)
+#    )
+#    index|sqlite_autoindex_bgtable_1|bgtable|3|
+# 
 # Author:  Arul Selvan
 # 
 # Version History:
@@ -224,6 +234,7 @@ sub usage {
   print "   --months <year> \n";
   print "   --weeks <numberofweeks> \n";
   print "   --days <numberofdays> \n";
+  print "   --help usage\n";
   exit 0;
 }
 
@@ -261,17 +272,24 @@ sub compute_a1c_all {
   my @bgData = read_db_data("select bg from bgtable");
   my $bgCount = @bgData;
 
+  # get the data duration
+  my @dateFrom = read_db_data("select timestamp from bgtable order by timestamp asc limit 1");
+  my @dateTo = read_db_data("select timestamp from bgtable order by timestamp desc limit 1");
+  my @totalDays = read_db_data("select julianday('$dateTo[0]') - julianday('$dateFrom[0]')");
+
   my $bgAve = sprintf( "%.02f", &average(\@bgData) );
   my $bgStd = sprintf( "%.02f", &stdev(\@bgData) );
-  my $a1c =   sprintf( "%.02f", &a1c($bgAve) );
-  my $numDays = sprintf("%.02f",($bgCount/(4*24)) );
+  my $a1c = sprintf( "%.02f", &a1c($bgAve) );
+  my $numDays = sprintf("%.02f",$totalDays[0] );
+  #my $numDays = sprintf("%.02f",($bgCount/(4*24)) );
 
   print " --- A1C for ALL data found in DB ---\n";
-  print "BG Sample count:      $bgCount\n";
-  print "BG Average:           $bgAve\n";
-  print "BG Std deviation:     $bgStd\n";
-  print "BG Sample duration:   $numDays days.\n";
-  print "Your predicted A1C:   $a1c\n\n";
+  print "BG data range:       $dateFrom[0] ---> $dateTo[0]\n";
+  print "BG data total:       $numDays days.\n";
+  print "BG data count:       $bgCount\n";
+  print "BG data average:     $bgAve\n";
+  print "BG data stddev:      $bgStd\n";
+  print "Your predicted A1C:  $a1c\n\n";
 
   if ($bgCount < $minBGcount) {
     print "CAUTION: Your BG sample count of $bgCount is too small to have meaningfull A1C calculation. \n";
