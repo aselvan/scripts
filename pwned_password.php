@@ -5,6 +5,9 @@
 * 
 * Jim Westergren --- original author
 * Arul Selvan    --- added main driver, and additional details -- Feb 25, 2018
+*
+* how to run: 
+*   php pwned_password.php
 */
 
 function checkPawnedPasswords(string $password) : int {
