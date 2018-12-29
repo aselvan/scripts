@@ -6,12 +6,18 @@
 # 
 # This script mounts a encrypted drive at specified path and copy your files to the  
 # encrypted drive, and unmounts it. Optionally with -l option, it simply does a directory 
-# listing of the encrypted files. The script will create two directories (encrypted, decrypted) 
-# on drive/path if they don't exist. The 'encrypted' contains the encrpted files which 
-# are mounted on 'decrypted' directory through the encfs driver to expose them as normal 
-# files. On the first time use of this on a specific drive/path, it will ask you to choose
-# a passphrase to encrypt files, make sure you remember that because you need that later
-# when you want to access the encrypted drive.
+# listing of the encrypted files as well as -m causes to stay mounted for a period of time. 
+# The script will create two directories (encrypted, decrypted) on drive/path if they don't 
+# exist. The 'encrypted' directory contains the encrpted files which you can backup to any 
+# backup mediums (external drive, even cloud backup like google drive, dropbox etc safely) 
+# for safe keeping. To access the encrupted data when needed, you can run this script with 
+# -m option which mounts a 'decrypted' directory through the encfs driver to expose them as 
+# as normal files inside that directory note: it automatically unmounts after 5 minutes but you 
+# can, optionaly set a longer or shorter time with -i option. On MacOS, when the decrypted drive
+# is in mounted state, you will have a mounted drive icon on your desktop for conveniently 
+# copying your files to the drive while it is in mounted state. On the first time use of this
+# script on a specific drive/path, it will ask you to choose a passphrase to encrypt files, 
+# make sure you remember that because you need that later when you want to access the encrypted drive.
 #
 # Author:  Arul Selvan
 # Version: Jun 23, 2018
@@ -35,22 +41,29 @@
 # NOTE: Change the default enc_drive below to your drive/path before using this script.
 #
 #enc_drive="/Volumes/exfat64g2"
-enc_drive="/data/personal/keys"
-options_list="c:d:lmuh"
+enc_drive="/data/personal/keys/encfs"
+options_list="c:d:i:lmuh"
 option=0
 file_to_copy=""
 mounted=0
 idle_minutes=5
 
 usage() {
-  echo "Usage: $0 [-d /my/encrypted/partition] -c <secret_file> | -mul"
-  echo "  -d  <drive_path>    use the path provided as root [note: must be the first option]"
-  echo "  -c  <secret_file>   mount the encrypted directory, copy the file, and unmount it"
-  echo "  -l  mount the encrypted directory, list content, and unmount it"
-  echo "  -m  mount the encrypted directory and leave it mounted. "
-  echo "      CAUTION: drive stays mounted for $idle_minutes minutes"
-  echo "  -u  unmount the already mounted directory"
-  echo "  -h  help" 
+  cat <<EOF
+  
+Usage: encrypted_drive.sh [-d /my/encrypted/partition] -c <secret_file> | -muli
+  -d  <drive_path>  use the path provided as root. 
+      NOTE: this must be the first option
+  -i  <minutes>  specify how long the mounted drive should stay mounted. 
+      default: 5 minutes
+  -c  <secret_file>  mount the encrypted directory, copy the file 
+      to the encrypted folder, and finally unmounts
+  -m  mount the encrypted directory and leave it mounted. 
+      NOTE: this option keeps the drive mounted for $idle_minutes minute(s)
+  -l  mount the encrypted directory, list content, and unmount it
+  -u  unmount the already mounted directory
+  -h  help
+EOF
   exit 1
 }
 
@@ -91,7 +104,7 @@ do_mount() {
   fi
   mounted=1
   echo "[INFO]: mounted $enc_drive/decrypted successfully"
-  echo "[INFO]: $enc_drive/decrypted will stay mounted for $idle_minutes minutes and will auto unmount."
+  echo "[INFO]: $enc_drive/decrypted will stay mounted for $idle_minutes minute(s) and will auto unmount."
 }
 
 copy() {
@@ -121,6 +134,9 @@ while getopts "$options_list" opt; do
     d)
       enc_drive=$OPTARG
       ;;
+    i)
+      idle_minutes=$OPTARG
+      ;;
     c)
       file_to_copy=$OPTARG
       copy
@@ -149,6 +165,7 @@ while getopts "$options_list" opt; do
 done
 
 if [ $option -eq 0 ]; then
+  echo ""
   echo "[ERROR] No option provided!"
   usage
 fi
