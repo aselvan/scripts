@@ -7,7 +7,7 @@
 # device nearby. We don't need any of this if the google home app 'routines' work as designed 
 # but the stupid thing is buggy and often doesn't work or works at random time (not the scheduled 
 # time) which makes it useless. This script would be cleaner if google enables the REST API 
-# reverse engineered here (https://rithvikvibhu.github.io/GHLocalApi/)to send commands in 
+# reverse engineered here (https://rithvikvibhu.github.io/GHLocalApi/) to send commands in 
 # addition to voice but for some reason google hides that from developers.
 #
 # Author:  Arul Selvan
@@ -31,15 +31,16 @@ BED_ROOM_ON="hey google, [[slnc 600]] turn on bedroom lights"
 BED_ROOM_OFF="hey google, [[slnc 600]] turn off bedroom lights"
 LAMP_ON="hey google, [[slnc 600]] turn on bsl1"
 LAMP_OFF="hey google, [[slnc 600]] turn off bsl1"
-SPEAK_VOLUME=50
+DEFAULT_VOLUME=35
 script_name=`basename $0`
 
 usage() {
 	cat <<EOF
   
-Usage: $script_name <room> <action>
+Usage: $script_name <room> <action> [volume]
   <room> valid options are "bedroom" or "livingroom"
   <action> valid options are "on" or "off"
+  [volume] is 0-100 and is optional (default:38), increase if needed
 
 EOF
   exit
@@ -62,7 +63,14 @@ get_volume() {
 # turn on/off bedroom
 bedroom() {
   action=$1
-  set_volume $SPEAK_VOLUME
+  volume=$2
+  
+  if [ ! -z $volume ] ; then
+    set_volume $volume
+  else
+    set_volume $DEFAULT_VOLUME
+  fi
+
   case $action in 
     on)
       echo $BED_ROOM_ON | /usr/bin/say
@@ -82,7 +90,14 @@ bedroom() {
 # turn on/off livingroom
 livingroom() {
   action=$1
-  set_volume $SPEAK_VOLUME
+  volume=$2
+  
+  if [ ! -z $volume ] ; then
+    set_volume $volume
+  else
+    set_volume $DEFAULT_VOLUME
+  fi
+  
   case $action in 
     on)
       echo $LIVING_ROOM_ON | /usr/bin/say
