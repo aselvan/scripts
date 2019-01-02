@@ -31,7 +31,7 @@ BED_ROOM_ON="hey google, [[slnc 600]] turn on bedroom lights"
 BED_ROOM_OFF="hey google, [[slnc 600]] turn off bedroom lights"
 LAMP_ON="hey google, [[slnc 600]] turn on bsl1"
 LAMP_OFF="hey google, [[slnc 600]] turn off bsl1"
-DEFAULT_VOLUME=35
+DEFAULT_VOLUME=40
 script_name=`basename $0`
 
 usage() {
@@ -74,10 +74,12 @@ bedroom() {
   case $action in 
     on)
       echo $BED_ROOM_ON | /usr/bin/say
+      sleep 5
       echo $LAMP_ON | /usr/bin/say
     ;;
     off)
       echo $BED_ROOM_OFF | /usr/bin/say
+      sleep 5
       echo $LAMP_OFF | /usr/bin/say
     ;;
     *)
