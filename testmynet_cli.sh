@@ -8,13 +8,25 @@
 # Author:  Arul Selvan
 # Version: Jan 19, 2019
 #
-options_list="s:l:h"
+options_list="s:l:f:dh"
 server_domain=testmy.net
 server_locations="au2 ca co de fl in jp lax ny sf sg tx uk"
 size=102400 # default using 100MB 
 location=tx
 user_agent="Wget/1.11.4" # testmy.net redirects to webpage if it sees curl :)
-curl_opt="-L -k -s -o /dev/null"
+download_file="speedtest_file.html"
+curl_opt="-L -k -s"
+curl_opt_extra="-o /dev/null"
+output_file=""
+total_time=""
+total_size=""
+dns_time=""
+connect_time=""
+pretransfer_time=""
+redirect_time=""
+band_width=""
+debug=0
+url=""
 
 # usage 
 usage() {
@@ -26,9 +38,33 @@ Usage: testmynet_cli.sh [options]
   -s  <size> download size in KB (default: $size i.e. 100MB)
   -l  <location> (default: tx i.e. texas server) see full list below
       $server_locations
+  -f  <filename> speed information will be written out to 'filename'
+  -d  debug messages, also saves the speedtest test downlod file as $download_file
   -h  help
 EOF
   exit 1
+}
+
+debug_output() {
+  echo "URL:              $url"
+  echo "Downloaded file:  $download_file"
+  echo "Total Time:       $total_time"
+  echo "Total Size:       $total_size"
+  echo "DNS Time:         $dns_time"
+  echo "Connect Time:     $connect_time"
+  echo "PreTransfer Time: $pretransfer_time"
+  echo "Redirect Time:    $redirect_time"
+  echo "Actual Total:     $actual_total i.e. (i.e. total_time-overhead like dns,connect, pretransfer, redirect etc)"
+  echo "Bandwidth:        $band_width Mbps"
+}
+
+write_output() {
+  m=$1
+  if [ ! -z $output_file ] ; then
+    echo $m >> $output_file
+  else
+    echo $m
+  fi
 }
 
 # validate location 
@@ -60,7 +96,14 @@ calc_bandwidth() {
 
   # calculate the bandwidth i.e. ((total_size/(total_time-overhead)*8)/(1000*1000)
   band_width=$(scale=6; echo "($total_size/$actual_total)*8/(1000*1000)"|/usr/bin/bc)
-  echo "Your bandwidth is: $band_width Mbps"
+  ts=$(date +"%D %H:%M %p")
+
+  # spit out all calculated variables.
+  if [ $debug -eq 1 ]; then
+    debug_output
+  fi
+
+  write_output "[$ts] measured bandwidth: $band_width Mbps"
 }
 
 # check curl
@@ -79,6 +122,13 @@ while getopts "$options_list" opt; do
       location=$OPTARG
       check_location
       ;;
+    f)
+      output_file=$OPTARG
+      ;;
+    d)
+      debug=1
+      curl_opt_extra="-o $download_file"
+      ;;
     h)
       usage 
       ;;
@@ -93,7 +143,7 @@ done
 
 # run curl and capture the stats.
 url="https://${location}.${server_domain}/dl-${size}"
-echo "Using server: $url"
-stats=`curl $curl_opt -A $user_agent -w "%{time_total} %{size_download} %{time_namelookup} %{time_connect} %{time_pretransfer} %{time_redirect}" $url`
+stats=`curl $curl_opt $curl_opt_extra -A $user_agent -w "%{time_total} %{size_download} %{time_namelookup} %{time_connect} %{time_pretransfer} %{time_redirect}" $url`
+
 calc_bandwidth "$stats"
 
