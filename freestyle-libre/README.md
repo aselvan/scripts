@@ -17,6 +17,7 @@ Usage: libre_app.pl [options]
 
 #### Example 1
 ``` 
+./libre_app.pl 
 Opening DB: libre-db.sqlite
 Calculating A1C based on FreeStyle Libre CGM data...
  --- A1C for ALL data found in DB ---
