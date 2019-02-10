@@ -9,13 +9,14 @@
 # Version: Jan 19, 2019
 #
 options_list="s:l:f:dh"
-server_domain=testmy.net
+server=testmy.net
 server_locations="au2 ca co de fl in jp lax ny sf sg tx uk"
 size=102400 # default using 100MB 
 location=tx
 user_agent="Wget/1.11.4" # testmy.net redirects to webpage if it sees curl :)
 download_file="speedtest_file.html"
-curl_opt="-L -k -s"
+curl_opt="-L -k"
+curl_silent="-s"
 curl_opt_extra="-o /dev/null"
 output_file=""
 total_time=""
@@ -121,6 +122,7 @@ while getopts "$options_list" opt; do
     l)
       location=$OPTARG
       check_location
+      server="$location.$server"
       ;;
     f)
       output_file=$OPTARG
@@ -128,6 +130,7 @@ while getopts "$options_list" opt; do
     d)
       debug=1
       curl_opt_extra="-o $download_file"
+      curl_silent=""
       ;;
     h)
       usage 
@@ -142,8 +145,8 @@ while getopts "$options_list" opt; do
 done
 
 # run curl and capture the stats.
-url="https://${location}.${server_domain}/dl-${size}"
-stats=`curl $curl_opt $curl_opt_extra -A $user_agent -w "%{time_total} %{size_download} %{time_namelookup} %{time_connect} %{time_pretransfer} %{time_redirect}" $url`
+url="https://${server}/dl-${size}"
+stats=`curl $curl_opt $curl_silent $curl_opt_extra -A $user_agent -w "%{time_total} %{size_download} %{time_namelookup} %{time_connect} %{time_pretransfer} %{time_redirect}" $url`
 
 calc_bandwidth "$stats"
 
