@@ -11,6 +11,9 @@
 - #### /encrypted_drive.sh
   Shell script to store/retrieve files to/from encrypted folder
 
+- #### /free_wifi.sh
+  Shell script to get free wifi by spoofing an authenticated mac address on a paid wifi service like inflight wifi.
+
 - #### /mypass.sh
   simple script to add/search passwords from an encrypted file
   
