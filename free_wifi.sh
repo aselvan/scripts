@@ -72,7 +72,7 @@ check_mac() {
   ifconfig $iface up
   sleep 1
   /bin/echo -n "[INFO] waiting for new IP assignment ."
-  count=10
+  count=30
   for (( i = 0; i<$count; i++ )) do
     sleep 1
     /bin/echo -n .
@@ -115,6 +115,8 @@ list_of_macs=`arp -an -i $iface|awk '{print $4;}'`
 
 for mac in $list_of_macs; do 
   if [ $mac = "(incomplete)" ] ; then
+    continue
+  elif [ $mac = "ff:ff:ff:ff:ff:ff" ] ; then
     continue
   elif [ $mac = $my_mac ] ; then
     continue
