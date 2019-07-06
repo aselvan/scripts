@@ -55,7 +55,7 @@ my $debug=0;
 my $today = `date +%m/%d/%Y" "%l:%M:%S" "%p`;
 chomp $today;
 my $minBGcount=30;
-my $type='libre';
+my $type='libreview';
 my $fname;
 my $export_fname;
 my $year=0;
@@ -106,6 +106,31 @@ sub format_dt_libre {
   return $date . " " .$time;
 }
 
+sub format_dt_libreview {
+  my ($dt) = @_;
+  # flip date to YYYY-MM-DD TIME from the format: "07-04-2019 2:50 PM"
+  my @dateArray = split(/[-\s]+/, $dt);
+  my $date = $dateArray[2] . "-" . $dateArray[0] . "-" . $dateArray[1]; # YYYY-MM-DD
+
+  # convert time to 24hr format i.e. "2:50 PM" to "14:50"
+  my @timeArray = split(/[\s:]+/,$dt); # timeArray[1] & timeArray[2] & timeArray[3]
+  my $hour = $timeArray[1];
+  my $min = $timeArray[2];
+  $hour -= 12 if ($timeArray[3] eq 'AM' && $hour == 12);
+  $hour += 12 if ($timeArray[3] eq 'PM' && $hour != 12);
+  
+  return $date . " " . $hour . ":" . $min;
+}
+
+
+sub format_dt_liapp {
+  my ($date, $time) = @_;
+  # string is DD.MM.YYY format need YYYY-MM-DD
+  my @ds = split(/\./, $date);
+  return $ds[2] . "-" . $ds[1] . "-" . $ds[0] . " " . $time;
+}
+
+
 sub print_import_results {
   my ($total,$imported,$duplicates,$errors) = @_;
   
@@ -120,6 +145,7 @@ sub print_import_results {
 
 }
 
+# function to import from libre reader exported data
 sub import_libre_data {
   open (my $fh, $fname) or die "Could not open file '$fname'";
   my $i = 0;
@@ -171,14 +197,77 @@ sub import_libre_data {
   
 }
 
-sub format_dt_liapp {
-  my ($date, $time) = @_;
-  # string is DD.MM.YYY format need YYYY-MM-DD
-  my @ds = split(/\./, $date);
-  return $ds[2] . "-" . $ds[1] . "-" . $ds[0] . " " . $time;
+# function to import from librewview cloud data www2.libreview.com.
+sub import_libreview_data {
+  open (my $fh, $fname) or die "Could not open file '$fname'";
+  my $i = 0;
+  my $duplicates=0;
+  my $imported=0;
+  my $errors=0;
+  my $total=0;
+
+  my $ps = $db_handle->prepare($insert_sql);
+
+  while (my $row = <$fh>) {
+    chomp $row;
+    
+    $i++;
+    # skip the header (i.e. first 2 lines)
+    if ( $i <= 2 ) {
+      next;
+    }
+    
+    #also remove \r\n & \000 [stupid libreview cloud export adds null char]
+    $row =~ s/[\r\n\000]//sg;
+    
+    # check the length for some arbitarly lenth like 10
+    my $slen = length($row);
+    if ( $slen <= 10 ) {
+      next;
+    }
+    
+    # tokenize w/ coma (ex: FreeStyle LibreLink,a8d3eff9-b1bd-4ac0-9364-a320ab05dd8a,07-04-2019 2:50 PM,0,100,,,,,,,,,,,,,,,)
+    # column details: 0=device name; 1=devid; 2=date; 3=type; 4=bg; 
+    my @rowArray = split(/,/, $row);    
+
+    # 3=type is 0=realtime data; 1=manual data; 5=error; 6=sensor not ready
+    # skip rows who's type is not 0 or 1
+    if ( $rowArray[3] != 0 && $rowArray[3] != 1 ) {
+      next;
+    }
+    
+    $total++;
+
+    # for some stupid reason if manual scan i.e. type=1 there is additonal comma!
+    if ($rowArray[3] == 1) {
+      $rowArray[4] = $rowArray[5];
+    }
+
+    # add to db
+    $ps->execute(&format_dt_libreview($rowArray[2]), $rowArray[4]);
+    if ($ps->err) {
+      if ( $DBI::errstr eq "UNIQUE constraint failed: bgtable.timestamp" || $DBI::err == 19 ) {
+        if ($debug == 1) { print "### ERROR code: $DBI::err\n"; }        
+        $duplicates++;
+      }
+      else { 
+        if ($debug == 1) { print "### ERROR code: $DBI::err\n"; }
+        $errors++;
+      }
+    }
+    else {
+      $imported++;
+    }
+  }
+  $db_handle->commit();
+
+  print_import_results($total,$imported,$duplicates, $errors);
+  
 }
 
 
+
+# function to import liapp (andriod/ios app some german guy wrote)
 sub import_liapp_data {
   open (my $fh, $fname) or die "Could not open file '$fname'";
   my $i = 0;
@@ -228,7 +317,7 @@ sub import_liapp_data {
 sub usage {
   print "Usage: libre_app.pl [options]\n";
   print "  where options are: \n";
-  print "   --import <filename> --type <liapp|libre>\n";
+  print "   --import <filename> --type <liapp|libre|libreview> [libre=reader data; libreview=cloud export - default]\n";
   print "   --export <filename>\n";
   print "   --db <dbname> \n";
   print "   --months <year> \n";
@@ -419,6 +508,12 @@ if ( defined $fname ) {
     print "Importing 'Libre Freestyle' data from file: $fname\n";
     print "Data type: $type\n";
     import_libre_data();
+    exit;
+  }
+  elsif ( $type eq "libreview" ) {
+    print "Importing 'LibreView' cloud export data from file: $fname\n";
+    print "Data type: $type\n";
+    import_libreview_data();
     exit;
   }
   elsif ( $type eq "liapp" ) {
