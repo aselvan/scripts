@@ -89,7 +89,7 @@ check_mac() {
     echo "[INFO] got connectivity!"
     exit
   else
-    echo "[ERROR] connctivity failed for $mac_addr!"
+    echo "[ERROR] connctivity failed for $mac_addr"
   fi
   return
 }
