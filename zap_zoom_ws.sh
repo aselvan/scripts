@@ -25,5 +25,5 @@ pkill "ZoomOpener"
 
 # wipe the trace of user preference. Actually, need to touch this to be readonly.
 rm -rf ~/.zoomus
-touch ~/.zoomus;
-chmod 000 ~/.zoomus;
+touch ~/.zoomus
+chmod 000 ~/.zoomus
