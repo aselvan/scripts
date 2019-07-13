@@ -5,7 +5,7 @@
 # Version: Jul 13, 2019
 
 service_port=19421
-pid=`sudo lsof -n -i :$service_port | awk '{print $2;}'|uniq`
+pid=`sudo lsof -n -i :$service_port | awk 'NR>1 {print $2;}'`
 
 if [ -z $pid ] ; then
   echo "[INFO] Doesn't look like zoom hidden webservice is running on your host."
