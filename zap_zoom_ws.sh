@@ -1,8 +1,10 @@
 #!/bin/sh
-
+# 
 # zap_zoomws.sh --- simple script to remove zooms hidden webservice from your mac
 # Author:  Arul Selvan
 # Version: Jul 13, 2019
+#
+# Disclaimer: use it at your own risk, I am not responsible for any damage.
 
 zoomus_related_junk="ZoomOpener RingCentralOpener TelusMeetingsOpener \
  BTCloudPhoneMeetingsOpener OfficeSuiteHDMeetingOpener \
