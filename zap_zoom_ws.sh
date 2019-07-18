@@ -17,40 +17,45 @@ zoomus_related_junk_dirs="zoomus ringcentralopener telusmeetingsopener \
 
 log_file="/tmp/zap_zoomws.log"
 service_port=19421
+service_port_range="19400-19500"
 
-# check if service is running
-pid=`sudo lsof -n -i :$service_port | awk 'NR>1 {print $2;}'`
+# get a list of any of the zoom junk or its variants if they are running.
+pids=`sudo lsof -nP +c 15 -sTCP:LISTEN -i tcp:$service_port_range|awk 'NR>1 {print $2;}'|uniq`;
 
-echo "[INFO] $0 running" >$log_file
+echo "[INFO] zap_zoomws.sh starting" >$log_file
 
-if [ -z $pid ] ; then
-  echo "[INFO] Doesn't look like zoom hidden webservice is running on your host."
+if [ ! -z "$pids" ] ; then
+  # attempt to directly kill running zoom induced junk
+  echo "[INFO] kill runnning zoom variat junk by pid ... " | tee -a $log_file  
+  for pid in $pids ; do
+    kill -9 $pid
+    if [ $? -ne 0 ] ; then
+      echo "[ERROR] unable to kill pid=$pid, check and manually remove!" | tee -a $log_file
+    else
+      echo "[INFO] killed the web server at pid=$pid" | tee -a $log_file
+    fi
+  done
+
+  # attempt to kill all the zoom induced junk apps by name
+  echo "[INFO] kill running zoom variant junk by name " | tee -a $log_file
+  for name in $zoomus_related_junk ; do 
+    pkill $name >> $log_file 2>&1
+    if [ $? -ne 0 ] ; then
+      echo "[INFO] $name is not running" >>$log_file 2>&1
+    else
+      echo "[ERROR] killed the hidden webservice $name" >> $log_file 2>&1 
+    fi
+  done
 else
-  echo "[WARN] found zoom hidden webervice running, attempting to kill..."
-  kill -9 $pid
-  if [ $? -ne 0 ] ; then
-    echo "[ERROR] unable to kill the webservice. pid=$pid, update your zoom client to v4.4.53932.0709"
-  else
-    echo "[INFO] killed the hidden webservice"
-  fi
+  echo "[INFO] Doesn't look like zoom & other zoom branded services are currently running."|tee -a $log_file
 fi
 
-# zap all the zoom induced junk
-echo "[INFO] kill all zoom induced junk ... "
-for name in $zoomus_related_junk ; do 
-  pkill $name >> $log_file 2>&1
-  if [ $? -ne 0 ] ; then
-    echo "[INFO] $name is not running" >>$log_file 2>&1
-  else
-    echo "[ERROR] killed the hidden webservice $name" >> $log_file 2>&1 
-  fi
-done
 
-echo "[INFO] removing all zoom induced junk ... "
+echo "[INFO] removing zoom variant installers to prevent future silent installs." | tee -a $log_file
 for name in $zoomus_related_junk_dirs ; do
   dir="~/.${name}"
   if [ -d $dir ] ; then
-    echo "[WARN] removing $dir" >> $log_file
+    echo "[WARN] removing $dir" | tee -a $log_file
     rm -rf $dir >> $log_file 2>&1
     touch $dir >> $log_file 2>&1
     chmod 000 $dir >> $log_file 2>&1
@@ -58,3 +63,13 @@ for name in $zoomus_related_junk_dirs ; do
     echo "[INFO] $dir not found, skipping" >> $log_file
   fi
 done
+
+# remove Libre FreeStyle blood glucometer helper/opener app.
+# note: you can open the app just like any other app by clicking icon 
+# no need for a stupid 'helper' app exposing vulnerability!
+
+# service name: com.abbott.FreeStyleLibreMAS
+if [ -f /Library/LaunchDaemons/com.abbott.FreeStyleLibreMAS.plist ] ; then
+  echo "[INFO] removing Libre Freestyle helper" | tee -a $log_file  
+  sudo launchctl unload -w /Library/LaunchDaemons/com.abbott.FreeStyleLibreMAS.plist 2>&1 | tee -a $log_file
+fi
