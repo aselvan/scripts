@@ -8,6 +8,9 @@
 - #### /pf 
   Firewall script to tighten your macOS (works on Yosemite onwards) with your own firewall. Very simple to setup by editing the /etc/pf.conf file (read the pf_rules_simple.conf)
   
+- #### /macos
+  MacOS only random scripts.
+  
 - #### /encrypted_drive.sh
   Shell script to store/retrieve files to/from encrypted folder
 
