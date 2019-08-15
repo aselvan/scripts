@@ -11,14 +11,14 @@
 - #### /macos
   MacOS only random scripts.
   
-- #### /encrypted_drive.sh
-  Shell script to store/retrieve files to/from encrypted folder
+- #### /security
+  Security, password, encruption related random scripts
 
-- #### /free_wifi.sh
-  Shell script to get free wifi by spoofing an authenticated mac address on a paid wifi service like inflight wifi.
+- #### /tools
+  Random scripts for various things
 
-- #### /mypass.sh
-  simple script to add/search passwords from an encrypted file
+- #### /linux
+  Linux related scripts
   
-- #### /pwned_password.php
-  Check if you are using any compromised passwords.
+- #### /misl
+  Misl scripts 
