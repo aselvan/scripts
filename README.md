@@ -12,7 +12,7 @@
   MacOS only random scripts.
   
 - #### /security
-  Security, password, encruption related random scripts
+  Security, password, encryption related random scripts
 
 - #### /tools
   Random scripts for various things
