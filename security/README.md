@@ -1,6 +1,6 @@
 # security
 
-### Security, password, encruption related random scripts
+### Security, password, encryption related random scripts
 
 - #### /enc_account.sh 
   Shell script to encrypt sensitive data and store it on google drive
