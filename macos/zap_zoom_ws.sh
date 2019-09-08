@@ -64,12 +64,3 @@ for name in $zoomus_related_junk_dirs ; do
   fi
 done
 
-# remove Libre FreeStyle blood glucometer helper/opener app.
-# note: you can open the app just like any other app by clicking icon 
-# no need for a stupid 'helper' app exposing vulnerability!
-
-# service name: com.abbott.FreeStyleLibreMAS
-if [ -f /Library/LaunchDaemons/com.abbott.FreeStyleLibreMAS.plist ] ; then
-  echo "[INFO] removing Libre Freestyle helper" | tee -a $log_file  
-  sudo launchctl unload -w /Library/LaunchDaemons/com.abbott.FreeStyleLibreMAS.plist 2>&1 | tee -a $log_file
-fi
