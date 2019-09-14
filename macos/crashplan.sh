@@ -16,7 +16,9 @@
 #
 
 # make sure to change this to your username crashplan is licensed to
-user_name="arulselvan"
+#user_name="aselvan"
+# should provide effective username on normal and elevated runs
+user_name=`who -m | awk '{print $1;}'`
 log_file="/tmp/crashplan.log"
 
 # plists
