@@ -16,9 +16,9 @@
 #
 
 # make sure to change this to your username crashplan is licensed to
-#user_name="aselvan"
+user_name="aselvan"
 # should provide effective username on normal and elevated runs
-user_name=`who -m | awk '{print $1;}'`
+#user_name=`who -m | awk '{print $1;}'`
 log_file="/tmp/crashplan.log"
 
 # plists
@@ -54,7 +54,7 @@ enable() {
 
   echo "[INFO] starting the UI ..." |tee -a $log_file
   # start the UI
-  cd /Users/$user_name
+  cd /Users/$user_name || exit
   sudo -u $user_name $cp_ui >>$log_file 2>&1 &
 }
 
