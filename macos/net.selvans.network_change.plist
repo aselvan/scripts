@@ -9,7 +9,7 @@
   <true/>
   <key>ProgramArguments</key>
   <array>
-    <string>/Library/LaunchAgents/net.selvans.network_change.sh</string>
+    <string>/Library/LaunchDaemons/net.selvans.network_change.sh</string>
   </array>
   <key>WatchPaths</key>
   <array>
