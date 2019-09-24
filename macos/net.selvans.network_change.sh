@@ -17,14 +17,20 @@
 # See also: net.selvans.network_change.plist
 #
 
+last_known_ip="/tmp/last_ip.txt"
 lock_file="/tmp/network_change.loc"
 log_file="/tmp/network_change.log"
-echo "[INFO] Starting $0 @ `date` ... " > $log_file
 
+cleanup_exit() {
+  echo "[INFO] Ending $0 @ `date`" >> $log_file
+  rm -f $lock_file
+  exit 0
+}
 
 # First sleep 15sec, otherwise launchd goes crazy restarting this script as it
 # thinks (stupidly) that we are failing because we exited fast (in few seconds)
 #
+echo "[INFO] Starting $0 @ `date` ... " > $log_file
 echo "[INFO] sleeping 15sec to keep launchd happy..." >> $log_file
 sleep 15
 
@@ -32,7 +38,7 @@ sleep 15
 # runs in case of resolv.conf changed w/ in 15 sec
 if [ -f $lock_file ] ; then
   echo "[INFO] another instance of $0 is running, exiting." >> $log_file
-  exit 0
+  cleanup_exit
 else
   touch $lock_file
 fi
@@ -45,8 +51,7 @@ myhostname=`hostname`
 new_ip=`curl -s https://ifconfig.me/ip`
 if [ $? -ne 0 ]; then
   echo "[ERROR] Failed to detect exteral IP, status_code: $? " >> $log_file
-  rm -f $lock_file
-  exit 0
+  cleanup_exit
 fi
 
 # check to make sure we got ip if not let the next try figure out
@@ -55,16 +60,24 @@ if [ ! -z $failed ]; then
   echo "[INFO] No ip returned, will try next time $0 is executed" >>$log_file
   echo "[INFO] Content: $new_ip" >> $log_file
   echo "[INFO] Failed string=$failed" >>$log_file
-  rm -f $lock_file
-  exit 0
+  cleanup_exit
 fi
 
-echo "[INFO] External IP: $new_ip" >> $log_file
+# if IP is same as last time, just leave
+if [ -f $last_known_ip ] ; then
+  last_ip=`cat $last_known_ip`
+  if [ "$last_ip" = "$new_ip" ] ; then
+    echo "[INFO] new IP is same as last IP, not saving, exit." >> $log_file
+    cleanup_exit
+  fi
+fi
+
+echo "[INFO] External IP: $new_ip; saving to $last_known_ip " >> $log_file
+echo $new_ip > $last_known_ip
+
 # publish ip to our site
 url="https://selvans.net/save/saveip.php?host=$myhostname&ip=$new_ip"
 echo "[INFO] Publishing to: $url" >> $log_file
 curl -s $url >> $log_file 2>&1
 
-echo "[INFO] Ending $0 @ `date`" >> $log_file
-rm -f $lock_file
-exit 0
+cleanup_exit
