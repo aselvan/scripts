@@ -1,0 +1,58 @@
+#
+# How to create a root CA to be used to sign SSL certificates.
+#
+# Author:  Arul Selvan
+# Version: Nov 3, 2015
+#
+# Steps:
+#   * create a CA cert
+#   * import and trust that on all clients
+#   * create ssl key, CSR for the SSL
+#   * create a EXT text file
+#   * create a signed cert w/ the CSR
+#   * install to webserver, device, router etc
+#   * for Asus3200 router follow the steps 
+#     * Login to admin UI
+#     * Go to WAN
+#     * Go to DDNS
+#     * Select www.asus.com
+#     * add selvans to hostname
+#     * select Import your own cert and use server.key,server.crt
+#     * Apply
+#     * Once loaded in browser, make sure you trust the cert.
+#
+
+#
+# The code below shows the example of how to create a rootCA and a SSL cert to 
+# be used by Asus3200 router.
+#
+
+# create a CA private key
+openssl genrsa -out asus_routerCA.key 2048
+
+# generate root cert (using private key above)
+openssl req -x509 -new -nodes -key asus_routerCA.key -sha256 -days 5000 -out asus_routerCA.pem
+
+# import the asus_routerCA.pem into OS CA store (in MacOS, its keychain) and trust this CA "Trust Always"
+
+# create a private key for SSL cert for each SSL service
+openssl genrsa -out selvans.asuscomm.com.key 2048
+
+# create a CSR for signing w/ our CA cert asus_routerCA.pem
+openssl req -new -key selvans.asuscomm.com.key -out selvans.asuscomm.com.csr
+
+# create a EXT config file for SAN (Subject Alternative Name)
+cat << EOF > selvans.asuscomm.com.ext
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = selvans.asuscomm.com
+EOL
+
+# finally sign the cert
+openssl x509 -req -in selvans.asuscomm.com.csr -CA asus_routerCA.pem -CAkey asus_routerCA.key -CAcreateserial -out selvans.asuscomm.com.crt -days 5000 -sha256 -extfile selvans.asuscomm.com.ext
+
+# all done
