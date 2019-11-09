@@ -26,6 +26,9 @@ gdns=8.8.8.8
 my_mac_addr_file="$HOME/.my_mac_address"
 my_mac=""
 iface="en0"
+# calculate the elapsed time (shell automatically increments the var SECONDS magically)
+SECONDS=0
+
 
 check_root() {
   if [ `id -u` -ne 0 ] ; then
@@ -42,10 +45,10 @@ ping_check() {
 restore_mac() {
   echo "[INFO] restoring mac to $my_mac ..."
   ifconfig $iface ether $my_mac
-  exit
 }
 
 save_mac() {
+  echo "[INFO] reading my mac address ..."
   if [ ! -f $my_mac_addr_file ] ; then
     echo "[WARN] no previously saved mac file ($my_mac_addr_file) found!"
     echo "[WARN] saving current mac address as saved mac address"
@@ -53,12 +56,18 @@ save_mac() {
     echo $my_mac > $my_mac_addr_file
   else
     my_mac=`cat $my_mac_addr_file`
-    echo "[INFO] using saved mac address: $my_mac"
+    echo "[INFO] my mac address $my_mac is already saved."
   fi
 }
 
 usage() {
   echo "Usage: $0 [interface]"
+  exit
+}
+
+elapsed_time() {
+  duration=$SECONDS
+  echo "[INFO] Total elapsed time is $(($duration / 60)) minutes and $(($duration % 60)) seconds"
   exit
 }
 
@@ -86,8 +95,8 @@ check_mac() {
   echo "[INFO] checking for connectivity ..."
   ping_check
   if [ $? -eq 0 ] ; then
-    echo "[INFO] got connectivity!"
-    exit
+    echo "[SUCCESS] got connectivity!"
+    elapsed_time
   else
     echo "[ERROR] connctivity failed for $mac_addr"
   fi
@@ -113,6 +122,7 @@ nmap --host-timeout 3 -T5 $my_net >/dev/null 2>&1
 # authenticated mac (someone who paid for this crappy wifi)
 list_of_macs=`arp -an -i $iface|awk '{print $4;}'`
 
+
 for mac in $list_of_macs; do 
   if [ $mac = "(incomplete)" ] ; then
     continue
@@ -126,4 +136,6 @@ for mac in $list_of_macs; do
 done
 
 # if we get here nothing is available, just restore and exit
+echo "[ERROR] unable to find a working macaddr to use, restoring ..."
 restore_mac
+elapsed_time
