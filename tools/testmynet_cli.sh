@@ -10,9 +10,9 @@
 #
 options_list="s:l:f:dh"
 server=testmy.net
-server_locations="au2 ca co de fl in jp lax ny sf sg tx uk"
+server_locations="dallas au ca co de fl in jp lax ny sf sg toronto uk"
 size=102400 # default using 100MB 
-location=tx
+location=dallas # default to dallas
 user_agent="Wget/1.11.4" # testmy.net redirects to webpage if it sees curl :)
 download_file="speedtest_file.html"
 curl_opt="-L -k"
@@ -37,7 +37,7 @@ Usage: testmynet_cli.sh [options]
   
   options:
   -s  <size> download size in KB (default: $size i.e. 100MB)
-  -l  <location> (default: tx i.e. texas server) see full list below
+  -l  <location> (default: dallas) see full list below
       $server_locations
   -f  <filename> speed information will be written out to 'filename'
   -d  debug messages, also saves the speedtest test downlod file as $download_file
@@ -122,7 +122,6 @@ while getopts "$options_list" opt; do
     l)
       location=$OPTARG
       check_location
-      server="$location.$server"
       ;;
     f)
       output_file=$OPTARG
@@ -145,7 +144,7 @@ while getopts "$options_list" opt; do
 done
 
 # run curl and capture the stats.
-url="https://${server}/dl-${size}"
+url="https://${location}.${server}/dl-${size}"
 stats=`curl $curl_opt $curl_silent $curl_opt_extra -A $user_agent -w "%{time_total} %{size_download} %{time_namelookup} %{time_connect} %{time_pretransfer} %{time_redirect}" $url`
 
 calc_bandwidth "$stats"
