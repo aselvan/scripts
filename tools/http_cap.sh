@@ -1,16 +1,27 @@
 #!/bin/sh
 #
 # simple tcpdump script to capture http data on specified network or host (not host) with
-# a specific payload_size 
+# a specific payload_size (OS: macOS or Linux)
 #
 # Author:  Arul Selvan
 # Version: May 24, 2015
 
-my_if="en0"
+# adjust these to your host and network
+my_if="eth0"
 my_net="192.168.0.0/16"
-cap_file="$HOME/tmp/http_cap.tcpdump"
-my_host=`ipconfig getifaddr en0`
+cap_file="/tmp/http_cap.tcpdump"
 payload_size=32
+
+if [ `uname -s` = "Darwin" ] ; then
+  my_host=`ipconfig getifaddr $my_if`
+else
+  my_host=`hostname -i`
+fi
+
+if [ -z $my_host ] ; then
+  echo "[ERROR] The interface '$my_if' is either not up or don't have IP assigned!"
+  exit
+fi
 
 # what to capture (all hosts or everything but my host)
 if [ ! -z $1 ] && [ $1 = "-a" ] ; then
