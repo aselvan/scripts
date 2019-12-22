@@ -91,6 +91,18 @@ sub stdev {
   return $std;
 }
 
+# calculate coefficient of variation
+sub cofvar {
+  my($data) = @_;
+  if(@$data == 1){
+    return 0;
+  }
+  my $average = &average($data);
+  my $sd = &stdev($data);
+  my $cv = ($sd / $average) * 100;
+  return $cv;
+}
+
 # calculate a1c 
 sub a1c {
   # A1c = (46.7 + average_blood_glucose_in_mg_dl) / 28.7
@@ -367,7 +379,8 @@ sub compute_a1c_all {
   my @totalDays = read_db_data("select julianday('$dateTo[0]') - julianday('$dateFrom[0]')");
 
   my $bgAve = sprintf( "%.02f", &average(\@bgData) );
-  my $bgStd = sprintf( "%.02f", &stdev(\@bgData) );
+  my $bgStd = sprintf( "%.02f  (SD ref range 10-26 for non-diabetes)", &stdev(\@bgData) );
+  my $bgCof = sprintf( "%.02f  (CV ref range 19-25 for non-diabetes)", &cofvar(\@bgData) );
   my $a1c = sprintf( "%.02f", &a1c($bgAve) );
   my $numDays = sprintf("%.02f",$totalDays[0] );
   #my $numDays = sprintf("%.02f",($bgCount/(4*24)) );
@@ -377,7 +390,8 @@ sub compute_a1c_all {
   print "BG data total:       $numDays days.\n";
   print "BG data count:       $bgCount\n";
   print "BG data average:     $bgAve\n";
-  print "BG data stddev:      $bgStd\n";
+  print "BG data SD:          $bgStd\n";
+  print "BG data CV:          $bgCof\n";
   print "Your predicted A1C:  $a1c\n\n";
 
   if ($bgCount < $minBGcount) {
@@ -392,7 +406,7 @@ sub compute_a1c_monthly {
   my $bgCount;
 
   print "--- A1C by month --- \n";
-  print "Month\tCount\tAverage\tSD\tA1C\n";
+  print "Month\tCount\tAverage\tSD\tCV\tA1C\n";
   for ($month=1; $month<=12; $month++) {
     my $month_filter=sprintf("'%02d/$year'", $month);
     my $sql = "select bg from bgtable where strftime('%m/%Y',timestamp) = " . $month_filter;
@@ -401,10 +415,11 @@ sub compute_a1c_monthly {
     if ( $bgCount >= $minBGcount) {
       my $bgAve = sprintf( "%.02f", &average(\@bgData) );
       my $bgStd = sprintf( "%.02f", &stdev(\@bgData) );
+      my $bgCof = sprintf( "%.02f", &cofvar(\@bgData) );
       my $a1c =   sprintf( "%.02f", &a1c($bgAve) );
       # strip the ''' character surrounding month
       $month_filter =~ s/\'//g;
-      print "$month_filter\t$bgCount\t$bgAve\t$bgStd\t$a1c\n";
+      print "$month_filter\t$bgCount\t$bgAve\t$bgStd\t$bgCof\t$a1c\n";
     }
     else {
       #print "$month_filter\t<NO DATA>\n";
@@ -417,7 +432,7 @@ sub compute_a1c_weekly {
   my $bgCount;
 
   print "--- A1C going back to $weeks weeks from $today --- \n";
-  print "Week\tCount\tAverage\tSD\tA1C\n";
+  print "Week\tCount\tAverage\tSD\tCV\tA1C\n";
   while ($weeks > 0) {
     my $week_from = sprintf("datetime('now' , '-%d days')",$weeks * 6);
     my $week_to   = sprintf("datetime('now' , '-%d days')",($weeks-1)*6);
@@ -427,8 +442,9 @@ sub compute_a1c_weekly {
     if ( $bgCount >= $minBGcount) {
       my $bgAve = sprintf( "%.02f", &average(\@bgData) );
       my $bgStd = sprintf( "%.02f", &stdev(\@bgData) );
+      my $bgCof = sprintf( "%.02f", &cofvar(\@bgData) );
       my $a1c =   sprintf( "%.02f", &a1c($bgAve) );
-      print "$weeks\t$bgCount\t$bgAve\t$bgStd\t$a1c\n";
+      print "$weeks\t$bgCount\t$bgAve\t$bgStd\t$bgCof\t$a1c\n";
     }
     else {
       print "$weeks\t$bgCount\t<SAMPLE_SIZE_TOO_SMALL>\n";      
@@ -442,7 +458,7 @@ sub compute_a1c_days {
   my $bgCount;
 
   print "--- A1C going back to $days days from $today --- \n";
-  print "Days\tCount\tAverage\tSD\tA1C\n";
+  print "Days\tCount\tAverage\tSD\tCV\tA1C\n";
   while ($days > 0) {
     my $days_from = sprintf("datetime('now' , '-%d days')",$days);
     my $days_to   = sprintf("datetime('now' , '-%d days')",($days-1));
@@ -452,8 +468,9 @@ sub compute_a1c_days {
     if ( $bgCount >= $minBGcount) {
       my $bgAve = sprintf( "%.02f", &average(\@bgData) );
       my $bgStd = sprintf( "%.02f", &stdev(\@bgData) );
+      my $bgCof = sprintf( "%.02f", &cofvar(\@bgData) );
       my $a1c =   sprintf( "%.02f", &a1c($bgAve) );
-      print "$days\t$bgCount\t$bgAve\t$bgStd\t$a1c\n";
+      print "$days\t$bgCount\t$bgAve\t$bgStd\t$bgCof\t$a1c\n";
     }
     else {
       print "$days\t$bgCount\t<SAMPLE_SIZE_TOO_SMALL>\n";
