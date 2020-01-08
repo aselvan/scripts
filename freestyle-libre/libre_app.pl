@@ -1,5 +1,14 @@
 #!/usr/bin/perl
-###############################################################################
+#
+##################################################################################
+# Disclaimer
+#
+# This script comes without warranty of any kind. Use them at your own risk. 
+# I assume no liability for the accuracy, correctness, completeness, or usefulness 
+# of any information provided by this site nor for any sort of damages using these 
+# scripts may cause.
+#
+##################################################################################
 # libre_app.pl
 #
 #  Simple perl script reads and parses the FreeStyle Libre CGM (Abbots Lab) 
@@ -36,13 +45,21 @@
 # v2.1 Apr 1,  2018 -- implemented export to csv 
 # v2.2 Apr 8,  2018 -- added average and stddev on monthly and weekly reports
 # v2.3 Aug 18, 2018 -- daily option
+# v2.4 Dec 21, 2019 -- added coefficent of variance measure.
+# v2.5 Jan 08, 2020 -- added disclaimer and version number
 #
 ##############################################################################
 use strict;
 use warnings;
 
-# perl db 
+# imports 
+use File::Basename;
 use DBI;
+
+# version
+my $version_number="v2.5 1/8/2020";
+my $script_name = basename($0);
+
 # commandline parsing
 use Getopt::Long;
 # default DB file name (expect in current directory)
@@ -339,6 +356,11 @@ sub usage {
   exit 0;
 }
 
+sub print_version {
+  print "$script_name $version_number\n";
+  exit 0;
+}
+
 sub read_db_data {
   my $sql = shift;
   my @bgData;
@@ -503,6 +525,7 @@ GetOptions( "import=s"  => \$fname,
             "weeks=i"   => \$weeks,
             "days=i"    => \$days,
             "export=s"  => \$export_fname,
+            "version"   => \&print_version,
             "help"      => \&usage)
 or die ("Error in command line arguments: \n");
 
