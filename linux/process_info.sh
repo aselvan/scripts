@@ -13,7 +13,7 @@ log_file=""
 pid=""
 pname=""
 rss_mb=""
-options_list="p:f:"
+options_list="p:f:h?"
 
 check_root() {
   if [ `id -u` -ne 0 ] ; then
@@ -53,8 +53,6 @@ collect_info() {
 	rss_mb=$(echo "scale=2; $rss/1024"|bc -l)
 }
 
-check_root
-
 while getopts "$options_list" opt; do
   case $opt in
     p)
@@ -75,6 +73,7 @@ while getopts "$options_list" opt; do
    esac
 done
 
+check_root
 timestamp=`date +'%D %T'`
 collect_info
 
