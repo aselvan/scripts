@@ -35,7 +35,7 @@ collect_info() {
   	echo "[ERROR] no process is listening on $port"
   	exit
 	fi
-	pname=`lsof -i :$port -s TCP:LISTEN|awk '{if(NR>1)print $1}'`
+	pname=`lsof -i :$port -s TCP:LISTEN|awk '{if(NR==2)print $1}'`
 
 	# find number of open fd's which includes sockets
 	fd_count=`ls -l /proc/$pid/fd|wc -l`
