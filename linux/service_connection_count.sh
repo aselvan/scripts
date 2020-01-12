@@ -7,6 +7,9 @@
 # Version: Jan 11, 2020
 #
 
+# ensure this script runs under cron w/ out having to set full path
+export PATH="/sbin:/bin:/usr/sbin:/usr/bin:${PATH}"
+
 # default port oracle (1521)
 port=1521
 log_file=""

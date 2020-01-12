@@ -7,6 +7,9 @@
 # Version: Jan 11, 2020
 #
 
+# ensure this script runs under cron w/ out having to set full path
+export PATH="/sbin:/bin:/usr/sbin:/usr/bin:${PATH}"
+
 # default port for obc 8045 (or) 9403
 port=8045
 log_file=""
