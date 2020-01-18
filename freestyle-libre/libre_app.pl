@@ -48,6 +48,7 @@
 # v2.4 Dec 21, 2019 -- added coefficent of variance measure.
 # v2.5 Jan 08, 2020 -- added disclaimer and version number
 # v3.0 Jan 18, 2020 -- reworked by month, weeks, days to do entire period
+# v3.1 Jan 18, 2020 -- updated the usage
 #
 ##############################################################################
 use strict;
@@ -58,7 +59,7 @@ use File::Basename;
 use DBI;
 
 # version
-my $version_number="v3.0 date: 1/18/2020";
+my $version_number="v3.1 date: 1/18/2020";
 my $script_name = basename($0);
 
 # commandline parsing
@@ -351,10 +352,11 @@ sub usage {
   print "   --import <filename> --type <liapp|libre|libreview> [libre=reader data; libreview=cloud export - default]\n";
   print "   --export <filename>\n";
   print "   --db <dbname> \n";
-  print "   --months <year> \n";
-  print "   --weeks <numberofweeks> \n";
-  print "   --days <numberofdays> \n";
+  print "   --months <number of months> \n";
+  print "   --weeks <number of weeks> \n";
+  print "   --days <number of days> \n";
   print "   --help usage\n";
+  print "   --debug 1 print debug message\n";
   exit 0;
 }
 
