@@ -47,6 +47,7 @@
 # v2.3 Aug 18, 2018 -- daily option
 # v2.4 Dec 21, 2019 -- added coefficent of variance measure.
 # v2.5 Jan 08, 2020 -- added disclaimer and version number
+# v3.0 Jan 18, 2020 -- reworked by month, weeks, days to do entire period
 #
 ##############################################################################
 use strict;
@@ -57,7 +58,7 @@ use File::Basename;
 use DBI;
 
 # version
-my $version_number="v2.5 1/8/2020";
+my $version_number="v3.0 date: 1/18/2020";
 my $script_name = basename($0);
 
 # commandline parsing
@@ -76,6 +77,7 @@ my $type='libreview';
 my $fname;
 my $export_fname;
 my $year=0;
+my $months=0;
 my $weeks=0;
 my $days=0;
 
@@ -422,7 +424,8 @@ sub compute_a1c_all {
   }
 }
 
-sub compute_a1c_monthly {
+# DEPRICATED:
+sub compute_a1c_monthly_old {
   my $month;
   my @bgData;
   my $bgCount;
@@ -431,6 +434,7 @@ sub compute_a1c_monthly {
   print "Month\tCount\tAverage\tSD\tCV\tA1C\n";
   for ($month=1; $month<=12; $month++) {
     my $month_filter=sprintf("'%02d/$year'", $month);
+    if ($debug == 1) { print "[DEBUG] Month filter: $month_filter\n"; }    
     my $sql = "select bg from bgtable where strftime('%m/%Y',timestamp) = " . $month_filter;
     @bgData = read_db_data($sql);
     $bgCount = @bgData;
@@ -449,15 +453,73 @@ sub compute_a1c_monthly {
   }
 }
 
+# calculate monthly going back to # months specified and for the entire period.
+sub compute_a1c_monthly {
+  my $month;
+  my @bgData;
+  my $bgCount;
+
+  # now, calculate for the entire period
+  print "--- A1C by month starting with $months months before to current --- \n";
+  print "Months\tCount\tAverage\tSD\tCV\tA1C\n";
+  my $num_months=$months;
+  
+  while ($months > 0) {
+    my $month_from = sprintf("datetime('now' , '-%d days')",$months * 30);
+    my $month_to   = sprintf("datetime('now' , '-%d days')",($months-1)*30);
+    if ($debug == 1) { print "[DEBUG] Month from: $month_from to: $month_to\n"; }    
+
+    my $sql="select bg from bgtable where timestamp between $month_from and $month_to";
+
+    @bgData = read_db_data($sql);
+    $bgCount = @bgData;
+    if ( $bgCount >= $minBGcount) {
+      my $bgAve = sprintf( "%.02f", &average(\@bgData) );
+      my $bgStd = sprintf( "%.02f", &stdev(\@bgData) );
+      my $bgCof = sprintf( "%.02f", &cofvar(\@bgData) );
+      my $a1c =   sprintf( "%.02f", &a1c($bgAve) );
+      print "$months\t$bgCount\t$bgAve\t$bgStd\t$bgCof\t$a1c\n";
+    }
+    else {
+      #print "$months\t<NO DATA>\n";
+    }
+    $months--;
+  }
+
+  # now, calculate for the entire period
+  print "\n--- A1C for the entire period in the last $num_months months --- \n";
+  print "Count\tAverage\tSD\tCV\tA1C\n";
+  my $month_from = sprintf("datetime('now' , '-%d days')",$num_months * 30);
+  my $month_to   = sprintf("datetime('now' , '-%d days')",0);
+  if ($debug == 1) { print "[DEBUG] Month from: $month_from to: $month_to\n"; }    
+  my $sql="select bg from bgtable where timestamp between $month_from and $month_to";
+
+  @bgData = read_db_data($sql);
+  $bgCount = @bgData;
+  if ( $bgCount >= $minBGcount) {
+    my $bgAve = sprintf( "%.02f", &average(\@bgData) );
+    my $bgStd = sprintf( "%.02f", &stdev(\@bgData) );
+    my $bgCof = sprintf( "%.02f", &cofvar(\@bgData) );
+    my $a1c =   sprintf( "%.02f", &a1c($bgAve) );
+    print "$bgCount\t$bgAve\t$bgStd\t$bgCof\t$a1c\n";
+  }
+
+}
+
 sub compute_a1c_weekly {
   my @bgData;
   my $bgCount;
 
   print "--- A1C going back to $weeks weeks from $today --- \n";
   print "Week\tCount\tAverage\tSD\tCV\tA1C\n";
+  my $num_weeks=$weeks;
+  
   while ($weeks > 0) {
     my $week_from = sprintf("datetime('now' , '-%d days')",$weeks * 6);
     my $week_to   = sprintf("datetime('now' , '-%d days')",($weeks-1)*6);
+   
+    if ($debug == 1) { print "[DEBUG] week from: $week_from to: $week_to\n"; }        
+   
     my $sql="select bg from bgtable where timestamp between $week_from and $week_to";
     @bgData = read_db_data($sql);
     $bgCount = @bgData;
@@ -473,6 +535,30 @@ sub compute_a1c_weekly {
     }
     $weeks--;
   }
+
+  # now, calculate for the entire period
+  print "\n--- A1C for the entire period in the last $num_weeks weeks --- \n";
+  print "Count\tAverage\tSD\tCV\tA1C\n";
+
+  my $week_from = sprintf("datetime('now' , '-%d days')",$num_weeks * 6);
+  my $week_to   = sprintf("datetime('now' , '-%d days')",0);
+   
+  if ($debug == 1) { print "[DEBUG] week from: $week_from to: $week_to\n"; }        
+   
+  my $sql="select bg from bgtable where timestamp between $week_from and $week_to";
+  @bgData = read_db_data($sql);
+  $bgCount = @bgData;
+  if ( $bgCount >= $minBGcount) {
+    my $bgAve = sprintf( "%.02f", &average(\@bgData) );
+    my $bgStd = sprintf( "%.02f", &stdev(\@bgData) );
+    my $bgCof = sprintf( "%.02f", &cofvar(\@bgData) );
+    my $a1c =   sprintf( "%.02f", &a1c($bgAve) );
+    print "$bgCount\t$bgAve\t$bgStd\t$bgCof\t$a1c\n";
+  }
+  else {
+    print "$bgCount\t<SAMPLE_SIZE_TOO_SMALL>\n";      
+  }
+
 }
 
 sub compute_a1c_days {
@@ -481,6 +567,7 @@ sub compute_a1c_days {
 
   print "--- A1C going back to $days days from $today --- \n";
   print "Days\tCount\tAverage\tSD\tCV\tA1C\n";
+  my $num_days=$days;
   while ($days > 0) {
     my $days_from = sprintf("datetime('now' , '-%d days')",$days);
     my $days_to   = sprintf("datetime('now' , '-%d days')",($days-1));
@@ -498,6 +585,26 @@ sub compute_a1c_days {
       print "$days\t$bgCount\t<SAMPLE_SIZE_TOO_SMALL>\n";
     }
     $days--;
+  }
+
+  # now, calculate for the entire period
+  print "\n--- A1C for the entire period in the last $num_days days --- \n";
+  print "Count\tAverage\tSD\tCV\tA1C\n";
+
+  my $days_from = sprintf("datetime('now' , '-%d days')",$num_days);
+  my $days_to   = sprintf("datetime('now' , '-%d days')",0);
+  my $sql="select bg from bgtable where timestamp between $days_from and $days_to";
+  @bgData = read_db_data($sql);
+  $bgCount = @bgData;
+  if ( $bgCount >= $minBGcount) {
+    my $bgAve = sprintf( "%.02f", &average(\@bgData) );
+    my $bgStd = sprintf( "%.02f", &stdev(\@bgData) );
+    my $bgCof = sprintf( "%.02f", &cofvar(\@bgData) );
+    my $a1c =   sprintf( "%.02f", &a1c($bgAve) );
+    print "$bgCount\t$bgAve\t$bgStd\t$bgCof\t$a1c\n";
+  }
+  else {
+    print "$bgCount\t<SAMPLE_SIZE_TOO_SMALL>\n";
   }
 }
 
@@ -521,7 +628,7 @@ GetOptions( "import=s"  => \$fname,
             "type=s"    => \$type,
             "debug=i"   => \$debug,            
             "db=s"      => \$db_file,
-            "months=i"  => \$year,
+            "months=i"  => \$months,
             "weeks=i"   => \$weeks,
             "days=i"    => \$days,
             "export=s"  => \$export_fname,
@@ -569,10 +676,9 @@ if ( defined $fname ) {
 }
 
 print "Calculating A1C based on FreeStyle Libre CGM data...\n";
-compute_a1c_all();
 
 # see if we need to to monthly as well
-if ( $year > 0 ) {
+if ( $months > 0 ) {
   # do monthly for the year specified
   compute_a1c_monthly();
 }
@@ -583,4 +689,8 @@ elsif ( $weeks > 0) {
 elsif ( $days > 0 ) {
   compute_a1c_days();
 }
-
+else {
+  # compute for all data
+  # note: this may not make sense as data could be years worth and a1c is really last 90days
+  compute_a1c_all();
+}
