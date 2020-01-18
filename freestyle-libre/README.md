@@ -1,6 +1,6 @@
 
 # Disclaimer
-This libre_app.pl script comes without warranty of any kind. Use them at your own risk. I assume no liability for the accuracy, correctness, completeness, or usefulness of any information provided by this site nor for any sort of damages using these scripts may cause.
+This libre_app.pl script comes without warranty of any kind. Use it at your own risk. I assume no liability for the accuracy, correctness, completeness, or usefulness of any information provided by this scripts nor for any sort of damages using these scripts may cause.
 
 
 # Usage Guide
@@ -13,76 +13,70 @@ Usage: libre_app.pl [options]
    --import <filename> --type <liapp|libre|libreview> [libre=reader data; libreview=cloud export - default]
    --export <filename>
    --db <dbname> 
-   --months <year> 
-   --weeks <numberofweeks> 
-   --days <numberofdays> 
+   --months <number of months> 
+   --weeks <number of weeks> 
+   --days <number of days> 
    --help usage
+   --debug 1 print debug message
 
 ```
 
 #### Example 1
 ``` 
-./libre_app.pl 
+./libre_app.pl --days 14
 Opening DB: libre-db.sqlite
 Calculating A1C based on FreeStyle Libre CGM data...
- --- A1C for ALL data found in DB ---
-BG data range:       2018-01-07 07:32 ---> 2020-01-08 14:54
-BG data total:       731.31 days.
-BG data count:       72934
-BG data average:     108.24
-BG data SD:          25.03  (SD ref range 10-26 for non-diabetes)
-BG data CV:          23.12  (CV ref range 19-25 for non-diabetes)
-Your predicted A1C:  5.40
+--- A1C going back to 14 days from 01/18/2020 11:11:32 AM --- 
+Days	Count	Average	SD	CV	A1C
+14	98	116.93	20.45	17.49	5.70
+13	49	130.39	27.03	20.73	6.17
+12	88	99.42	20.79	20.92	5.09
+11	104	112.96	25.02	22.15	5.56
+10	102	104.34	17.46	16.73	5.26
+9	109	103.58	14.35	13.86	5.24
+8	80	100.60	19.05	18.94	5.13
+7	99	102.99	22.25	21.61	5.22
+6	92	109.39	12.26	11.21	5.44
+5	97	105.68	25.39	24.03	5.31
+4	84	102.27	19.60	19.16	5.19
+3	92	105.38	29.67	28.15	5.30
+2	96	103.99	22.03	21.18	5.25
+1	61	99.89	18.84	18.86	5.11
 
+--- A1C for the entire period in the last 14 days --- 
+Count	Average	SD	CV	A1C
+1251	106.47	22.30	20.94	5.34
 ```
 
 #### Example 2
 ```
-./libre_app.pl --weeks 7
+./libre_app.pl --weeks 4
 Opening DB: libre-db.sqlite
 Calculating A1C based on FreeStyle Libre CGM data...
- --- A1C for ALL data found in DB ---
-BG data range:       2018-01-07 07:32 ---> 2020-01-08 14:54
-BG data total:       731.31 days.
-BG data count:       72934
-BG data average:     108.24
-BG data SD:          25.03  (SD ref range 10-26 for non-diabetes)
-BG data CV:          23.12  (CV ref range 19-25 for non-diabetes)
-Your predicted A1C:  5.40
-
---- A1C going back to 7 weeks from 01/08/2020  3:36:49 PM --- 
+--- A1C going back to 4 weeks from 01/18/2020 11:11:41 AM --- 
 Week	Count	Average	SD	CV	A1C
-7	601	120.75	21.49	17.80	5.83
-6	493	122.77	22.58	18.40	5.90
-5	520	118.12	24.70	20.91	5.74
-4	535	112.23	24.07	21.45	5.54
-3	527	111.03	22.77	20.51	5.50
-2	577	114.22	22.86	20.02	5.61
-1	513	118.58	25.36	21.39	5.76
+4	557	116.08	22.55	19.43	5.67
+3	552	119.59	24.16	20.20	5.79
+2	582	104.25	20.47	19.64	5.26
+1	522	104.75	22.30	21.29	5.28
 
+--- A1C for the entire period in the last 4 weeks --- 
+Count	Average	SD	CV	A1C
+2213	111.17	23.38	21.03	5.50
 ```
 
 #### Example 3
 ```
+./libre_app.pl --months 3
 Opening DB: libre-db.sqlite
 Calculating A1C based on FreeStyle Libre CGM data...
- --- A1C for ALL data found in DB ---
-BG data range:       2018-01-07 07:32 ---> 2020-01-08 14:54
-BG data total:       731.31 days.
-BG data count:       72934
-BG data average:     108.24
-BG data SD:          25.03  (SD ref range 10-26 for non-diabetes)
-BG data CV:          23.12  (CV ref range 19-25 for non-diabetes)
-Your predicted A1C:  5.40
+--- A1C by month starting with 3 months before to current --- 
+Months	Count	Average	SD	CV	A1C
+3	2570	108.94	24.54	22.52	5.42
+2	2564	118.37	23.50	19.85	5.75
+1	2737	111.02	23.43	21.11	5.50
 
---- A1C going back to 7 days from 01/08/2020  3:37:11 PM --- 
-Days	Count	Average	SD	CV	A1C
-7	97	112.37	26.55	23.62	5.54
-6	106	133.57	20.78	15.56	6.28
-5	98	123.35	24.74	20.06	5.93
-4	84	118.12	19.86	16.82	5.74
-3	55	127.42	27.53	21.60	6.07
-2	102	98.77	21.22	21.48	5.07
-1	68	111.49	21.74	19.50	5.51
-
+--- A1C for the entire period in the last 3 months --- 
+Count	Average	SD	CV	A1C
+7871	112.73	24.15	21.42	5.56
 ```
