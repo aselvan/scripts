@@ -37,6 +37,7 @@ disable_misl() {
 
   #zap the login hook (read it first to see if there are things we need there)
   defaults delete com.apple.loginwindow LoginHook
+  defaults delete com.apple.loginwindow LogoutHook
 }
 
 check_root() {
@@ -72,7 +73,7 @@ disable() {
       echo "[INFO} Disabling: $p"
       launchctl unload -w $p
       mv $p $p.disabled
-    fi
+    fiLogoutHook
   done
 
   echo "[INFO] disabling launch agents for user $user ..."
