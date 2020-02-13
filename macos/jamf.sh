@@ -49,8 +49,9 @@ check_root() {
 enable() {
   echo "[INFO] enabling daemons ..."
   for p in $jamf_daemons_plist ; do
-    if [ -f $p ] ; then
+    if [ -f $p.disabled ] ; then
       echo "[INFO] Enabling: $p"
+      mv $p.disabled $p
       launchctl load $p
     fi
   done
@@ -70,6 +71,7 @@ disable() {
     if [ -f $p ] ; then
       echo "[INFO} Disabling: $p"
       launchctl unload -w $p
+      mv $p $p.disabled
     fi
   done
 
