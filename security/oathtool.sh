@@ -91,12 +91,11 @@ if [ $add -ne 0 ]; then
   if [ ! -f $secret_file_dir ]; then
    mkdir -p $secret_file_dir || exit
   fi
-  encrypted_key=$(echo $secret | openssl enc -aes-256-cbc -a -salt)
+  dummy=$(echo $secret | openssl enc -aes-256-cbc -a -salt >$secret_file_dir/$file)
   if [ $? -ne 0 ]; then
     echo "[ERROR] encrypting secret key, try again"
     exit
   fi
-  echo $encrypted_key > $secret_file_dir/$file
   echo "[INFO] encrypted secret key at $secret_file_dir/$file"
 else
   # create a OTP
