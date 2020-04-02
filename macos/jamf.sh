@@ -73,7 +73,7 @@ disable() {
       echo "[INFO} Disabling: $p"
       launchctl unload -w $p
       mv $p $p.disabled
-    fiLogoutHook
+    fi
   done
 
   echo "[INFO] disabling launch agents for user $user ..."
