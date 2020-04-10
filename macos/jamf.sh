@@ -50,18 +50,17 @@ check_root() {
 enable() {
   echo "[INFO] enabling daemons ..."
   for p in $jamf_daemons_plist ; do
-    if [ -f $p.disabled ] ; then
+    if [ -f $p ] ; then
       echo "[INFO] Enabling: $p"
-      mv $p.disabled $p
       launchctl load $p
     fi
   done
 
   echo "[INFO] enabling launch agents ..."
   for a in $jamf_agent_plist ; do
-    if [ -f $a.disabled ] ; then
+    if [ -f $a ] ; then
       echo "[INFO] Enabling: $a"
-      mv $a.disabled $a
+      sudo -u $user launchctl load $a
     fi
   done
 }
@@ -72,7 +71,6 @@ disable() {
     if [ -f $p ] ; then
       echo "[INFO} Disabling: $p"
       launchctl unload -w $p
-      mv $p $p.disabled
     fi
   done
 
@@ -81,7 +79,6 @@ disable() {
     if [ -f $a ] ; then
       echo "[INFO] Disabling: $a"
       sudo -u $user launchctl unload -w $a
-      mv $a $a.disabled
     fi
   done
 
