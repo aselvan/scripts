@@ -7,5 +7,7 @@
 # Version: Jan 23, 2020
 #
 
+log_file=/tmp/msteam.log
+
 echo "[INFO] Starting MS-Team with gpu disabled."
-nohup /Applications/Microsoft\ Teams.app/Contents/MacOS/Teams --disable-gpu &
+nohup /Applications/Microsoft\ Teams.app/Contents/MacOS/Teams --disable-gpu > $log_file 2>&1 &
