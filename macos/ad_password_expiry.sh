@@ -2,26 +2,33 @@
 #
 # ad_password_expiry.sh --- check the AD password expiry date
 #
-# This script can be used in script to check exit code which will be the # of days 
-# leftin the password expiry except 0 which is an error; this is ass backwards 
-# behavior of any unix app or script but who cares?
+# The exit code will be the number of days left for password to expire
+# to allow this script to be used in other scritps. On any error it 
+# will return 0 which ass backwards behavior of any unix app or script 
+# but who cares?
 #
 # Author:  Arul Selvan
 # Version: Apr 25, 2020
 #
 
 # commandline arguments
-options_list="u:d:h"
+options_list="u:d:e:h"
 
 # works with user login or elevated
 user=`who -m | awk '{print $1;}'`
 # note: case sensitive!
 domain_prefix="RRI"
 
+# e-mail when e-mail address is provided
+email_addr=""
+email_subject="AD password expiring"
+email_threshold=7
+log_file="/tmp/ad_password_expiry.log"
+
 usage() {
-	echo "Usage: $0 [-u ad_user_nanme] [-d domain_prefix] "
+  echo "Usage: $0 [-u ad_user_nanme] [-d domain_prefix] " | tee
   echo "   ex: $0 -u arul -d selvans.net"
-	exit 0
+  exit 0
 }
 
 # process commandline
@@ -32,6 +39,9 @@ while getopts "$options_list" opt; do
       ;;
     d)
       domain_prefix=$OPTARG
+      ;;
+    e)
+      email_addr=$OPTARG
       ;;
     h)
       usage
@@ -45,22 +55,22 @@ while getopts "$options_list" opt; do
    esac
 done
 
-echo "[INFO] checking AD password expiry for '$user' ... "
+echo "[INFO] checking AD password expiry for '$user' ... " >$log_file | tee
 
 # Perform 2 checks to determine if this mac is part of an AD domain
 # 1. check if this mac is bound to an AD domain (could be offline or not on VPN)
 ad_domain=`dsconfigad -show | awk '/Active Directory Domain/{print $NF}'`
 if [ -z $ad_domain ] ; then
-  echo "[ERROR] this device is not bound to any AD domain"
+  echo "[ERROR] this device is not bound to any AD domain" | tee -a $log_file
   exit 0
 else
-  echo "[INFO] device is bound to $ad_domain"
+  echo "[INFO] device is bound to $ad_domain" | tee -a $log_file
 fi
 
 # 2. check if DNS query returns a LDAP SRV record, inidcation of AD server available for further queries
 host -t srv _ldap._tcp.$ad_domain >/dev/null 2>&1
 if [ $? -ne 0 ] ; then
-  echo "[ERROR] no LDP srv records, this device may be bound to AD but offline, try connecting to VPN"
+  echo "[ERROR] no LDP srv records, this device may be bound to AD but offline, try connecting to VPN" | tee -a $log_file
   exit 0
 fi
 
@@ -68,10 +78,10 @@ fi
 domain_path="/Active Directory/$domain_prefix/All Domains"
 
 # get the password expiry date from AD
-echo "[INFO] querying AD with '$domain_path' for '$user'"
+echo "[INFO] querying AD with '$domain_path' for '$user'" | tee -a $log_file
 expiry_time=`dscl "$domain_path" -read Users/$user msDS-UserPasswordExpiryTimeComputed| awk '/dsAttrTypeNative/{print $NF}'`
 if [ -z $expiry_time ] ; then
-  echo "[ERROR] empty response while qurying AD server, code=$?"
+  echo "[ERROR] empty response while qurying AD server, code=$?" | tee -a $log_file
   exit 0
 fi
 
@@ -86,7 +96,15 @@ expiry_date=$(date -r $expiry_time_secs)
 today_sec=$(/bin/date +%s)
 num_days_left=$(echo "($expiry_time_secs - $today_sec)/60/60/24" | /usr/bin/bc)
 
-echo "[INFO] $user, your password will expire in $num_days_left days on/after '$expiry_date'"
+# do we need to e-mail?
+# note: send mail if num_days_left is <= $email_threshold and an e-mail address is provided
+message="$user, your password will expire in $num_days_left days on/or after '$expiry_date'"
+email_subject="$email_subject in $num_days_left days"
+echo "[INFO] $message" | tee -a $log_file
+if [[ $num_days_left -le $email_threshold && ! -z $email_addr ]] ; then
+  echo "[INFO] e-mail threahold of $email_threshold days reached, sending e-mail to $email_addr ..." | tee -a $log_file
+  cat $log_file | mail -s "$email_subject" $email_addr
+fi
 
 # exit w/ number of days left (may not be good idea if its more than 255 but no AD server will allow that big)
 exit $num_days_left
