@@ -22,6 +22,54 @@ jamf_agent_plist="\
   /Library/LaunchAgents/com.jamf.management.agent.plist \
   /Library/LaunchAgents/com.jamfsoftware.jamf.agent.plist"
 
+script_path="/Library/Application Support/JAMF/ManagementFrameworkScripts"
+backup_suffix="backup"
+skip_script="skip.sh"
+
+disable_links() {
+  cur_dir=`pwd`
+  cd "$script_path" || exit
+
+  # create the placeholer and links
+  cat <<EOF > $skip_script 
+#!/bin/sh
+echo "[\`date\`] \$0 starting skip..." >/tmp/$skip_script.log
+exit 0
+EOF
+  chmod +x $skip_script
+  scripts=`ls -1 *.sh`
+  for script in $scripts ; do
+    if [ "$script" = "$skip_script" ] ; then
+      continue
+    fi
+    test -h "$script"
+    if [ $? -eq 0 ] ; then
+      echo "[ERROR] "$script" is a already a symbolic link, skiping"
+      continue
+    fi
+    mv "$script" "$script".$backup_suffix
+    ln -s $skip_script "$script"
+  done
+}
+
+enable_links() {
+  cur_dir=`pwd`
+  cd "$script_path" || exit
+
+  scripts=`ls -1 *.sh`
+  for script in $scripts ; do
+    if [ "$script" = "$skip_script" ] ; then
+      continue
+    fi
+    if [ -f "$script".$backup_suffix ]; then
+      rm "$script"
+      mv "$script".$backup_suffix "$script"
+    else
+      echo "[ERROR] missing file: "$script".$backup_suffix, skipping ..."
+    fi
+  done
+}
+
 #
 # remove crap that were messed up, specifically preferences that 
 # were overriden which breaks crond (i.e. sleep time which breaks crond)
@@ -63,6 +111,10 @@ enable() {
       sudo -u $user launchctl load $a
     fi
   done
+  
+  echo "[INFO] Enable jamf scripts for user $user"
+  enable_links
+
 }
 
 disable() {
@@ -84,6 +136,10 @@ disable() {
 
   # disable the misl crap
   disable_misl
+
+  # reset links
+  echo "[INFO] disabling scripts..."
+  disable_links 
 }
 
 check_root
