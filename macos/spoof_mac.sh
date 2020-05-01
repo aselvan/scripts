@@ -5,6 +5,8 @@
 # Description: 
 #  Spoof mac address, save current or restore.
 # 
+# pre-req: openssl
+#
 # Disclaimer: 
 # This will obviously create lot of packet collitions/problems on the network and  
 # create slowness, so you do choose to use this script, you are using at your own 
@@ -46,6 +48,10 @@ save_mac() {
 
 spoof_mac() {
   mac_to_spoof=$1
+  if [ $mac_to_spoof = "random" ] ; then
+    echo "[INFO] generating a randmom mac ..."
+    mac_to_spoof=`openssl rand -hex 6 | sed "s/\(..\)/\1:/g; s/.$//"`
+  fi
   echo "[INFO] spoofing your mac as '$mac_to_spoof' on interface '$iface'"
   ifconfig $iface ether $mac_to_spoof
   exit
@@ -60,7 +66,7 @@ show_mac() {
 usage() {
   echo "Usage: $0 [options]"
   echo "  -i <interface> [default: en0 note: needs to be first argument to choose another interface]"
-  echo "  -m <mac_address_to_spoof> [changes your mac address to the one provided]"
+  echo "  -m <mac_address_to_spoof> [mac address to spoof or \"random\" to generate one]"
   echo "  -s [saves current mac address]"
   echo "  -r [restores previously saved mac address]"
   echo "  -l [shows the currently used mac address]"
