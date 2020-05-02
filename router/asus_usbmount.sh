@@ -2,15 +2,22 @@
 #
 # asus_usbmount.sh -- mounts the usb drive in ASUS GT-AX1100 as /opt
 #
-#   This needed since stock firmawre has /opt as readonly with links
+#   This is needed since stock firmawre has /opt as readonly with links
 #   pointing to a /tmp/opt. The problem is while there are read-only
 #   links created by firmware for most /opt/ directories, the /var is
 #   missed which is essential for Enware install. So this script mounts
 #   the entier /opt on top the external usb where we have write access
 #
-# Note: This eclips the /opt from firmware where there is one scripts/
-# directory and I am sure if firmware needs it but its hidden with this
-# mount below.
+####### DISCLAIMER: ######## 
+# If you do choose to use this script, you are using it at your own risk 
+# and I am not liable for any loss or damage you have caused by using 
+# this script.
+############################
+#
+# Note: 
+#  This eclips the /opt from firmware where there is one scripts/
+#  directory and I am sure if firmware needs it but its hidden with this
+#  mount below.
 #
 # Install instruction:
 # -------------------
@@ -23,6 +30,7 @@
 # Version: Apr 21, 2020
 
 # In my ASUS-GT AX11000, the top usb slot mapps to be sda1 
+# TODO: change this to your device name
 my_usb=/dev/sda1
 
 # check and make sure it is good before attempting to mount
@@ -35,6 +43,9 @@ else
   echo "$my_usb is not present, skiping mount" >/tmp/asus_usbmount.log
 fi
 
+#
+# TODO: change this to your ssh-key(s)
+#
 # TODO: once ASUS fixed the bug, add keys via admin UI and remove everything below.
 # ASUS GT-AX11000 firmware Version:3.0.0.4.384_8011 has a bug which 
 # looses all ssh pub keys other than the first one. I need more keys
