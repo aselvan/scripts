@@ -22,7 +22,7 @@
 # Version:  Apr 5, 2018
 #
 
-tmp_dir="/Users/arulselvan/tmp"
+tmp_dir="${HOME}/tmp"
 local_dir="${tmp_dir}/liapp"
 log_file="${tmp_dir}/logs/liapp_import.log"
 internet_test_log="${tmp_dir}/logs/internet_test.log"
