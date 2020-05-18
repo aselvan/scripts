@@ -54,6 +54,9 @@ my_ssh_keys1="ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAvGze5SVRGLbAk2ZPIBgBnMZXx+y/e3
 my_ssh_keys2="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDIUWiLXe4oIQ5MFqHAanzoxGg1MewV4ro9CsbruT4LoU4u3E1Ocdul+rWeGJuYaPcA0Qg7BjPwlSgi22GxqljoQKA0uw2CizB24up2M51Wb4mqZNG2WwRpwfCsRju6p2ymRhziBe052zRgH9yEwBMcAgqHwL7MDRniqVz0IzOLmK4a19I7S+4L2eSCZDjzGv5S0ytW8pTrzt4aCqLG7SGFWHl9P1g5cpY9kz0fqLhATEU/dNgBjffetb0x+esjI9L3x9GWYzzBlqr0hEv3lzDoNUrwCAMI+4eCNpGkTcliIelMsXhDdBFAB1uTrllffOVYK4s3vkfvLLgbl8otUkCR root@gorilla"
 my_ssh_key3="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQD6EigjJFrLo+SiCkSQH2g4N3S566zZocYK0e5d0uCKVgLB5sUzEtpA9J4VTIGq1QtaQAsuOYqhEsAb6NJTQi+Ny+dX/Z99tQ1SSiCtKNe51aufDrGKeNLK/fAxYmtdG+8rcIFkzzhUw82HEYmJExS6c2dbhh3z+SytqNAQPysDekpyWXV5usPHMku3CtL3D+Pl3kPRY/RMIJXIeEnmFQ9Q5/vBbnnTFCfP3zLX4z6AyFSFifCKUzDPsOhY3hYkumxgaCZKeMJgkIEIrfsTEwpbtfFqamyy6s7NSFieuGHSIXMmGGkMtVDtZklOSLFp6KF1ceZNzancNO4gDll7pR/B cub900@cub900mac"
 
+#echo "" >> /tmp/home/root/.ssh/authorized_keys
 #echo $my_ssh_keys1 >> /tmp/home/root/.ssh/authorized_keys
+echo "" >> /tmp/home/root/.ssh/authorized_keys
 echo $my_ssh_keys2 >> /tmp/home/root/.ssh/authorized_keys
+echo "" >> /tmp/home/root/.ssh/authorized_keys
 echo $my_ssh_keys3 >> /tmp/home/root/.ssh/authorized_keys
