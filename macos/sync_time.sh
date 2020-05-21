@@ -11,7 +11,7 @@
 # Version: Sep 5, 2014
 #
 
-log_file="${HOME}/tmp/sync_time.log"
+log_file="/tmp/sync_time.log"
 # ntp client
 ntp_client="/usr/bin/sntp -sS"
 # use a list of servers so it works regardless of network (work or home)
