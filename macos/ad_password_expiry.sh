@@ -59,7 +59,7 @@ echo "[INFO] checking AD password expiry for '$user' ... " >$log_file | tee
 
 # Perform 2 checks to determine if this mac is part of an AD domain
 # 1. check if this mac is bound to an AD domain (could be offline or not on VPN)
-ad_domain=`dsconfigad -show | awk '/Active Directory Domain/{print $NF}'`
+ad_domain=`/usr/sbin/dsconfigad -show | awk '/Active Directory Domain/{print $NF}'`
 if [ -z $ad_domain ] ; then
   echo "[ERROR] this device is not bound to any AD domain" | tee -a $log_file
   exit 0
@@ -68,7 +68,7 @@ else
 fi
 
 # 2. check if DNS query returns a LDAP SRV record, inidcation of AD server available for further queries
-host -t srv _ldap._tcp.$ad_domain >/dev/null 2>&1
+/usr/bin/host -t srv _ldap._tcp.$ad_domain >/dev/null 2>&1
 if [ $? -ne 0 ] ; then
   echo "[ERROR] no LDP srv records, this device may be bound to AD but offline, try connecting to VPN" | tee -a $log_file
   exit 0
@@ -79,7 +79,7 @@ domain_path="/Active Directory/$domain_prefix/All Domains"
 
 # get the password expiry date from AD
 echo "[INFO] querying AD with '$domain_path' for '$user'" | tee -a $log_file
-expiry_time=`dscl "$domain_path" -read Users/$user msDS-UserPasswordExpiryTimeComputed| awk '/dsAttrTypeNative/{print $NF}'`
+expiry_time=`/usr/bin/dscl "$domain_path" -read Users/$user msDS-UserPasswordExpiryTimeComputed| awk '/dsAttrTypeNative/{print $NF}'`
 if [ -z $expiry_time ] ; then
   echo "[ERROR] empty response while qurying AD server, code=$?" | tee -a $log_file
   exit 0
@@ -103,7 +103,7 @@ email_subject="$email_subject in $num_days_left days"
 echo "[INFO] $message" | tee -a $log_file
 if [[ $num_days_left -le $email_threshold && ! -z $email_addr ]] ; then
   echo "[INFO] e-mail threahold of $email_threshold days reached, sending e-mail to $email_addr ..." | tee -a $log_file
-  cat $log_file | mail -s "$email_subject" $email_addr
+  cat $log_file | /usr/bin/mail -s "$email_subject" $email_addr
 fi
 
 # exit w/ number of days left (may not be good idea if its more than 255 but no AD server will allow that big)
