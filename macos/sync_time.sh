@@ -11,9 +11,11 @@
 # Version: Sep 5, 2014
 #
 
-log_file="/Users/arul/tmp/sync_time.log"
+log_file="${HOME}/tmp/sync_time.log"
+# ntp client
+ntp_client="/usr/bin/sntp -sS"
 # use a list of servers so it works regardless of network (work or home)
-time_servers="pool.ntp.org"
+time_servers="time.apple.com pool.ntp.org"
 
 echo "Running time script ..." > $log_file
 uid=`id -u`
@@ -26,7 +28,7 @@ for time_server in $time_servers; do
   /sbin/ping -t30 -c1 -qo $time_server >>$log_file 2>&1
   if [ $? -eq 0 ]; then 
     echo "Sync'ing time w/ server: $time_server" >> $log_file
-    /usr/sbin/ntpdate $time_server >> $log_file 2>&1
+    $ntp_client $time_server >> $log_file 2>&1
     exit
   fi
 done
