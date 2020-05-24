@@ -1,0 +1,108 @@
+#
+##############################################################################################
+# HOWTO:
+# 
+# This is a collection of various random things for the router ASUS GT-AX11000. Many of this 
+# would work for other routers as well.
+#
+# Author:  Arul Selvan
+# Version: May 23, 2020
+#
+# NOTE: All of these assume that you have ssh access to the router and logged in to the router
+# via ssh.
+##############################################################################################
+#
+
+----------------------------------------------------------------------------------
+# How to run cron
+The cron is available with a utility named 'cru' (why can they call it cron?)
+The following is the syntax for setting up a cron to run at 6.30am everyday
+
+/usr/sbin/cru a Run_Whatever "30 6 * * * /bin/whatever"
+
+----------------------------------------------------------------------------------
+# How to setup loglevel
+Log level defaults to 6 but 7 provides more details; do the following.
+nvram set log_level=7
+nvram commit
+reboot
+
+----------------------------------------------------------------------------------
+# How to run stuff on startup
+There is a writable filesystem mounted on boot at /jffs where you can store the
+scripts that you can run on startup. Create a script (see asus_usbmount.sh in this
+directory which is the one I use to run some custom setup). You can setup the 
+script to run on startup as shown below
+
+1. cp myscript.sh /jffs/myscipt.sh
+2. nvram set script_usbmount="/jffs/myscript.sh"
+3. nvram commit
+4. reboot (use your UI as it does other stuff as well)
+
+----------------------------------------------------------------------------------
+# How to install entware (this provides all the tools that are missing on your stock firmware)
+
+Download the install script from below
+1. find the kernel version of your router with the command below. In my case the version is aarch64
+
+#/tmp/home/root# uname -rm
+4.1.51 aarch64
+
+2. download the script to the router
+wget http://bin.entware.net/aarch64-k3.10/installer/generic.sh
+
+3. execute the script (note: there is a but in gt-ax11000 where /opt/var link is missing so you need
+to first install my asus_usbmount.sh referenced above first).
+
+4. If all goes well you got entware installed. You can update by opkg update; opkg install <whatever tool you need>
+
+5. Read the documentation here: https://github.com/Entware/Entware/wiki/Install-on-Asus-stock-firmware
+
+----------------------------------------------------------------------------------
+
+# How to isolate IoT devices --- this is not really specific to this router, so any router would work
+
+1. Setup a guest network on your router. Ensure you "disable Access to inTRAnet" or whatever your router is 
+   calling it on the UI. This, under the hood, essentially makes any STAs (your devices) connect to this 
+   guest network in a separate VLAN.
+
+   The following output showing my guest network (i.e. interface wl0.2). As you can see the rules are 
+   there to completely isolate this from your main network. In my case 192.168.1.0/24.
+
+   /tmp/home/root# LD_LIBRARY_PATH=/usr/lib:/lib:/lib/aarch64 ebtables -t broute -L
+Bridge table: broute
+
+Bridge chain: BROUTING, entries: 3, policy: ACCEPT
+-p IPv4 -i wl0.2 --ip-dst 192.168.1.1 --ip-proto icmp -j ACCEPT 
+-p IPv4 -i wl0.2 --ip-dst 192.168.1.0/24 --ip-proto icmp -j DROP 
+-p IPv4 -i wl0.2 --ip-dst 192.168.1.0/24 --ip-proto tcp -j DROP 
+
+2. Reserve a small block of IP in your main routers DHCP service. For example, I blocked 192.168.1.200 
+   to 192.168.1.254 so your main router does not assign any STAs in your main network within this range. 
+   so this can be used by the repeater which we are going to setup in the next steps.
+
+3. Buy TP-Link AC750 WiFi Extender (really cheap $29 in Amazon) 
+    https://www.amazon.com/gp/product/B07N1WW638/ref=ox_sc_act_title_1?smid=ATVPDKIKX0DER&psc=1
+
+4. Setup this device and assign a static IP for this router, choose 192.168.1.200 and default 
+   gateway of 191.168.1.1 (your router).
+
+5. a) Go to wireless setup enter your guest network (step#1) for 2.4Gz. Note the wireless passoword and 
+   security protocol i.e. WPA2 etc or what ever should be the same as your guest netowrk. You should disable
+   the 5Ghz completely since we are not going to be using it.
+
+   b) Go to extended network and give it a SSID that is differnt from your guest network to avoid your IoT 
+   junk latching to main guest network which should be fine but you have the option to place this repeater 
+   closer to these IoT junk so they are happy with good signal. These are cheap so you can place 2 or three
+   around the house. Don't do too many as they would cause lot of wifi interference.
+
+6. Now, go to your IoT crap and make them connect to the new SSID from step #5b. Note: the wifi password 
+   is same as your guest network on the main router.
+
+All the IoT crap now is totally isolated from your main network. Enjoy.
+Note: If you have devices that needs to talk to others like google cast to stream music or video on other
+devices in home, don't move them to this network as they will not be able to talk to your TV or sound bar etc.
+You just going to have to live with them inside your network if you want that. 
+
+----------------------------------------------------------------------------------
+
