@@ -3,11 +3,37 @@
 #
 # msteam.sh --- wrapper to avoid ms-team behave like a pig draining power and cpu
 #
+# In addition to disabling gpu usage, restrict msteam to not to compete with other 
+# apps for cpu by lowering priority to the absolute minimum. In addition, if available, 
+# this script will use 'cpulimit' tool to lock it down CPU usage 
+# 
+# Optional: You can install the 'cpulimit' with Homebrew i.e. brew install cpulimit 
+#
+# Note: Most modern macs have 4 cores so the 50% (default value) will be limiting 
+#       your msteam to use only 50% out of 400%, however msteam fork/exec's 4 child
+#       process so each can get upto 50% CPU! so you can't win w/ this cpu pig! 
+#       So the bottomline, it can potentially go up to 200% at the worst case but it 
+#       doesnt seem to be going more than 100% which is good. If you reduce to 10%, 
+#       it simply crawls hence the default of 50%
+# 
+#
 # Author:  Arul Selvan
 # Version: Jan 23, 2020
 #
 
 log_file=/tmp/msteam.log
+cpu_percent=50
+cpu_limit_bin=/usr/local/bin/cpulimit
 
 echo "[INFO] Starting MS-Team with gpu disabled."
-nice -20 nohup /Applications/Microsoft\ Teams.app/Contents/MacOS/Teams --disable-gpu > $log_file 2>&1 &
+
+# if cpulimit present, use it
+if [ -x $cpu_limit_bin ] ; then
+  if [ ! -z $1 ] ; then
+    cpu_percent=$1
+  fi
+  echo "[INFO] using cpulimit tool to limit $cpu_percent% of CPU usage"
+  $cpu_limit_bin -l $cpu_percent -i nice -n 20 nohup /Applications/Microsoft\ Teams.app/Contents/MacOS/Teams --disable-gpu > $log_file 2>&1 &
+else
+  nice -n 20 nohup /Applications/Microsoft\ Teams.app/Contents/MacOS/Teams --disable-gpu > $log_file 2>&1 &
+fi
