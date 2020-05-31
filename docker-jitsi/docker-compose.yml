@@ -12,6 +12,7 @@ services:
             - ${CONFIG}/web:/config:Z
             - ${CONFIG}/web/letsencrypt:/etc/letsencrypt:Z
             - ${CONFIG}/transcripts:/usr/share/jitsi-meet/transcripts:Z
+            - ./selvans.net_watermark.png:/usr/share/jitsi-meet/images/watermark.png
         environment:
             - ENABLE_AUTH
             - ENABLE_GUESTS
