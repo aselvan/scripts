@@ -9,20 +9,18 @@
 # 
 # Optional: You can install the 'cpulimit' with Homebrew i.e. brew install cpulimit 
 #
-# Note: Most modern macs have 4 cores so the 50% (default value) will be limiting 
-#       your msteam to use only 50% out of 400%, however msteam fork/exec's 4 child
-#       process so each can get upto 50% CPU! so you can't win w/ this cpu pig! 
-#       So the bottomline, it can potentially go up to 200% at the worst case but it 
-#       doesnt seem to be going more than 100% which is good. If you reduce to 10%, 
-#       it simply crawls hence the default of 50%
-# 
+# Note: Most modern macs have 4 cores so the 100% (default value) will be limiting 
+#       your msteam to use only 1 full CPU core, however msteam fork/exec's 4 child
+#       process so in theory each process can get upto 100% CPU! so you can't win 
+#       w/ this cpu pig! So the bottomline, it can potentially go up to 400% at the 
+#       worst case but it doesnt seem to be going more than 100% which is good. 
 #
 # Author:  Arul Selvan
 # Version: Jan 23, 2020
 #
 
 log_file=/tmp/msteam.log
-cpu_percent=50
+cpu_percent=100
 cpu_limit_bin=/usr/local/bin/cpulimit
 
 echo "[INFO] Starting MS-Team with gpu disabled."
