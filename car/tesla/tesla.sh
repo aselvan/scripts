@@ -149,8 +149,15 @@ case $1 in
     execute "vehicles/$tesla_id/command/honk_horn" "POST" "on=true"
   ;;
   start)
-    # doesn't work not sure what the argument to pass.
-    execute "vehicles/$tesla_id/command/remote_start_drive" "POST" "on=true"
+    # yuk, this needs tesla password! This is a handy command if phone ran out of
+    # battery or misplaced or worse lost and you don't have keycard. This command 
+    # allows us to unlock car, and drive w/ out keycard or app
+    tesla_passwd=$2
+    if [ -z $tesla_passwd ] ; then
+      echo "[ERROR] start command requires your tesla account password!"
+      exit
+    fi
+    execute "vehicles/$tesla_id/command/remote_start_drive" "POST" "password=$tesla_passwd"
   ;;
   sentry)
     sc=$2
