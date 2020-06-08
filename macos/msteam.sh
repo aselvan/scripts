@@ -5,7 +5,7 @@
 #
 # In addition to disabling gpu usage, restrict msteam to not to compete with other 
 # apps for cpu by lowering priority to the absolute minimum. In addition, if available, 
-# this script will use 'cpulimit' tool to lock it down CPU usage 
+# and option is specified, this script will use 'cpulimit' tool to lock it down CPU usage 
 # 
 # Optional: You can install the 'cpulimit' with Homebrew i.e. brew install cpulimit 
 #
@@ -20,16 +20,36 @@
 #
 
 log_file=/tmp/msteam.log
-cpu_percent=100
+cpu_percent=""
 cpu_limit_bin=/usr/local/bin/cpulimit
+options_list="l:h"
+script_name=`basename $0`
+
+
+usage() {
+  echo "Usage: $script_name [-l <percent_cpu_limit>]"
+  exit 1
+}
+
+# parse args
+while getopts "$options_list" opt; do 
+  case $opt in 
+    l)
+      cpu_percent=$OPTARG
+      ;;
+    h)
+      usage
+      ;;
+    *)
+      usage
+     ;;
+   esac
+done
 
 echo "[INFO] Starting MS-Team with gpu disabled."
 
-# if cpulimit present, use it
-if [ -x $cpu_limit_bin ] ; then
-  if [ ! -z $1 ] ; then
-    cpu_percent=$1
-  fi
+# if cpulimit requested and tool is available, use it
+if [[ ! -z $cpu_percent && -x $cpu_limit_bin ]] ; then
   echo "[INFO] using cpulimit tool to limit $cpu_percent% of CPU usage"
   $cpu_limit_bin -l $cpu_percent -i nice -n 20 nohup /Applications/Microsoft\ Teams.app/Contents/MacOS/Teams --disable-gpu > $log_file 2>&1 &
 else
