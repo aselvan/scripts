@@ -7,6 +7,13 @@
 # use tesla_token.sh to obtain your bearer token and use this script
 # to obtain the vehicle id (use id command).
 #
+# optional:
+# --------
+# if jq (jason commandline processor) installed, it will be used to 
+# print the output with JSON formatted. You can install it on macOS
+#
+# brew install jq
+#
 # Notes:
 # ------
 # All tesla APIs require bearer token and vehicle id. Since the token 
@@ -26,6 +33,7 @@
 # Client ID & Secret: https://pastebin.com/pS7Z6yyP
 #
 
+jq_bin=/usr/local/bin/jq
 tesla_api_ep="https://owner-api.teslamotors.com/api/1"
 client_id="81527cff06843c8634fdc09e8ac0abefb46ac849f38fe1e431c2ef2106796384"
 client_secret="c7257eb71a564034f9419ee651c7d0e5f7aa6bfbd18bafb5c5c033b093bb2fa3"
@@ -35,7 +43,7 @@ bearer_token=""
 tesla_id=""
 
 usage() {
-  echo "Usage: $0 <id|state|wakeup|charge|climate|drive|honk|start|sentry|lock|unlock>\n"
+  echo "Usage: $0 <id|state|wakeup|charge|climate|drive|honk|start|sentry|lock|unlock|location>\n"
   exit 0
 }
 
@@ -44,6 +52,20 @@ check_vehicle_id() {
     echo "[ERROR] id missing, create the file $tesla_id_file"
     usage
   fi
+}
+
+json_print() {
+  data=$1
+  if [ -x $jq_bin ] ; then
+    echo $data | $jq_bin
+    if [ $? -ne 0 ] ; then
+      # jason format may be messed up on response?
+      echo $data
+    fi
+  else
+    echo $data
+  fi
+  echo ""
 }
 
 # wakeup, tesla!
@@ -79,7 +101,7 @@ execute() {
   if [ ! -z $2 ] ; then
     curl_request=$2
   fi
-
+  
   if [ ! -z $3 ] ; then
     additional_arg=$3
   fi
@@ -94,21 +116,48 @@ execute() {
 
   echo "[INFO] executing '$curl_request' on route: $tesla_api_ep/$command_route ...\n"
   if [ -z $additional_arg ] ; then
-    curl -X $curl_request \
+    result=`curl -s -X $curl_request \
       -H "Cache-Control: no-cache" \
       -H "Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW" \
       -H "Authorization: Bearer $bearer_token" \
       -w "\n\n" \
-      $tesla_api_ep/$command_route
+      $tesla_api_ep/$command_route`
   else
-    curl -X $curl_request \
+    result=`curl -s -X $curl_request \
       -H "Cache-Control: no-cache" \
       -H "Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW" \
       -H "Authorization: Bearer $bearer_token" \
       -F "$additional_arg" \
       -w "\n\n" \
-      $tesla_api_ep/$command_route
+      $tesla_api_ep/$command_route`
   fi
+  
+  json_print $result
+}
+
+location() {
+  if [ ! -x $jq_bin ] ; then
+    echo "[ERROR] jq (JSON commandline processor) required for 'location' command"
+    exit 2
+  fi
+
+  check_vehicle_id
+  wakeup
+
+  result=`curl -s -X GET \
+    -H "Cache-Control: no-cache" \
+    -H "Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW" \
+    -H "Authorization: Bearer $bearer_token" \
+    -w "\n\n" \
+    $tesla_api_ep/vehicles/$tesla_id/data_request/drive_state`
+
+    lat=`echo $result| $jq_bin '.response.latitude'`
+    lon=`echo $result| $jq_bin '.response.longitude'`
+
+    google_map="https://maps.google.com/?q=$lat,$lon"
+
+    echo "[INFO] invoking: $google_map"
+    open "$google_map"
 }
 
 
@@ -180,6 +229,8 @@ case $1 in
   ;;
   unlock)
     execute "vehicles/$tesla_id/command/door_unlock" "POST" "on=true"
+  ;;
+  location) "$@"
   ;;
   *) usage
   ;;
