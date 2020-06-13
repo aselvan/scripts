@@ -1,6 +1,10 @@
-#!/bin/sh
+#!/bin/bash
 #
-# tesla.sh --- wrapper script for various tesla commands 
+# tesla.sh
+#
+# Simple wrapper script for various tesla commands. This script
+# is tested on macOS and Linux, if you are on winblows, it might 
+# work w/ Cygwin but good luck with that.
 #
 # prereq:
 # ------
@@ -10,9 +14,10 @@
 # optional:
 # --------
 # if jq (jason commandline processor) installed, it will be used to 
-# print the output with JSON formatted. You can install it on macOS
+# print the output with JSON formatted. You can install it like so below.
 #
-# brew install jq
+# brew install jq (macOS)
+# apt-get install jq (Linux)
 #
 # Notes:
 # ------
@@ -115,7 +120,7 @@ execute() {
   # make sure tesla is awake
   wakeup
 
-  echo "[INFO] executing '$curl_request' on route: $tesla_api_ep/$command_route ...\n"
+  echo "[INFO] executing '$curl_request' on route: $tesla_api_ep/$command_route ..."
   if [ -z $additional_arg ] ; then
     result=`curl -s -X $curl_request \
       -H "Cache-Control: no-cache" \
@@ -179,6 +184,11 @@ if [ -z $bearer_token ] ; then
   echo "[ERROR] bearer token required for all tesla commands!"
   usage
 fi
+
+if [ $os_name != "Darwin" ]; then
+  jq_bin=/usr/bin/jq
+fi
+
 
 # the commands
 case $1 in
