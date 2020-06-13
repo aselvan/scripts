@@ -41,6 +41,7 @@ bearer_token_file="$HOME/.mytesla.bearer.token"
 tesla_id_file="$HOME/.mytesla.id"
 bearer_token=""
 tesla_id=""
+os_name=`uname -s`
 
 usage() {
   echo "Usage: $0 <id|state|wakeup|charge|climate|drive|honk|start|sentry|lock|unlock|location>\n"
@@ -156,8 +157,13 @@ location() {
 
     google_map="https://maps.google.com/?q=$lat,$lon"
 
-    echo "[INFO] invoking: $google_map"
-    open "$google_map"
+    # if we are on a macOS, open the link in default browser, otherwise just print
+    if [ $os_name = "Darwin" ]; then
+      echo "[INFO] opening tesla location in browser: $google_map"
+      /usr/bin/open "$google_map"
+    else
+      echo "[INFO] your tesla location URL: $google_map"
+    fi
 }
 
 
