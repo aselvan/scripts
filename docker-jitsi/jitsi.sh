@@ -2,11 +2,16 @@
 #
 # jitsi.sh --- simple wrapper to setup directories, settings and start/stop jitsi docker service
 #
+# Note: change the lines where letsencrypt certs/keys are copied to your own keys
+# also change/customize/rename env.selvans.net to suite your needs, otherwise, 
+# everything should work, and you'd be running jitsi video conf in your docker host
+# in under 10 minutes!
+#
 # Author:  Arul Selvan
 # Version: May 30, 2020
 
-# letsencrypt domain path on the host
-letsencrypt_domain=selvans.net
+# domain name; used to reference letsencrypt path, env filename etc.
+my_domain=selvans.net
 
 # stop
 stop() {
@@ -27,12 +32,12 @@ setup() {
   rm -rf ./configs
   mkdir -p configs/web/keys
 
-  # copy our keys
-  cp /etc/letsencrypt/live/$letsencrypt_domain/fullchain.pem configs/web/keys/cert.crt
-  cp /etc/letsencrypt/live/$letsencrypt_domain/privkey.pem configs/web/keys/cert.key
+  # copy you keys to config directory that is mapped as volume inside docker containers
+  cp /etc/letsencrypt/live/$my_domain/fullchain.pem configs/web/keys/cert.crt
+  cp /etc/letsencrypt/live/$my_domain/privkey.pem configs/web/keys/cert.key
 
   # copy the environment
-  cp env.selvans.net .env
+  cp env.$my_domain .env
 
   # update the password on .env file
   sed -i.bak \
