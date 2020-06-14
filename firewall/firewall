@@ -14,7 +14,7 @@ anchor_name="realpage.com"
 rule_set="/etc/pf.conf"
 
 usage() {
-  echo "Usage: $0 <start|stop|status|allstatus|addtable|showtable|deletetable>"
+  echo "Usage: $0 <start|stop|status|allstatus|addip|deleteip|showtable|flushtable>"
   exit
 }
 
@@ -72,23 +72,27 @@ do
      /sbin/pfctl -sa
      /sbin/pfctl -a $anchor_name -sa
      break
-  elif [ "$1" = "addtable" ]; then
+  elif [ "$1" = "addip" ]; then
      shift 1
      if [ -z $1 ]; then
-        echo "addtable needs IP address as argument"
+        echo "addip needs IP address as argument"
         usage
      fi
      echo "Adding $1 to the dynamic_ips table..."
      pfctl -a $anchor_name -t dynamic_ips -T add $1
      break
-  elif [ "$1" = "deletetable" ]; then
+  elif [ "$1" = "deleteip" ]; then
      shift 1
      if [ -z $1 ]; then
-        echo "deletetable needs IP address as argument"
+        echo "deleteip needs IP address as argument"
         usage
      fi
      echo "Deleting $1 from the dynamic_ips table..."
      pfctl -a $anchor_name -t dynamic_ips -T delete $1
+     break
+  elif [ "$1" = "flushtable" ]; then
+     echo "Flushing the dynamic_ips table..."
+     pfctl -a $anchor_name -t dynamic_ips -T flush
      break
   elif [ "$1" = "showtable" ]; then
      echo "Showing dynamic_ips table..."
