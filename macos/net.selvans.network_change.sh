@@ -20,11 +20,41 @@
 last_known_ip="/tmp/last_ip.txt"
 lock_file="/tmp/network_change.loc"
 log_file="/tmp/network_change.log"
+home_server="selvans.net"
+fw_script="/Users/aselvan/bin/pf/firewall"
 
 cleanup_exit() {
   echo "[INFO] Ending $0 @ `date`" >> $log_file
   rm -f $lock_file
   exit 0
+}
+
+# add home server ip to firewall whitelist
+add_home_server() {
+  selvans_ip=`/usr/bin/dig +short $home_server`
+  if [ $? -ne 0 ]; then
+    echo "[ERROR] failed to get $home_server's IP,  skiping ..." >>$log_file
+    return
+  fi
+
+  # check to make sure we got ip 
+  failed=`echo $selvans_ip |awk '/[A-Za-z]/'`
+  if [ ! -z $failed ]; then
+    echo "[ERROR] $home_server's IP is invalid: $selvans_ip; skiping ..." >>$log_file
+    return
+  fi
+
+  # all well, add to firewall rules.
+  if [ -x $fw_script ] ; then
+    # first flush old entries
+    $fw_script flushtable >> $log_file 2>&1
+
+    # now, add this IP
+    echo "[INFO] executing $fw_script addtable $selvans_ip " >> $log_file
+    $fw_script addip $selvans_ip >> $log_file 2>&1
+  else
+    echo "[ERROR] missing firewall script: $fw_script ; skipping ..." >> $log_file
+  fi
 }
 
 # First sleep 15sec, otherwise launchd goes crazy restarting this script as it
@@ -57,9 +87,9 @@ fi
 # check to make sure we got ip if not let the next try figure out
 failed=`echo $new_ip |awk '/[A-Za-z]/'`
 if [ ! -z $failed ]; then
-  echo "[INFO] No ip returned, will try next time $0 is executed" >>$log_file
-  echo "[INFO] Content: $new_ip" >> $log_file
-  echo "[INFO] Failed string=$failed" >>$log_file
+  echo "[ERROR] No ip returned, will try next time $0 is executed" >>$log_file
+  echo "[ERROR] Content: $new_ip" >> $log_file
+  echo "[ERROR] Failed string=$failed" >>$log_file
   cleanup_exit
 fi
 
@@ -79,5 +109,8 @@ echo $new_ip > $last_known_ip
 url="https://selvans.net/save/saveip.php?host=$myhostname&ip=$new_ip"
 echo "[INFO] Publishing to: $url" >> $log_file
 curl -s $url >> $log_file 2>&1
+
+# finally, while we are at it, just add our external IP to the firewall whitelist
+add_home_server
 
 cleanup_exit
