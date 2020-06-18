@@ -49,7 +49,8 @@ tesla_id=""
 os_name=`uname -s`
 
 usage() {
-  echo "Usage: $0 <id|state|wakeup|charge|climate|drive|honk|start|sentry|lock|unlock|location>\n"
+  echo "Usage: $0 <id|state|wakeup|charge|climate|drive|honk|start|sentry|lock|unlock|location|update>"
+  echo ""
   exit 0
 }
 
@@ -224,6 +225,16 @@ case $1 in
     fi
     execute "vehicles/$tesla_id/command/remote_start_drive" "POST" "password=$tesla_passwd"
   ;;
+  update)
+    # software update, requires # seconds arg
+    secs=$2
+    if [ -z $secs ] ; then
+      echo "[ERROR] software update command requires number seconds delay before updates start"
+      exit
+    fi
+    execute "vehicles/$tesla_id/command/schedule_software_update" "POST" "offset_sec=$secs"
+  ;;
+
   sentry)
     sc=$2
     if [ -z $sc ] ; then
