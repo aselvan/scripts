@@ -16,7 +16,7 @@ usage() {
 create() {
   user=$1
   password=$2
-  if [[ -z $user || -z $password ]] ; then
+  if [ -z $user ] || [ -z $password ] ; then
     echo "[ERROR] 'user' and 'password' are required for create"
     usage
   fi
@@ -35,7 +35,7 @@ delete() {
 update() {
   user=$1
   password=$2
-  if [[ -z $user || -z $password ]] ; then
+  if [ -z $user ] || [ -z $password ] ; then
     echo "[ERROR] 'user' and 'password' are required for update"
     usage
   fi

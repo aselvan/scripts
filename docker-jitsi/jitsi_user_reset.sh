@@ -7,12 +7,13 @@
 
 my_name=`basename $0`
 os_name=`uname -s`
+JITSI_HOME="/var/jitsi"
 
 # script to reset the password
-jitsi_user_script="/var/jitsi/jitsi_user.sh"
+jitsi_user_script="$JITSI_HOME/jitsi_user.sh"
 
 # users list
-users_list_file="/var/jitsi/jitsi_users.txt"
+users_list_file="$JITSI_HOME/jitsi_users.txt"
 pwgen_bin="/usr/local/bin/pwgen"
 
 # need pwgen
@@ -25,7 +26,7 @@ if [ ! -x $pwgen_bin ] ; then
   exit
 fi
 
-if [[ -z "${CRED_PATH}" || ! -d "${CRED_PATH}" ]] ; then
+if [ -z "${CRED_PATH}" ] || [ ! -d "${CRED_PATH}" ] ; then
   echo "[ERROR] either CRED_PATH env variable is not set or not pointing to a valid directory!"
   exit
 fi
@@ -45,6 +46,6 @@ fi
 
 for user in $users_list ; do
   password=`$pwgen_bin 8 1`
-  $jitsi_user_script update $user $password
+  ( cd $JITSI_HOME ; $jitsi_user_script update $user $password )
   echo "$password" > ${CRED_PATH}/$user.txt
 done
