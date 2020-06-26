@@ -20,7 +20,7 @@ create() {
     echo "[ERROR] 'user' and 'password' are required for create"
     usage
   fi
-  docker-compose exec prosody prosodyctl --config /config/prosody.cfg.lua register $user $jitsi_host $password
+  docker-compose exec -T prosody prosodyctl --config /config/prosody.cfg.lua register $user $jitsi_host $password
 }
 
 delete() {
@@ -29,7 +29,7 @@ delete() {
     echo "[ERROR] 'user' is a required argument for delete"
     usage
   fi
-  docker-compose exec prosody prosodyctl --config /config/prosody.cfg.lua unregister $user $jitsi_host
+  docker-compose exec -T prosody prosodyctl --config /config/prosody.cfg.lua unregister $user $jitsi_host
 }
 
 update() {
