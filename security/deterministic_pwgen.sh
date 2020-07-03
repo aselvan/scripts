@@ -27,7 +27,7 @@
 
 # special chars to avoid.
 # Note: there are some dumb/stupid websites don't allow certain special chars
-special_chars_to_avoid="*~\'\`,[]\\/^}{<|>();?\""
+special_chars_to_avoid="&*~\'\`,[]\\/^}{<|>();?\""
 
 # pwgen option
 pwgen_opt="--remove-chars=$special_chars_to_avoid -N1 -cyn -1 16"
