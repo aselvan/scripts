@@ -1,0 +1,75 @@
+#
+##############################################################################################
+# rasberyPI-HOWTO 
+# 
+# setup rasberyPI to have ssh and wifi enabled directly on stock image before flashing.
+# 
+# Author:  Arul Selvan
+# Version: Jul 3, 2020
+#
+##############################################################################################
+#
+
+1. Download the desired PI image
+
+  http://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2020-05-28/2020-05-27-raspios-buster-lite-armhf.zip
+
+2. Validate the images (the following is example at the time of this writeup, get the recent SHA-256
+
+echo "f5786604be4b41e292c5b3c711e2efa64b25a5b51869ea8313d58da0b46afc64 2020-05-27-raspios-buster-lite-armhf.zip | sha256sum -c
+
+3. unzip and mount the disk image in your macOS or Linux
+
+  hdiutil mount 2020-05-27-raspios-buster-lite-armhf.img
+
+4. Enable ssh, avahi (it should mount on /Volumes/boot, check and make sure)
+
+  touch /Volumes/boot/ssh
+  touch /Volumes/boot/avahi
+
+5. Edit /Volumes/boot/config.txt and append dtoverlay=dwc2
+
+6. Edit /Volumes/boot/cmdline.txt and insert modules-load=dwc2,g_ether after the rootwait entry
+
+7. Run wpa_passphrase for your wifi and save the encrypted hash psk=xxxx
+
+  wpa_passphrase "your_wifi_ssid"
+
+8. Replace the template with right values 
+
+  sed -i ".bak" 's/MY_HOME_MAIN_SSID/your_wifi_ssid/g' wpa_supplicant.conf
+  sed -i ".bak" 's/MY_HOME_MAIN_PSK/<psk from above>/g' wpa_supplicant.conf
+
+  you can add additional entries to repeat like MY_HOME_ALTERNATE_SSID etc.
+
+9. umount the image 
+
+   umount /Volumes/boot
+
+10. Flash the SD card
+
+sudo dd bs=1m if=/path/to/2020-05-27-raspios-buster-lite-armhf.img of=/dev/rdisk2
+
+WARNING: Make sure the of= contains the right SD card disk device, wrong one will trash your mac
+
+
+11. Insert the SD card in PI and let it boot, resize partition etc. Should take a min+
+
+If all goes well, PI should be connecting to your wifi if password, SSID are all correct.
+Find out the IP from your DHCP server and ssh
+
+ssh pi@raspberrypi.local # password is raspberry
+
+If PI is not able to connect to wifi, you can still ssh to PI with ethernet gadget setup on 
+step #4 so you can go fix PI to connect to wifi. With PI connected to your mac, go to network 
+settings, you should see a new device "RNDIS/Ethernet Gadget". We need to enable sharing, 
+go to Sharing settings, select "Internet Sharing" and select "RNDIS/Ethernet Gadget" from the list
+You should be able to ssh now.
+
+12. Finally, secure your PI (outside of scope of this simple howto)
+
+  * setup strong password for 'pi' user
+  * setup additionl user as needed
+  * enable ufw firewall
+  * tighten sshd
+
