@@ -35,12 +35,16 @@ echo "f5786604be4b41e292c5b3c711e2efa64b25a5b51869ea8313d58da0b46afc64 2020-05-2
 
   wpa_passphrase "your_wifi_ssid"
 
-8. Replace the template with right values 
+8. Replace the template with right values and copy to /boot
 
   sed -i ".bak" 's/MY_HOME_MAIN_SSID/your_wifi_ssid/g' wpa_supplicant.conf
   sed -i ".bak" 's/MY_HOME_MAIN_PSK/<psk from above>/g' wpa_supplicant.conf
+  
+  # you can add additional entries to repeat like MY_HOME_ALTERNATE_SSID etc.
 
-  you can add additional entries to repeat like MY_HOME_ALTERNATE_SSID etc.
+  # copy to boot volume
+  cp wpa_supplicant.conf /Volumes/boot/.
+
 
 9. umount the image 
 
@@ -53,17 +57,20 @@ sudo dd bs=1m if=/path/to/2020-05-27-raspios-buster-lite-armhf.img of=/dev/rdisk
 WARNING: Make sure the of= contains the right SD card disk device, wrong one will trash your mac
 
 
-11. Insert the SD card in PI and let it boot, resize partition etc. Should take a min+
+11. Insert the SD card in PI and let it boot, resize partition etc. Should take a minute or two
 
 If all goes well, PI should be connecting to your wifi if password, SSID are all correct.
-Find out the IP from your DHCP server and ssh
+Find out the IP from your DHCP server and ssh as shown below
 
 ssh pi@raspberrypi.local # password is raspberry
 
 If PI is not able to connect to wifi, you can still ssh to PI with ethernet gadget setup on 
-step #4 so you can go fix PI to connect to wifi. With PI connected to your mac, go to network 
-settings, you should see a new device "RNDIS/Ethernet Gadget". We need to enable sharing, 
-go to Sharing settings, select "Internet Sharing" and select "RNDIS/Ethernet Gadget" from the list
+step #4 so you can go fix PI to connect to wifi. With PI connected (make sure the USB from 
+your mac is connected to the USB port (not the power port) of the PI. Now go to your mac, 
+go to network settings, you should see a new device "RNDIS/Ethernet Gadget". We need to 
+enable sharing, go to Sharing settings, select "Internet Sharing" and select 
+"RNDIS/Ethernet Gadget" from the list and enable sharing.
+
 You should be able to ssh now.
 
 12. Finally, secure your PI (outside of scope of this simple howto)
