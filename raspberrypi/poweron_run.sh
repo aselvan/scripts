@@ -24,7 +24,7 @@ ifttt_api="https://maker.ifttt.com/trigger/$ifttt_event_name/with/key"
 echo "[INFO] `date`: $my_name starting..." > $log_file
 
 # first check if we got connectivity.
-/sbin/ping -t30 -c3 -qo $gdns >/dev/null 2>&1
+/bin/ping -t30 -c3 -q $gdns >/dev/null 2>&1
 if [ $? -ne 0 ] ; then
   echo "[WARN] We dont have connectivity. force dhcpd? or force wpa_supplicant to try again?" >> $log_file
   # for now, exit; will figureout how to force wlan to reconnect.
@@ -43,11 +43,15 @@ pi_hostname=`hostname`
 timestamp=`date`
 
 # post a message to the IFTTT
+echo "[INFO] sending message via IFTTT!" >> $log_file
 ifttt_endpoint="$ifttt_api/$IFTTT_KEY"
 curl -X POST \
   -F "value1=$my_ip" \
   -F "value2=$pi_hostname rebooted at $timestamp" \
   $ifttt_endpoint
+
+
+echo "[INFO] nothing more for now, exiting" >> $log_file
 
 # TODO: more stuff later ...
 

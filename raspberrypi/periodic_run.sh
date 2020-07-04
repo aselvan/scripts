@@ -37,7 +37,7 @@ pi_is_not_home() {
 echo "[INFO] `date`: $my_name starting..." > $log_file
 
 # first check if we got connectivity.
-/sbin/ping -t30 -c3 -qo $gdns >/dev/null 2>&1
+/bin/ping -t30 -c3 -q $gdns >/dev/null 2>&1
 if [ $? -ne 0 ] ; then
   echo "[WARN] We dont have connectivity. force dhcpd? or force wpa_supplicant to try again?" >> $log_file
   # for now, exit; will figureout how to force wlan to reconnect.
@@ -61,6 +61,10 @@ else
   pi_is_not_home
 fi
 
+
+echo "[INFO] nothing more for now, exiting" >> $log_file
+
 # TODO: more stuff later ...
+
 
 
