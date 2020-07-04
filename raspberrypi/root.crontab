@@ -18,7 +18,7 @@
 # should be booting.
 #
 # Note: need to send to background to let PI continue to boot
-@reboot /usr/bin/flock -w10 /tmp/poweron_run.lock /root/scripts/poweron_run.sh >/dev/null 2>&1 &
+@reboot /usr/bin/flock -w10 /tmp/poweron_run.lock /root/scripts/raspberrypi/poweron_run.sh >/dev/null 2>&1 &
 
 # Run every 5 minutes. This script should try and complete under 5 minutes.
 # if it takes longer, the cron interval should be adjusted but it is protected from
@@ -26,5 +26,5 @@
 #
 # Purpose: Can be used to do general purpose stuff like check wifi/connectivity
 # or send message via IFTTT etc.
-*/5 * * * * /usr/bin/flock -w10 /tmp/periodic_run.lock /root/scripts/periodic_run.sh >/dev/null 2>&1
+*/5 * * * * /usr/bin/flock -w10 /tmp/periodic_run.lock /root/scripts/raspberrypi/periodic_run.sh >/dev/null 2>&1
 
