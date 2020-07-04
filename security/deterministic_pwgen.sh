@@ -31,7 +31,7 @@ special_chars_to_avoid="&*~\'\`,[]\\/^}{<|>();?\""
 
 # pwgen option
 pwgen_opt="--remove-chars=$special_chars_to_avoid -N1 -cyn -1 16"
-options="s:u:hp"
+options="w:u:hp"
 website=""
 user=""
 print_console=0
@@ -43,8 +43,8 @@ my_name=`basename $0`
 usage() {
   #clear
   cat <<EOF
-Usage: $my_name -s <website> -u <username|email> [-p]
-  -s <website>        ---> The website the password is generated for.
+Usage: $my_name -w <website> -u <username|email> [-p]
+  -w <website>        ---> The website the password is generated for.
   -u <username|email> ---> The username used for the website specified above.
   -p                  ---> will print the password to console.
        
@@ -57,7 +57,7 @@ EOF
 # ----------- main entry -----------
 while getopts $options opt; do
   case $opt in
-    s)
+    w)
       website=$OPTARG
       ;;
     u)
@@ -88,7 +88,7 @@ fi
 
 >&2 echo "Enter your passphrase: " 
 read -s pass_phrase
-passwd=`pwgen $pwgen_opt -H <(printf $pass_phrase)#$user:$website`
+passwd=`pwgen $pwgen_opt -H <(printf "$pass_phrase")#$user:$website`
 
 # copy to pastebuffer for easy access
 # pastebuffer depending on OS
