@@ -45,7 +45,7 @@ timestamp=`date`
 # post a message to the IFTTT
 echo "[INFO] sending message via IFTTT!" >> $log_file
 ifttt_endpoint="$ifttt_api/$IFTTT_KEY"
-curl -X POST \
+curl -s -X POST \
   -F "value1=$my_ip" \
   -F "value2=$pi_hostname rebooted at $timestamp" \
   $ifttt_endpoint >> $log_file 2>&1
