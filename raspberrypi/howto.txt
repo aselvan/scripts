@@ -73,7 +73,13 @@ enable sharing, go to Sharing settings, select "Internet Sharing" and select
 
 You should be able to ssh now.
 
-12. Finally, secure your PI (outside of scope of this simple howto)
+12. Login and update PI and install some stuff we need
+apt-get update; apt-get upgrade --fix-missing
+apt-get install dnsutils git
+
+# install any other you may need
+
+13. Finally, secure your PI (outside of scope of this simple howto)
 
   * setup strong password for 'pi' user
   * setup additionl user as needed
