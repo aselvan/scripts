@@ -48,7 +48,7 @@ ifttt_endpoint="$ifttt_api/$IFTTT_KEY"
 curl -X POST \
   -F "value1=$my_ip" \
   -F "value2=$pi_hostname rebooted at $timestamp" \
-  $ifttt_endpoint
+  $ifttt_endpoint >> $log_file 2>&1
 
 
 echo "[INFO] nothing more for now, exiting" >> $log_file
