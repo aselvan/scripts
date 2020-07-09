@@ -31,7 +31,15 @@ os_name=`uname -s`
 SECONDS=0
 attempt_wait=30
 ip_wait=30
+options_list="i:h"
+my_name=`basename $0`
 
+usage() {
+  echo "Usage: $my_name [-e interface] [-h]"
+  echo "  -e <interface> is the network interface default: en0"
+  echo "  -h usage/help"
+  exit
+}
 
 check_root() {
   if [ `id -u` -ne 0 ] ; then
@@ -146,8 +154,28 @@ search_free_wifi() {
 #  ------------ main -----------------
 check_root
 
-if [ ! -z $1 ] ; then
-  iface=$1
+while getopts "$options_list" opt; do
+  case $opt in
+    i)
+      iface=$OPTARG
+      ;;
+    h)
+      usage
+      ;;
+    \?)
+     usage
+     ;;
+   esac
+done
+
+# before we do anything check if we have connectivity, if so exit. This 
+# allows this script to be added to recurring cronjob
+ping_check
+if [ $? -eq 0 ] ; then
+  ip=`ip addr show $iface | grep 'inet ' | awk '{print $2}' |cut -f1 -d'/'`
+  echo "[INFO] the interface '$iface' already has network connectivity with IP address '$ip'"
+  echo "[INFO] nothing to do, so exiting..."
+  exit
 fi
 
 # save our mac address first
