@@ -49,7 +49,7 @@ check_root() {
 }
 
 ping_check() {
-  /sbin/ping -t30 -c3 -qo $gdns >/dev/null 2>&1
+  ping -t30 -c3 -q $gdns >/dev/null 2>&1
   return $?
 }
 
