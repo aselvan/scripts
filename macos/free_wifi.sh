@@ -29,7 +29,8 @@ iface="en0"
 os_name=`uname -s`
 # calculate the elapsed time (shell automatically increments the var SECONDS magically)
 SECONDS=0
-sleep_sec=30
+attempt_wait=30
+ip_wait=30
 
 
 check_root() {
@@ -93,13 +94,12 @@ check_mac() {
   ifconfig $iface up
   sleep 1
   /bin/echo -n "[INFO] waiting for new IP assignment ."
-  count=30
-  for (( i = 0; i<$count; i++ )) do
+  for (( i = 0; i<$ip_wait; i++ )) do
     sleep 1
     /bin/echo -n .
     #ip=`ipconfig getifaddr $iface`
     ip=`ip addr show $iface | grep 'inet ' | awk '{print $2}' |cut -f1 -d'/'`
-    if [ ! -z $ip ] ; then
+    if [ ! -z "$ip" ] ; then
       break
     fi
   done
@@ -129,7 +129,6 @@ search_free_wifi() {
   # authenticated mac (someone who paid for this crappy wifi)
   list_of_macs=`arp -an -i $iface|awk '{print $4;}'`
 
-
   # search through all the macs we collected
   for mac in $list_of_macs; do 
     if [ $mac = "(incomplete)" ] ; then
@@ -155,13 +154,13 @@ fi
 save_mac
 
 # make 3 trys, if we don't get any just exit.
-for ((i=0; i<3; i++)) {
-  echo "[INFO] searching for wifi. Attempt#$i ..."
+for ((attempt=0; attempt<3; attempt++)) {
+  echo "[INFO] searching for wifi. Attempt #$attempt ..."
   
   search_free_wifi
 
-  echo "[INFO] sleeping $sleep_sec ..."
-  sleep 30
+  echo "[INFO] sleeping $attempt_wait sec to try again ..."
+  sleep $attempt_wait
 }
 
 # if we get here nothing is available, just restore and exit
