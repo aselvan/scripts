@@ -15,7 +15,7 @@
 gdns=8.8.8.8
 my_name=`basename $0`
 log_file="/tmp/$my_name.log"
-home_public_ip=`dig +short selvans.net`
+home_public_ip=`dig +short selvans.net @$gdns`
 # should take this also as env option later.
 ifttt_event_name="pizero"
 ifttt_api="https://maker.ifttt.com/trigger/$ifttt_event_name/with/key"
@@ -38,7 +38,7 @@ if [ -z "${IFTTT_KEY}" ] ; then
 fi
 
 # find pi's egress IP
-my_ip=`/usr/bin/dig -p443 +short myip.opendns.com @resolver1.opendns.com`
+my_ip=`dig -p443 +short myip.opendns.com @resolver1.opendns.com`
 pi_hostname=`hostname`
 timestamp=`date`
 

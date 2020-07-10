@@ -16,7 +16,7 @@
 gdns=8.8.8.8
 my_name=`basename $0`
 log_file="/tmp/$my_name.log"
-home_public_ip=`dig +short selvans.net`
+home_public_ip=`dig +short selvans.net @$gdns`
 
 pi_is_home() {
   echo "[INFO] PI is home!" >> $log_file
