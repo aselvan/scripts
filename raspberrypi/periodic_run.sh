@@ -52,7 +52,7 @@ else
 fi
 
 # find pi's egress IP
-my_ip=`/usr/bin/dig -p443 +short myip.opendns.com @resolver1.opendns.com`
+my_ip=`dig +short myip.opendns.com @resolver1.opendns.com`
 echo "[INFO] `hostname` public IP is: $my_ip" >> $log_file
 
 if [ ${home_public_ip} = ${my_ip} ] ; then

@@ -1,4 +1,4 @@
-#/bin/bash
+#!/bin/bash
 #
 # free_wifi.sh
 #
@@ -182,7 +182,7 @@ fi
 save_mac
 
 # make 3 trys, if we don't get any just exit.
-for ((attempt=0; attempt<3; attempt++)) {
+for (( attempt=0; attempt<3; attempt++ )) {
   echo "[INFO] searching for wifi. Attempt #$attempt ..."
   
   search_free_wifi
