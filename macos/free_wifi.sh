@@ -135,7 +135,7 @@ search_free_wifi() {
 
   # now get the list of macs and iterate through to find an 
   # authenticated mac (someone who paid for this crappy wifi)
-  list_of_macs=`arp -an -i $iface|awk '{print $4;}'`
+  list_of_macs=`/usr/sbin/arp -an -i $iface|awk '{print $4;}'`
 
   # search through all the macs we collected
   for mac in $list_of_macs; do 
