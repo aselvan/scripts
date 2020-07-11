@@ -49,7 +49,7 @@ tesla_id=""
 os_name=`uname -s`
 
 usage() {
-  echo "Usage: $0 <id|state|wakeup|charge|climate|drive|honk|start|sentry|lock|unlock|location|update>"
+  echo "Usage: $0 <id|state|wakeup|charge|climate|drive|honk|start|sentry|lock|unlock|location|update|log|light}>"
   echo ""
   exit 0
 }
@@ -258,6 +258,12 @@ case $1 in
     execute "vehicles/$tesla_id/command/door_unlock" "POST" "on=true"
   ;;
   location) "$@"
+  ;;
+  log)
+    execute "diagnostics"
+  ;;
+  light)
+    execute "vehicles/$tesla_id/command/flash_lights" "POST" "on=true"
   ;;
   *) usage
   ;;
