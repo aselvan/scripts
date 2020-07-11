@@ -5,7 +5,7 @@
 # This script should be added to wpa_cli on system startup like below to get events
 # from the wpa_supplicant when it connects to a new wifi access point or disconnects
 # 
-# wpa_cli -i wlan0 -B -a <script_path>/wpa_supplicant_event.sh
+# wpa_cli -i wlan0 -B -a <script_path>/wifi_event_run.sh
 #
 # NOTE: it appears the image raspios-buster-lite does have rc.local systemd unit
 #       enabled for compatibility so the above command can be added to /etc/rc.local 
