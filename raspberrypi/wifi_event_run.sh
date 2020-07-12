@@ -15,9 +15,17 @@
 # Version: Jul 11, 202
 #
 
+# google dns for validating connectivity
+gdns=8.8.8.8
 pi_hostname=`hostname`
+my_ip=""
 my_name=`basename $0`
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
+ping_interval=10
+ping_attempt=3
+ifttt_key_file="/root/.ifttt_key"
+ifttt_event_name="pizero"
+ifttt_api="https://maker.ifttt.com/trigger/$ifttt_event_name/with/key"
 
 # wpa_supplicant passes these args while invoking this script
 iface_name=$1
@@ -32,6 +40,43 @@ write_separator() {
   echo "[INFO] ------------end------------" >> $log_file
 }
 
+ping_check() {
+  for (( attempt=0; attempt<$ping_attempt; attempt++ )) {
+    echo "[INFO] checking for connectivity, attempt #$attempt ..." >> $log_file
+    /bin/ping -t30 -c3 -q $gdns >/dev/null 2>&1
+    if [ $? -eq 0 ] ; then
+      echo "[INFO] we got connectvity!" >> $log_file
+      return
+    fi
+    echo "[INFO] sleeping for $ping_interval sec for another attempt" >> $log_file
+    sleep $ping_interval
+  }
+
+  echo "[WARN] bummer no connectivity!" >> $log_file
+  write_separator
+  exit
+}
+
+do_ifttt() {
+  # if we have ifttt key, send a message
+  if [ ! -f $ifttt_key_file ] ; then
+    echo "[WARN] no ifttt key provided, skiping." >> $log_file
+    return
+  else
+    ifttt_key=`cat $ifttt_key_file`
+  fi
+
+  # post a message to the IFTTT
+  timestamp=`date`
+  echo "[INFO] sending message via IFTTT!" >> $log_file
+  ifttt_endpoint="$ifttt_api/$ifttt_key"
+  curl -w "\n" -s -X POST \
+    -F "value1=$pi_hostname got internet connectivity at $timestamp" \
+    -F "value2=$pi_hostname's public IP is '$my_ip'" \
+    -F "value3=$pi_hostname's wifi access point ID: '$WPA_ID_STR'" \
+    $ifttt_endpoint >> $log_file 2>&1
+}
+
 # connected event. 
 # do whatever we need here on connect.
 connect_event() {
@@ -40,26 +85,23 @@ connect_event() {
   echo "[INFO] WPA_ID       = $WPA_ID" >> $log_file
   echo "[INFO] WPA_ID_STR   = $WPA_ID_STR" >> $log_file
 
-  # should we stall few seconds for DHCP offer?
-  # NOTE: it is not clear CONNECTED event is delivered prior to DHCP offer or post offer
+  # NOTE: it is not clear CONNECTED event is delivered prior to DHCP offer or 
+  # post offer. So should we stall few seconds for DHCP offer?
   sleep 5
 
-  # first check if we really got connectivity.
-  /bin/ping -t30 -c3 -q $gdns >/dev/null 2>&1
-  if [ $? -ne 0 ] ; then
-    echo "[WARN] bummer no connectivity!" >> $log_file
-    write_separator
-    exit
-  fi
+  # first attempt ping check for 30 sec to see if we have connectivity.
+  ping_check
 
   # since we got internet, phone home?
   my_ip=`dig -p443 +short myip.opendns.com @resolver1.opendns.com`
   url="https://selvans.net/save/saveip.php?host=$pi_hostname&ip=$my_ip"
   echo "[INFO] Publishing to: $url" >> $log_file
-  curl -s $url >> $log_file 2>&1
+  curl -w "\n" -s $url >> $log_file 2>&1
+
+  # send ifttt
+  do_ifttt
 
   # TODO: more stuff to follow later ...
-  
   write_separator
 }
 
