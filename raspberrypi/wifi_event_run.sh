@@ -24,6 +24,7 @@ log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 ping_interval=10
 ping_attempt=3
 ifttt_key_file="/root/.ifttt_key"
+publish_ip_url_file="/root/.publish_ip_url"
 ifttt_event_name="pizero"
 ifttt_api="https://maker.ifttt.com/trigger/$ifttt_event_name/with/key"
 
@@ -43,7 +44,7 @@ write_separator() {
 ping_check() {
   for (( attempt=0; attempt<$ping_attempt; attempt++ )) {
     echo "[INFO] checking for connectivity, attempt #$attempt ..." >> $log_file
-    /bin/ping -t30 -c3 -q $gdns >/dev/null 2>&1
+    ping -t30 -c3 -q $gdns >/dev/null 2>&1
     if [ $? -eq 0 ] ; then
       echo "[INFO] we got connectvity!" >> $log_file
       return
@@ -55,6 +56,21 @@ ping_check() {
   echo "[WARN] bummer no connectivity!" >> $log_file
   write_separator
   exit
+}
+
+publish_ip() {
+  # get publish_ip_url; NOTE: URL should take host & ip as query parameter
+  if [ ! -f $publish_ip_url_file ] ; then
+    echo "[WARN] no publish IP url provided, skiping." >> $log_file
+    return
+  else
+    publish_ip_url=`cat $publish_ip_url_file`
+  fi
+
+  my_ip=`dig -p443 +short myip.opendns.com @resolver1.opendns.com`
+  url="$publish_ip_url?host=$pi_hostname&ip=$my_ip"
+  echo "[INFO] Publishing to: $url" >> $log_file
+  curl -w "\n" -s $url >> $log_file 2>&1
 }
 
 do_ifttt() {
@@ -93,10 +109,7 @@ connect_event() {
   ping_check
 
   # since we got internet, phone home?
-  my_ip=`dig -p443 +short myip.opendns.com @resolver1.opendns.com`
-  url="https://selvans.net/save/saveip.php?host=$pi_hostname&ip=$my_ip"
-  echo "[INFO] Publishing to: $url" >> $log_file
-  curl -w "\n" -s $url >> $log_file 2>&1
+  publish_ip
 
   # send ifttt
   do_ifttt
@@ -110,6 +123,7 @@ disconnect_event() {
   write_separator
 }
 
+# ----------------- main entry -----------------
 echo "[INFO] `date` wpa_supplicant event received." >> $log_file
 
 case "$wifi_status" in
