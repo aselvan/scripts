@@ -5,6 +5,9 @@
 # Version: Jul 4, 2020
 #
 
+# ensure we have everything in our path
+PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
 # setup a env variable for your home public IP which is used to 
 # detect if PI is home. Make sure you set this correctly as this is
 # obviously cloudflare dns :)
