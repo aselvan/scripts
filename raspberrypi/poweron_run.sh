@@ -19,9 +19,38 @@ home_public_ip=`dig +short selvans.net @$gdns`
 # should take this also as env option later.
 ifttt_event_name="pizero"
 ifttt_api="https://maker.ifttt.com/trigger/$ifttt_event_name/with/key"
+ssh_port=22
 
 #  ---------- main ---------------
 echo "[INFO] `date`: $my_name starting..." > $log_file
+
+# check if we need to punch hole for ssh access from external hosts
+# assumes ufw is setup already and activated.
+if [ ! -z "${EXTERNAL_IP_LIST}" ] ; then
+  echo "[INFO] checking and/or enabling external hosts for ssh access" >> $log_file
+  if [ -z "${EXTERNAL_SSH_PORT}" ]; then
+    echo "[WARN] using $ssh_port for ssh port, highly recomended to use a different port!" >> $log_file
+  else
+    ssh_port=${EXTERNAL_SSH_PORT}
+    echo "[INFO] using $ssh_port for ssh port!" >> $log_file
+  fi
+  # go through the list
+  external_ip_list=${EXTERNAL_IP_LIST}
+  for external_ip in $external_ip_list ; do
+    echo "[INFO] checking and/or adding $external_ip" >> $log_file
+    ufw status |grep $external_ip
+    if [ $? -eq 0 ] ; then
+      echo "[INFO] the external IP ($external_ip) already in firewall allowed list" >> $log_file
+      continue
+    else
+      echo "[INFO] adding external IP ($external_ip) to firewall allowed list" >> $log_file
+      ufw allow from $external_ip to any port $ssh_port
+      ufw status |grep $external_ip >> $log_file 2>&1
+    fi
+  done
+else
+  echo "[WARN] no EXTERNAL_IP_LIST env variable set, skiping firewall access setup." >> $log_file
+fi
 
 # first check if we got connectivity.
 /bin/ping -t30 -c3 -q $gdns >/dev/null 2>&1
