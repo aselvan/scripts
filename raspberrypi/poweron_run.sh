@@ -38,13 +38,13 @@ if [ ! -z "${EXTERNAL_IP_LIST}" ] ; then
   external_ip_list=${EXTERNAL_IP_LIST}
   for external_ip in $external_ip_list ; do
     echo "[INFO] checking and/or adding $external_ip" >> $log_file
-    ufw status |grep $external_ip
+    ufw status |grep $external_ip >> $log_file 2>&1
     if [ $? -eq 0 ] ; then
       echo "[INFO] the external IP ($external_ip) already in firewall allowed list" >> $log_file
       continue
     else
       echo "[INFO] adding external IP ($external_ip) to firewall allowed list" >> $log_file
-      ufw allow from $external_ip to any port $ssh_port
+      ufw allow from $external_ip to any port $ssh_port >> $log_file 2>&1
       ufw status |grep $external_ip >> $log_file 2>&1
     fi
   done
