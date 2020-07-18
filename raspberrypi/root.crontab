@@ -14,6 +14,15 @@
 # an event defined 'pizero' which is what will be used by the script
 #IFTTT_KEY=abcde
 
+# punch SSH port on firewall for our external IPs to ssh into PI
+# setup a port you want to ensure for ssh access, setup something other than 22
+# but don't forget to change /etc/ssh/sshd_config to enable that port on pi
+#EXTERNAL_SSH_PORT=22
+
+# setup list of exteral IPs you want firewal to allow so you can ssh into PI
+# note: this assumes you had configured firewall on PI (ufw is assumed)
+#EXTERNAL_IP_LIST="192.168.1.1 192.168.1.2"
+
 # Power on script i.e. when tesla wakes up the hub is powered so our PI 
 # should be booting.
 #
