@@ -22,11 +22,12 @@ user_name="aselvan"
 log_file="/tmp/crashplan.log"
 
 # plists
-crashplan_daemons_plist="/Library/LaunchDaemons/com.crashplan.engine.plist"
+crashplan_daemons_plist="/Library/LaunchDaemons/com.crashplan.engine.plist /Library/LaunchDaemons/com.code42.service.plist"
 crashplan_agent_plist="/Users/${user_name}/Library/LaunchAgents/com.code42.menubar.plist"
 
 # crashplan ui
-cp_ui="/Applications/CrashPlan.app/Contents/MacOS/CrashPlanWeb"
+#cp_ui="/Applications/CrashPlan.app/Contents/MacOS/CrashPlanWeb"
+cp_ui="/Applications/Code42.app/Contents/MacOS/Code42Desktop"
 
 check_root() {
   if [ `id -u` -ne 0 ] ; then
