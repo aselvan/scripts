@@ -17,7 +17,7 @@ base_path="/root"
 # default process to monitor are paloalto traps which tend to suck resources
 process_list="pmd authorized dypd analyzerd"
 option=""
-csv_header="DateTime, PID, CMD, %MEM, %CPU, RSS (Kbyte), VSZ (Kbyte)"
+csv_header="DateTime, PID, CMD, %MEM, %CPU, RSS (MB), VSZ (MB)"
 options_list="ril:h"
 crontab_entry="*/5 * * * * /bin/flock -w10 /tmp/$my_name.lock $base_path/$my_name -r >/dev/null 2>&1"
 
@@ -38,13 +38,15 @@ usage() {
 
 install() {
   echo "[INFO] Install $my_name as cronjob ..." > $log_file
+  # update with latest copy
+  cp $0 $base_path/.
+  chmod +x $base_path/$my_name
+
   crontab -l |grep $my_name >/dev/null 2>&1
   if [ $? -eq 0 ] ; then
     echo "[WARN] cron entry already present!, exit" >> $log_file
     return
   fi
-  cp $0 $base_path/.
-  chmod +x $base_path/$my_name
   crontab -l > /tmp/crontab.save
   echo "$crontab_entry" >>  /tmp/crontab.save
   crontab /tmp/crontab.save
@@ -60,7 +62,7 @@ write_process_info() {
     echo $csv_header >  $base_path/$pname.csv
   fi
 
-  pinfo=`ps -p$pid -ocomm,pmem,pcpu,rss,vsz |awk -v OFS=, 'NR>1 {print $1, $2, $3, $4, $5}'`
+  pinfo=`ps -p$pid -ocomm,pmem,pcpu,rss,vsz |awk -v OFS=, 'NR>1 {print $1, $2, $3, $4/1024, $5/1024}'`
 
   timestamp=`date +'%D %T'`
   echo "$timestamp , $pid , $pinfo" >>  $base_path/$pname.csv
