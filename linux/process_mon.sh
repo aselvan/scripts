@@ -15,7 +15,7 @@ log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 base_path="/root"
 
 # default process to monitor are paloalto traps which tend to suck resources
-process_list="pmd authorized dypd analyzerd"
+process_list="pmd authorized dypd analyzerd trapsd"
 option=""
 csv_header="DateTime, PID, CMD, %MEM, %CPU, RSS (MB), VSZ (MB)"
 options_list="ril:h"
@@ -69,12 +69,12 @@ write_process_info() {
 }
 
 run() {
-  echo "[INFO] $myname running..." > $log_file
+  echo "[INFO] $my_name running..." > $log_file
   for pname in $process_list ; do
     pid_list=`pidof $pname`
     if [ $? -ne 0 ] ; then
-      echo "[ERROR] unable to get PID of $pname" >> $log_file
-      break
+      echo "[WARN] unable to get PID of '$pname', continuing w/ rest of the list '$process_list' ..." >> $log_file
+      continue
     fi
     # Note: pid_list could be potentially more than one 
     for pid in $pid_list ; do 
