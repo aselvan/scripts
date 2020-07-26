@@ -46,6 +46,8 @@ fi
 
 for user in $users_list ; do
   password=`$pwgen_bin 8 1`
-  ( cd $JITSI_HOME ; $jitsi_user_script update $user $password )
+  # just delete and add it back instead of update so non-existing users are created
+  ( cd $JITSI_HOME ; $jitsi_user_script delete $user )
+  ( cd $JITSI_HOME ; $jitsi_user_script create $user $password )
   echo "$password" > ${CRED_PATH}/$user.txt
 done
