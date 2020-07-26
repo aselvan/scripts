@@ -43,6 +43,9 @@ update() {
   create $user $password
 }
 
+# first just do a ps in case stack is not running, it should start the stack
+docker ps >/tmp/jitsi_ps.txt 2>&1
+
 # create or delete users
 case $1 in
   create|delete|update) "$@"
