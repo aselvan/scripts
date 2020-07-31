@@ -10,6 +10,8 @@
 # required: jstat, jcmd,jstack (all are part of JDK distro) on the path
 # OS: Linux
 #
+# Note: the script must be run by the same user running the JVM
+#
 # Author:  Arul Selvan
 # Version: Jul 29, 2020
 #
@@ -17,17 +19,22 @@
 my_name=`basename $0`
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 base_path="/root"
-options_list="p:m:tdh"
+options_list="p:m:rtdh"
 pid=0
 olgen_limit=75
 terminate=0
+restart_app=0
 thread_dump=0
+stop_command="/usr/local/tomcat/bin/shutdown.sh"
+start_command="/usr/local/tomcat/bin/start.sh"
+sleep_seconds=30
 
 usage() {
   echo "Usage: $my_name -p <java_pid> [-t|-d] [-m percent]"
   echo "  -p <java_pid>       ---> is the pid of the java process to check for gc usage"
   echo "  -m <percent>        ---> oldgen max percent to check to take action; $olgen_limit% is default"
-  echo "  -t                  ---> send SIGTERM if oldgen is > $olgen_limit% used"
+  echo "  -r                  ---> restart when oldgen limit exceeds threashold of  $olgen_limit%"
+  echo "  -t                  ---> send SIGTERM if oldgen is > $olgen_limit% used (can not be used with -r)"
   echo "  -d                  ---> send SIGQUIT to generate threaddump if oldgen is > $percent% used"
   exit
 }
@@ -40,19 +47,23 @@ check_root() {
 }
 
 check_tools() {
-  which jstat >/dev/null 2>&1
-  if [ $? -ne 0 ] ; then
-    echo "[ERROR] jstat is not in the path!"
+  if [ -z "${JDK_HOME}" ] ; then
+    echo "[ERROR] JDK_HOME is not set. Set this env variable to point to JDK root path"
     exit
   fi
-  which jcmd >/dev/null 2>&1
-  if [ $? -ne 0 ] ; then
-    echo "[ERROR] jcmd is not in the path!"
+
+  if [ ! -x  ${JDK_HOME}/bin/jstat ] ; then
+    echo "[ERROR] jstat is missing!"
     exit
   fi
-  which jstack >/dev/null 2>&1
-  if [ $? -ne 0 ] ; then
-    echo "[ERROR] jcmd is not in the path!"
+
+  if [ ! -x  ${JDK_HOME}/bin/jcmd ] ; then
+    echo "[ERROR] jcmd is missing!"
+    exit
+  fi
+  
+  if [ ! -x  ${JDK_HOME}/bin/jstack ] ; then
+    echo "[ERROR] jstack is missing!"
     exit
   fi
 }
@@ -71,21 +82,32 @@ terminate() {
   fi
 }
 
+restart_app() {
+  echo "[INFO] restarting ... " || tee -a $log_file
+  echo "[INFO] executing $stop_command  " || tee -a $log_file
+  $stop_command >> $log_file 2>&1
+  echo "[INFO] sleeping $sleep_seconds sec ..." || tee -a $log_file
+  sleep $sleep_seconds
+  echo "[INFO] executing $start_command  " || tee -a $log_file
+  $start_command >> $log_file 2>&1
+}
+
 take_action() {
   echo "[WARN] oldgen is larger than threshold of $olgen_limit%, taking action!" || tee -a $log_file
 
   if [ $terminate -ne 0 ] ; then
     terminate
+  elif [ $restart_app -ne 0 ] ; then
+    restart_app
   else
     echo "[INFO] forcing a full GC" || tee -a $log_file
-    jcmd $pid GC.run || tee -a $log_file 2>&1
+    ${JDK_HOME}/bin/jcmd $pid GC.run || tee -a $log_file 2>&1
   fi
 }
 
 echo "[INFO] $my_name: start" > $log_file
 
 check_tools
-check_root
 
 while getopts "$options_list" opt; do
   case $opt in
@@ -101,6 +123,9 @@ while getopts "$options_list" opt; do
     d)
       thread_dump=1
       ;;
+    r)
+      restart_app=1
+      ;;
     h)
       usage
       ;;
@@ -110,7 +135,7 @@ done
 # check pid
 if [ $pid -eq 0 ] ; then
   echo "[WARN] JVM pid is not provided, will use running tomcat (assuming just only one is running)" || tee -a $log_file
-  pid=`jcmd -l|grep org.apache.catalina.startup.Bootstrap |awk '{print $1;}'`
+  pid=`${JDK_HOME}/bin/jcmd -l|grep org.apache.catalina.startup.Bootstrap |awk '{print $1;}'`
   echo "[INFO] found a tomcat pid $pid ... " || tee -a $log_file
 fi
 
@@ -119,7 +144,7 @@ if [ ! -d /proc/$pid ] ; then
   usage
 fi
 
-result=($(jstat -gcoldcapacity $pid |awk 'NR > 1 { print $0;}'))
+result=($(${JDK_HOME}/bin/jstat -gcoldcapacity $pid |awk 'NR > 1 { print $0;}'))
 oldgen_max=${result[1]}
 oldgen_cur=${result[2]}
 num_full_gc=${result[5]}
@@ -133,7 +158,7 @@ echo "[INFO] Total full GC:   $num_full_gc times" || tee -a $log_file
 # generate thread dump
 if [ $thread_dump -ne 0 ] ; then
   echo "[INFO] dumping threads..." || tee -a $log_file
-  jstack -l $pid > /tmp/jvm_stackdump_$pid.txt 2>&1
+  ${JDK_HOME}/bin/jstack -l $pid > /tmp/jvm_stackdump_$pid.txt 2>&1
   echo "[INFO] stack dump for pid $pid is at /tmp/jvm_stackdump_$pid.txt" || tee -a $log_file
 fi
 
