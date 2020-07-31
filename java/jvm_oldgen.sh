@@ -109,8 +109,9 @@ done
 
 # check pid
 if [ $pid -eq 0 ] ; then
-  echo "[ERROR] pid is a required argument" || tee -a $log_file
-  usage
+  echo "[WARN] JVM pid is not provided, will use running tomcat (assuming just only one is running)" || tee -a $log_file
+  pid=`jcmd -l|grep org.apache.catalina.startup.Bootstrap |awk '{print $1;}'`
+  echo "[INFO] found a tomcat pid $pid ... " || tee -a $log_file
 fi
 
 if [ ! -d /proc/$pid ] ; then
@@ -126,8 +127,8 @@ oldgen_used_percent=$(printf %.0f $(echo "scale=2; ($oldgen_cur/$oldgen_max)*100
 
 echo "[INFO] Oldgen MAX size: $oldgen_max KB" || tee -a $log_file
 echo "[INFO] Oldgen CUR size: $oldgen_cur KB" || tee -a $log_file
-echo "[INFO] Oldgen Used %:   $oldgen_used_percent" || tee -a $log_file
-echo "[INFo] Total full GC:   $num_full_gc times" || tee -a $log_file
+echo "[INFO] Oldgen Used:     $oldgen_used_percent%" || tee -a $log_file
+echo "[INFO] Total full GC:   $num_full_gc times" || tee -a $log_file
 
 # generate thread dump
 if [ $thread_dump -ne 0 ] ; then
