@@ -21,7 +21,7 @@ log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 base_path="/root"
 options_list="p:m:rtdh"
 pid=0
-olgen_limit=75
+olgen_limit=50
 terminate=0
 restart_app=0
 thread_dump=0
@@ -144,10 +144,10 @@ if [ ! -d /proc/$pid ] ; then
   usage
 fi
 
-result=($(${JDK_HOME}/bin/jstat -gcoldcapacity $pid |awk 'NR > 1 { print $0;}'))
-oldgen_max=${result[1]}
-oldgen_cur=${result[2]}
-num_full_gc=${result[5]}
+result=($(${JDK_HOME}/bin/jstat -gcold $pid |awk 'NR > 1 { print $0;}'))
+oldgen_max=${result[4]}
+oldgen_cur=${result[5]}
+num_full_gc=${result[7]}
 oldgen_used_percent=$(printf %.0f $(echo "scale=2; ($oldgen_cur/$oldgen_max)*100"|bc))
 
 echo "[INFO] Oldgen MAX size: $oldgen_max KB" || tee -a $log_file
