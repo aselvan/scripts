@@ -105,7 +105,7 @@ take_action() {
   fi
 }
 
-echo "[INFO] $my_name: start" > $log_file
+echo "[INFO] `date` $my_name starting" > $log_file
 
 check_tools
 
