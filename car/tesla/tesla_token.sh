@@ -10,15 +10,34 @@
 # Client ID & Secret: https://pastebin.com/pS7Z6yyP
 #
 
+my_name=`basename $0`
+log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 tesla_api_ep=https://owner-api.teslamotors.com/oauth/token
 client_id="81527cff06843c8634fdc09e8ac0abefb46ac849f38fe1e431c2ef2106796384"
 client_secret="c7257eb71a564034f9419ee651c7d0e5f7aa6bfbd18bafb5c5c033b093bb2fa3"
+refresh_token_file="$HOME/.mytesla.refresh.token"
+refresh_token=""
 
 usage() {
-  echo "Usage: $0 <create|refresh>"
+  echo "Usage: $my_name <create|refresh>"
   echo "  $0 create <email> <password>"
   echo "  $0 refresh <refresh_token>"     
   exit 0
+}
+
+log() {
+  message_type=$1
+  message=$2
+  echo "$message_type $message" || tee -a $log_file
+}
+
+read_token_from_file() {
+  if [ -f $refresh_token_file ] ; then
+    refresh_token=`cat $refresh_token_file`
+  else
+    log "[ERROR]" "$refresh_token_file file missing!"
+    exit
+  fi
 }
 
 # create bearer token
@@ -31,7 +50,7 @@ create() {
     usage
   fi
 
-  echo "[INFO] creating token for tesla account: $tesla_account_email ...\n"
+  log "[INFO]" "creating token for tesla account: $tesla_account_email ...\n"
   curl -X POST \
     -H "Cache-Control: no-cache" \
     -H "Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW" \
@@ -47,10 +66,10 @@ create() {
 refresh() {
   refresh_token=$1
   if [[ -z $refresh_token ]] ; then
-    echo "[ERROR] required arg (refresh_token) missing!"
-    usage
+    log "[WARN]" "required arg 'refresh_token' missing, attempting to read from $refresh_token_file!"
+    read_token_from_file
   fi
-  echo "[INFO] refreshing token: $refresh_token ...\n"
+  log "[INFO]" "refreshing token: $refresh_token ..."
   curl -X POST \
     -H "Cache-Control: no-cache" \
     -H "Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW" \
@@ -60,6 +79,9 @@ refresh() {
     -F "refresh_token=${refresh_token}" -w "\n\n" \
     $tesla_api_ep
 }
+
+# ----------  main --------------
+echo "[INFO] `date` Starting $my_name ..." > $log_file
 
 case $1 in
   create|refresh) "$@"

@@ -38,6 +38,8 @@
 # Client ID & Secret: https://pastebin.com/pS7Z6yyP
 #
 
+my_name=`basename $0`
+log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 jq_bin=/usr/local/bin/jq
 tesla_api_ep="https://owner-api.teslamotors.com/api/1"
 client_id="81527cff06843c8634fdc09e8ac0abefb46ac849f38fe1e431c2ef2106796384"
@@ -47,16 +49,23 @@ tesla_id_file="$HOME/.mytesla.id"
 bearer_token=""
 tesla_id=""
 os_name=`uname -s`
+sleep_time=30
 
 usage() {
-  echo "Usage: $0 <id|state|wakeup|charge|climate|drive|honk|start|sentry|lock|unlock|location|update|log|light}>"
+  echo "Usage: $my_name <id|state|wakeup|charge|climate|drive|honk|start|sentry|lock|unlock|location|update|log|light}>"
   echo ""
   exit 0
 }
 
+log() {
+  message_type=$1
+  message=$2
+  echo "$message_type $message" || tee -a $log_file
+}
+
 check_vehicle_id() {
   if [ -z $tesla_id ] ;  then
-    echo "[ERROR] id missing, create the file $tesla_id_file"
+    log "[ERROR]" "id missing, create the file $tesla_id_file"
     usage
   fi
 }
@@ -67,17 +76,17 @@ json_print() {
     echo $data | $jq_bin
     if [ $? -ne 0 ] ; then
       # jason format may be messed up on response?
-      echo $data
+      log "[INFO]" $data
     fi
   else
-    echo $data
+    log "[INFO]"  $data
   fi
   echo ""
 }
 
 # wakeup, tesla!
 wakeup() {
-  echo "[INFO] attempting to wake up tesla..."
+  log "[INFO]" "attempting to wake up tesla..."
 
   # attempt 3 times to wakup and bail if not successful
   for (( i=0; i<3; i++)) ;  do
@@ -88,15 +97,18 @@ wakeup() {
       $tesla_api_ep/vehicles/$tesla_id/wake_up 2>&1`
   
     if [[ $response == *state*:*online* ]] ; then
-      echo "[INFO] tesla should be awake now."
+      log "[INFO]" "tesla should be awake now."
       return
     fi
 
+    # not waking up, log output
     # sleep for sometime
-    echo "[INFO] tesla not waking up, will try in 30 sec again..."
-    sleep 30
+    log "[WARN]" "tesla not waking up, will try in $sleep_time sec again. API reponse='$response'"
+    sleep $sleep_time
+
   done
-  echo "[WARN] your tesla had too much to drink, not waking up! Try again later."
+
+  log "[WARN]" "your tesla had too much to drink, not waking up! Try again later."
 }
 
 # execute the command
@@ -121,7 +133,7 @@ execute() {
   # make sure tesla is awake
   wakeup
 
-  echo "[INFO] executing '$curl_request' on route: $tesla_api_ep/$command_route ..."
+  log "[INFO]" "executing '$curl_request' on route: $tesla_api_ep/$command_route ..."
   if [ -z $additional_arg ] ; then
     result=`curl -s -X $curl_request \
       -H "Cache-Control: no-cache" \
@@ -139,12 +151,12 @@ execute() {
       $tesla_api_ep/$command_route`
   fi
   
-  json_print $result
+  json_print "$result"
 }
 
 location() {
   if [ ! -x $jq_bin ] ; then
-    echo "[ERROR] jq (JSON commandline processor) required for 'location' command"
+    log "[ERROR]" "jq (JSON commandline processor) required for 'location' command"
     exit 2
   fi
 
@@ -165,13 +177,15 @@ location() {
 
     # if we are on a macOS, open the link in default browser, otherwise just print
     if [ $os_name = "Darwin" ]; then
-      echo "[INFO] opening tesla location in browser: $google_map"
+      log "[INFO]" "opening tesla location in browser: $google_map"
       /usr/bin/open "$google_map"
     else
-      echo "[INFO] your tesla location URL: $google_map"
+      log "[INFO]" "your tesla location URL: $google_map"
     fi
 }
 
+# ----------  main --------------
+echo "[INFO] `date` Starting $my_name ..." > $log_file
 
 # read bearer token and vehicle id.
 if [ -f $bearer_token_file ] ; then
@@ -182,7 +196,7 @@ if [ -f $tesla_id_file ] ;  then
 fi
 
 if [ -z $bearer_token ] ; then
-  echo "[ERROR] bearer token required for all tesla commands!"
+  log "[ERROR]" "bearer token required for all tesla commands!"
   usage
 fi
 
