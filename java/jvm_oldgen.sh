@@ -25,9 +25,13 @@ olgen_limit=50
 terminate=0
 restart_app=0
 thread_dump=0
-stop_command="/usr/local/tomcat/bin/shutdown.sh"
+# interval between start/stop, terminate 
+sleep_seconds=15 
+# this is passed to catalina.sh to wait for gracefull shutdown before attempt to force kill
+tomcat_wait=60 
+
+stop_command="/usr/local/tomcat/bin/shutdown.sh $tomcat_wait -force"
 start_command="/usr/local/tomcat/bin/start.sh"
-sleep_seconds=30
 
 usage() {
   echo "Usage: $my_name -p <java_pid> [-t|-d] [-m percent]"
@@ -72,10 +76,10 @@ terminate() {
   echo "[INFO] sending term signal " || tee -a $log_file
   kill -15 $pid
   # give it some time 
-  sleep 30
+  sleep $sleep_seconds
   
-  kill -0 $pid
-  if [ $? -ne 0 ] ; then
+  kill -0 $pid >/dev/null 2>&1
+  if [ $? -eq 0 ] ; then
     # not going down gracefully, kill it
     echo "[INFO] not going down gracefully sending kill signal " || tee -a $log_file    
     kill -9 $pid
@@ -86,10 +90,11 @@ restart_app() {
   echo "[INFO] restarting ... " || tee -a $log_file
   echo "[INFO] executing $stop_command  " || tee -a $log_file
   $stop_command >> $log_file 2>&1
-  echo "[INFO] sleeping $sleep_seconds sec ..." || tee -a $log_file
+  echo "[INFO] sleeping $sleep_seconds sec to start the app..." || tee -a $log_file
   sleep $sleep_seconds
   echo "[INFO] executing $start_command  " || tee -a $log_file
   $start_command >> $log_file 2>&1
+  echo "[INFO] wait for sometime for app to startup." || tee -a $log_file
 }
 
 take_action() {
@@ -163,6 +168,6 @@ if [ $thread_dump -ne 0 ] ; then
 fi
 
 # check to see if we need to take action
-if [ $oldgen_used_percent -gt $olgen_limit ] ; then
+if [ $oldgen_used_percent -ge $olgen_limit ] ; then
   take_action
 fi
