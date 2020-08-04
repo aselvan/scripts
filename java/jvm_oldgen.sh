@@ -19,6 +19,7 @@
 my_name=`basename $0`
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 base_path="/root"
+default_jdk_home="/usr/java/latest"
 options_list="p:m:rtdh"
 pid=0
 olgen_limit=50
@@ -28,7 +29,7 @@ thread_dump=0
 # interval between start/stop, terminate 
 sleep_seconds=15 
 # this is passed to catalina.sh to wait for gracefull shutdown before attempt to force kill
-tomcat_wait=60 
+tomcat_wait=60
 
 stop_command="/usr/local/tomcat/bin/shutdown.sh $tomcat_wait -force"
 start_command="/usr/local/tomcat/bin/start.sh"
@@ -52,8 +53,8 @@ check_root() {
 
 check_tools() {
   if [ -z "${JDK_HOME}" ] ; then
-    echo "[ERROR] JDK_HOME is not set. Set this env variable to point to JDK root path"
-    exit
+    echo "[WARN] JDK_HOME is not set, using default path '$default_jdk_home' on RHEL/CentOS"
+    JDK_HOME=$default_jdk_home
   fi
 
   if [ ! -x  ${JDK_HOME}/bin/jstat ] ; then
