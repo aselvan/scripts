@@ -20,12 +20,12 @@ my_name=`basename $0`
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 base_path="/root"
 default_jdk_home="/usr/java/latest"
-options_list="p:m:rtdh"
+options_list="p:m:d:rth"
 pid=0
-olgen_limit=50
+oldgen_threshold=50
+threaddump_threshold=75
 terminate=0
 restart_app=0
-thread_dump=0
 # interval between start/stop, terminate 
 sleep_seconds=15 
 # this is passed to catalina.sh to wait for gracefull shutdown before attempt to force kill
@@ -37,10 +37,10 @@ start_command="/usr/local/tomcat/bin/start.sh"
 usage() {
   echo "Usage: $my_name -p <java_pid> [-t|-d] [-m percent]"
   echo "  -p <java_pid>       ---> is the pid of the java process to check for gc usage"
-  echo "  -m <percent>        ---> oldgen max percent to check to take action; $olgen_limit% is default"
-  echo "  -r                  ---> restart when oldgen limit exceeds threashold of  $olgen_limit%"
-  echo "  -t                  ---> send SIGTERM if oldgen is > $olgen_limit% used (can not be used with -r)"
-  echo "  -d                  ---> send SIGQUIT to generate threaddump if oldgen is > $percent% used"
+  echo "  -m <percent>        ---> oldgen max percent to check to take action; $oldgen_threshold% is default"
+  echo "  -r                  ---> restart when oldgen usage exceeds threashold of $oldgen_threshold%"
+  echo "  -t                  ---> send SIGTERM if oldgen is > $oldgen_threshold% used (can not be used with -r)"
+  echo "  -d <percent>        ---> generate threaddump if oldgen usage is > $threaddump_threshold% "
   exit
 }
 
@@ -99,7 +99,7 @@ restart_app() {
 }
 
 take_action() {
-  echo "[WARN] oldgen is larger than threshold of $olgen_limit%, taking action!" || tee -a $log_file
+  echo "[WARN] oldgen is larger than threshold of $oldgen_threshold%, taking action!" || tee -a $log_file
 
   if [ $terminate -ne 0 ] ; then
     terminate
@@ -111,32 +111,36 @@ take_action() {
   fi
 }
 
+# ------------- main --------------------
 echo "[INFO] `date` $my_name starting" > $log_file
-
-check_tools
-
 while getopts "$options_list" opt; do
   case $opt in
     p)
       pid=$OPTARG
       ;;
     m)
-      olgen_limit=$OPTARG
+      oldgen_threshold=$OPTARG
       ;;
     t)
       terminate=1
       ;;
     d)
-      thread_dump=1
+      threaddump_threshold=$OPTARG
       ;;
     r)
       restart_app=1
+      ;;
+    \?|:)
+      echo "[ERROR] option requires an argument!"
+      usage
       ;;
     h)
       usage
       ;;
    esac
 done
+
+check_tools
 
 # check pid
 if [ $pid -eq 0 ] ; then
@@ -161,14 +165,14 @@ echo "[INFO] Oldgen CUR size: $oldgen_cur KB" || tee -a $log_file
 echo "[INFO] Oldgen Used:     $oldgen_used_percent%" || tee -a $log_file
 echo "[INFO] Total full GC:   $num_full_gc times" || tee -a $log_file
 
-# generate thread dump
-if [ $thread_dump -ne 0 ] ; then
+# generate thread dump only if oldgen_used_percent greater than threaddump_threshold
+if [ $oldgen_used_percent -ge $threaddump_threshold ]  ; then
   echo "[INFO] dumping threads..." || tee -a $log_file
   ${JDK_HOME}/bin/jstack -l $pid > /tmp/jvm_stackdump_$pid.txt 2>&1
   echo "[INFO] stack dump for pid $pid is at /tmp/jvm_stackdump_$pid.txt" || tee -a $log_file
 fi
 
 # check to see if we need to take action
-if [ $oldgen_used_percent -ge $olgen_limit ] ; then
+if [ $oldgen_used_percent -ge $oldgen_threshold ] ; then
   take_action
 fi
