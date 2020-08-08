@@ -46,7 +46,7 @@ options_list="c:d:i:lmuh"
 option=0
 file_to_copy=""
 mounted=0
-idle_minutes=5
+idle_minutes=15
 
 usage() {
   cat <<EOF
