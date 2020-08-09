@@ -15,7 +15,7 @@
 # google dns for validating connectivity
 gdns=8.8.8.8
 my_name=`basename $0`
-log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
+log_file="/var/log/$(echo $my_name|cut -d. -f1).log"
 home_public_ip=`dig +short selvans.net @$gdns`
 
 pi_is_home() {
