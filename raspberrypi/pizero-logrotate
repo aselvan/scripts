@@ -1,0 +1,41 @@
+#
+# pizero-logrotate 
+#
+# Log rotate for all the scripts we have for raspberrypi such as periodic_run.sh, 
+# wifi_event_run.sh etc.
+#
+# Note: copy this file to /etc/logrotate.d/
+#
+# Author:  Arul Selvan
+# Version: Aug 8, 2020
+#
+
+/var/log/periodic_run.log {
+  copytruncate
+  weekly
+  rotate 4
+  compress
+  delaycompress
+  missingok
+  size 5M
+}
+
+/var/log/wifi_event_run.log {
+  copytruncate
+  weekly
+  rotate 4
+  compress
+  delaycompress
+  missingok
+  size 5M
+}
+
+/var/log/poweron_run.log {
+  copytruncate
+  weekly
+  rotate 4
+  compress
+  delaycompress
+  missingok
+  size 5M
+}
