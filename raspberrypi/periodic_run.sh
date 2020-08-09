@@ -34,7 +34,7 @@ pi_is_not_home() {
 }
 
 #  ---------- main ---------------
-echo "[INFO] `date`: $my_name starting..." > $log_file
+echo "[INFO] `date`: $my_name starting..." >> $log_file
 
 # first check if we got connectivity.
 /bin/ping -t30 -c3 -q $gdns >/dev/null 2>&1

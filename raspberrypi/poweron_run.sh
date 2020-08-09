@@ -22,7 +22,7 @@ ifttt_api="https://maker.ifttt.com/trigger/$ifttt_event_name/with/key"
 ssh_port=22
 
 #  ---------- main ---------------
-echo "[INFO] `date`: $my_name starting..." > $log_file
+echo "[INFO] `date`: $my_name starting..." >> $log_file
 
 # check if we need to punch hole for ssh access from external hosts
 # assumes ufw is setup already and activated.
