@@ -1,0 +1,32 @@
+#
+# Steps intall/setup/run metasploit
+#
+#
+# Author:  Arul Selvan
+# Version: Aug 30, 2020
+#
+
+
+# run it as root (metasploit will complain about mulitiuser) since there is only one user.
+sudo su
+
+# install dependencies.
+apt-get install rbenv
+rbenv rehash
+apt-get install git ruby ruby-pg postgresql-common \
+  libpq-dev libpcap0.8 bundler \
+  ruby-pcaprub libpcap0.8 libpcap0.8-dev libsqlite3-dev
+
+# configure git to get msfupdate script to work
+git config --global user.name "Your Name"
+git config --global user.email "yourname@yourdomain.com"
+
+# we are installing /opt/metasploit-framework
+cd /opt
+git clone git://github.com/rapid7/metasploit-framework
+cd metasploit-framework
+./msfupdate
+bundle install
+
+# finally to run
+./msfconsole
