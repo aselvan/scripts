@@ -1,0 +1,42 @@
+#
+# Steps intall/setup/run opencanary
+#
+#
+# Author:  Arul Selvan
+# Version: Aug 30, 2020
+#
+
+#
+# Install PI image
+#
+# First follow the README.raspberypi at link below to install your image to raspberrypi
+#
+# https://github.com/aselvan/scripts/blob/master/raspberrypi/README.raspberrypi
+#
+
+# Once your pi is up and running, ssh into it and follow the steps below
+
+# run it as root
+sudo su
+
+# install 
+apt-get update; apt-get upgrade --fix-missing
+apt-get install python-dev python-pip python-virtualenv build-essential libssl-dev libffi-dev
+
+# install a separate python env for opencanary
+cd /opt/
+virtualenv -p /usr/bin/python3 opencanary
+pip3 install 'setuptools<45.0.0'
+pip install rdpy RDP SNMP
+. opencanary/bin/activate
+pip3 install opencanary
+
+# copy the configurations
+mkdir /etc/opencanaryd
+cp <your_custom_opencanary.conf> /etc/opencanaryd/.
+(or)
+opencanary/bin/opencanaryd --copyconfig # this creates ~/.opencanary.conf now copy it to /etc/opencanaryd/
+
+# you can run the following on a local.rc or @reboot cron entry
+/opt/opencanary/bin/opencanaryd --start
+
