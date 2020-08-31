@@ -79,6 +79,9 @@ apt-get install dnsutils git nmap
 
 # install any other you may need
 
+# reconfigure timezone
+dpkg-reconfigure tzdata
+
 13. Finally, secure your PI (outside of scope of this simple howto)
 
   * setup strong password for 'pi' user
