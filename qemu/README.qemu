@@ -6,7 +6,6 @@
 
 
 # Misl howto's for qemu
-# ---------------------
 
 
 1. How to create snapshot copy from original
@@ -23,3 +22,10 @@
     # check the image
     qemu-img info myimage.qcow2
 
+3. Compress and make the image smaller
+  
+  3.1. start the guest vm and run dfrag, and write 0's to unused space. In windows run
+    sdelete -c c: and sdelete -z c:
+
+  3.2. run the following
+    qemu-img convert -c -f qcow2 original.qcow2 -O qcow2 compressed.qcow2
