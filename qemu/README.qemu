@@ -12,13 +12,17 @@
 
     qemu-img create -f qcow2 -b original.qcow2 snapshot.qcow2
 
-2. Convert Virtualbox VDI to qcow2
+2. Convert Virtualbox VDI|VMDK to qcow2
 
     # extract the OVA file that would extract the vmdk 
     tar -xvf myimage.ova
 
-    # convert the VMDK to qcow2
+    # convert a VMDK to qcow2
     qemu-img convert myimage.vmdk myimage.qcow2 -O qcow2
+
+    # convert a VDI to qcow2
+    qemu-img convert -f vdi -O qcow2 myimage.vdi myimage.qcow2
+
     # check the image
     qemu-img info myimage.qcow2
 
