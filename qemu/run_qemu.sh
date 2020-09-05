@@ -5,6 +5,7 @@
 # Author:  Arul Selvan
 # Version: Sep 4, 2020
 #
+qemu_bin="qemu-system-x86_64"
 memory=4096
 cores=2
 snapshot="-snapshot"
@@ -16,7 +17,8 @@ image_path="$HOME//VirtualBoxVMs/qemu"
 boot_image="$image_path/winblows.qcow2"
 cpu="IvyBridge"
 vga=virtio
-options_list="m:c:i:wh"
+additional_args=""
+options_list="m:c:i:a:wh"
 my_name=`basename $0`
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 
@@ -26,10 +28,11 @@ log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 #-audiodev coreaudio,id=coreaudio
 
 usage() {
-  echo "Usage: $my_name [-m <memory> -c <count> -i <image> -w -h]"
+  echo "Usage: $my_name [-m <memory> -c <count> -i <image> -a <args>-w -h]"
   echo "  -m <memory> size in MB to reserve for qemu. default is 4096"
   echo "  -c <count> count of cpu core to reserve for qemu. default is 2"
   echo "  -i <image> image name from $image_path ex: -i linux"
+  echo "  -a <args> any additional qemu args to pass directly to $qemu_bin" 
   echo "  -w enable writing to base image. default is snapshot mode"
   echo "  -h usage/help"
   exit
@@ -49,6 +52,9 @@ while getopts "$options_list" opt; do
     i)
       boot_image="$image_path/${OPTARG}.qcow2"
       ;;
+    a)
+      additional_args="$OPTARG"
+      ;;
     w)
       snapshot=""
       ;;
@@ -67,10 +73,10 @@ if [ ! -f $boot_image ]; then
   usage
 fi
 
-echo "[INFO] options: memory=$memory; cpu=$cores; snapshot=$snapshot ..." >> $log_file
+echo "[INFO] options: memory=$memory; cpu=$cores; snapshot=$snapshot additional_args=$additional_args ..." >> $log_file
 echo "[INFO] options: image=$boot_image ..." >> $log_file
 
-exec qemu-system-x86_64 \
+exec $qemu_bin \
   -rtc base=localtime,clock=host \
   -vga $vga \
   -smp $cores \
@@ -79,5 +85,5 @@ exec qemu-system-x86_64 \
   -accel hvf \
   -cpu $cpu \
   -nic $net \
-  -hda $boot_image $snapshot >> $log_file 2>&1
+  -hda $boot_image $snapshot $additional_args >> $log_file 2>&1
 
