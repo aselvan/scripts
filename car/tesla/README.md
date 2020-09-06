@@ -9,7 +9,7 @@
   Script to get/refresh a bearer token for your car to use with all API calls using the tesls.sh script above.
 
 # Disclaimer
-This tesla scripts Tesla's unofficial APIs, and comes without warranty of any kind. Use it at your own risk. I assume no liability for the accuracy, correctness, completeness, or usefulness of any information provided by this scripts nor for any sort of damages using these scripts may cause.
+This tesla scripts use Tesla's unofficial APIs i.e. https://owner-api.teslamotors.com/api/1, and comes without warranty of any kind what so ever. You are free to use it at your own risk. I assume no liability for the accuracy, correctness, completeness, or usefulness of any information provided by this scripts nor for any sort of damages using these scripts may cause.
 
 # Usage Guide
 
