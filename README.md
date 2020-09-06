@@ -8,6 +8,9 @@
 - #### /car/tesla
   Wrapper script to call tesla API to do various things like lock/unlock door, honk, location, enable keyless drive, etc.
 
+- #### /raspberrypi
+  Various tools/scripts/howtos to build a image for Pi to be used as IoT device or pentest device
+
 - #### /docker-jitsi
   Run your own Jitsi (opensource equivelent of google meet, zoom etc) audio/video conf with dockerized images.
 
