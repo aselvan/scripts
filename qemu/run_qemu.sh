@@ -16,7 +16,7 @@ net="user"
 image_path="$HOME//VirtualBoxVMs/qemu"
 boot_image="$image_path/winblows.qcow2"
 cpu="IvyBridge"
-vga=virtio
+vga=std
 additional_args=""
 options_list="m:c:i:a:wh"
 my_name=`basename $0`
@@ -83,7 +83,5 @@ exec $qemu_bin \
   -m $memory \
   -machine $machine \
   -accel hvf \
-  -cpu $cpu \
   -nic $net \
   -hda $boot_image $snapshot $additional_args >> $log_file 2>&1
-
