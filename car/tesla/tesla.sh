@@ -2,16 +2,25 @@
 #
 # tesla.sh
 #
-# Simple wrapper script for various tesla commands. This script
-# is tested on macOS and Linux, if you are on winblows, it might 
-# work w/ Cygwin but good luck with that.
+# Simple wrapper script for various tesla commands. This script is tested on 
+# macOS and Linux, if you are on winblows, it might work w/ Cygwin but good 
+# luck with that.
 #
-# prereq:
+# DISCLAIMER:
+# -----------
+#
+# This scripts use Tesla's unofficial APIs i.e. https://owner-api.teslamotors.com/api/1
+# and comes without warranty of any kind what so ever. You are free to use it at your 
+# own risk. I assume no liability for the accuracy, correctness, completeness, or 
+# usefulness of any information provided by this scripts nor for any sort of damages 
+# using these scripts may cause.
+#
+# Prereq:
 # ------
 # use tesla_token.sh to obtain your bearer token and use this script
 # to obtain the vehicle id (use id command).
 #
-# optional:
+# Optional:
 # --------
 # if jq (jason commandline processor) installed, it will be used to 
 # print the output with JSON formatted. You can install it like so below.
@@ -60,7 +69,7 @@ usage() {
 log() {
   message_type=$1
   message=$2
-  echo "$message_type $message" || tee -a $log_file
+  echo "$message_type $message" | tee -a $log_file
 }
 
 check_vehicle_id() {
@@ -185,7 +194,7 @@ location() {
 }
 
 # ----------  main --------------
-echo "[INFO] `date` Starting $my_name ..." > $log_file
+echo "[INFO] `date`: Starting $my_name ..." > $log_file
 
 # read bearer token and vehicle id.
 if [ -f $bearer_token_file ] ; then

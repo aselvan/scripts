@@ -3,6 +3,15 @@
 # tesla_token.sh --- wrapper script to get/refresh a bearer token for your car to 
 #    to use with other API calls. 
 #
+# DISCLAIMER:
+# -----------
+#
+# This scripts use Tesla's unofficial APIs i.e. https://owner-api.teslamotors.com/oauth/token
+# and comes without warranty of any kind what so ever. You are free to use it at your 
+# own risk. I assume no liability for the accuracy, correctness, completeness, or 
+# usefulness of any information provided by this scripts nor for any sort of damages 
+# using these scripts may cause.
+#
 # Author:  Arul Selvan
 # Version: May 31, 2020
 #
@@ -28,7 +37,7 @@ usage() {
 log() {
   message_type=$1
   message=$2
-  echo "$message_type $message" || tee -a $log_file
+  echo "$message_type $message" | tee -a $log_file
 }
 
 read_token_from_file() {
@@ -81,7 +90,7 @@ refresh() {
 }
 
 # ----------  main --------------
-echo "[INFO] `date` Starting $my_name ..." > $log_file
+echo "[INFO] `date`: Starting $my_name ..." > $log_file
 
 case $1 in
   create|refresh) "$@"
