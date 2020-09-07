@@ -13,7 +13,7 @@ machine=pc-q35-2.10
 # net example to forward ports
 #net="user,hostfwd=tcp:127.0.0.1:3389-:3389"
 net="user"
-image_path="$HOME//VirtualBoxVMs/qemu"
+image_path="$HOME/VirtualBoxVMs/qemu"
 boot_image="$image_path/winblows.qcow2"
 cpu="IvyBridge"
 vga=std
