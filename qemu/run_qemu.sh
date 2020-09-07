@@ -22,10 +22,6 @@ options_list="m:c:i:a:wh"
 my_name=`basename $0`
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 
-# need to figure out sound
-#sound=hda-duplexdd
-#-audiodev spice,id=spice 
-#-audiodev coreaudio,id=coreaudio
 
 usage() {
   echo "Usage: $my_name [-m <memory> -c <count> -i <image> -a <args>-w -h]"
@@ -40,7 +36,7 @@ usage() {
 
 #  ------------ main -----------------
 # process args
-echo "[INFO] `date`: starting $my_name ..." > $log_file
+echo "[INFO] `date`: starting $my_name ..." | tee $log_file
 while getopts "$options_list" opt; do
   case $opt in
     m)
@@ -73,10 +69,12 @@ if [ ! -f $boot_image ]; then
   usage
 fi
 
-echo "[INFO] options: memory=$memory; cpu=$cores; snapshot=$snapshot additional_args=$additional_args ..." >> $log_file
-echo "[INFO] options: image=$boot_image ..." >> $log_file
+echo "[INFO] options: memory=$memory; cpu=$cores; snapshot=$snapshot additional_args=$additional_args ..."|tee -a $log_file
+echo "[INFO] options: image=$boot_image ..." | tee -a $log_file
 
-exec $qemu_bin \
+$qemu_bin \
+  -usb -device usb-tablet \
+  -device intel-hda -device hda-output \
   -rtc base=localtime,clock=host \
   -vga $vga \
   -smp $cores \
@@ -85,3 +83,10 @@ exec $qemu_bin \
   -accel hvf \
   -nic $net \
   -hda $boot_image $snapshot $additional_args >> $log_file 2>&1
+
+if [ $? -ne 0 ] ; then
+  echo "[ERROR] $qemu_bin failed... see log below" | tee -a $log_file
+  cat $log_file
+else
+  echo "[INFO] $qemu_bin exited normally" | tee -a $log_file
+fi
