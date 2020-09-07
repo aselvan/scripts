@@ -40,3 +40,9 @@
 
   4.2. run the following
     qemu-img convert -c -f qcow2 original.qcow2 -O qcow2 compressed.qcow2
+
+5. Resize the qcow2
+
+  5.1 Shutdown the VM
+  5.2 run the following
+    sudo qemu-img resize original.qcow2 +8G # add 8G more
