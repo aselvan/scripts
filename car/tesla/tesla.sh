@@ -79,6 +79,21 @@ check_vehicle_id() {
   fi
 }
 
+check_http_status() {
+  http_code=$1
+
+  # add all http codes here, later.
+  case $http_code in 
+    200)
+      return
+      ;;
+    401)
+      echo "[ERROR] unauthorized, expired token or bad user/password?" | tee -a $log_file
+      ;;
+  esac
+  exit
+}
+
 json_print() {
   data=$1
   if [ -x $jq_bin ] ; then
@@ -93,18 +108,23 @@ json_print() {
   echo ""
 }
 
+
 # wakeup, tesla!
 wakeup() {
   log "[INFO]" "attempting to wake up tesla..."
 
   # attempt 3 times to wakup and bail if not successful
   for (( i=0; i<3; i++)) ;  do
-    response=`curl -s -X POST \
+    http_status=`curl -s -X POST \
       -H "Cache-Control: no-cache" \
       -H "Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW" \
       -H "Authorization: Bearer $bearer_token" \
+      -w "%{http_code}" \
+      -o /tmp/${my_name}_curl_response.txt \
       $tesla_api_ep/vehicles/$tesla_id/wake_up 2>&1`
   
+    check_http_status $http_status
+    response=`cat /tmp/${my_name}_curl_response.txt`
     if [[ $response == *state*:*online* ]] ; then
       log "[INFO]" "tesla should be awake now."
       return
@@ -144,23 +164,28 @@ execute() {
 
   log "[INFO]" "executing '$curl_request' on route: $tesla_api_ep/$command_route ..."
   if [ -z $additional_arg ] ; then
-    result=`curl -s -X $curl_request \
+    http_status=`curl -s -X $curl_request \
       -H "Cache-Control: no-cache" \
       -H "Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW" \
       -H "Authorization: Bearer $bearer_token" \
-      -w "\n\n" \
+      -w "%{http_code}" \
+      -o /tmp/${my_name}_curl_response.txt \
       $tesla_api_ep/$command_route`
   else
-    result=`curl -s -X $curl_request \
+    http_status=`curl -s -X $curl_request \
       -H "Cache-Control: no-cache" \
       -H "Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW" \
       -H "Authorization: Bearer $bearer_token" \
       -F "$additional_arg" \
-      -w "\n\n" \
+      -w "%{http_code}" \
+      -o /tmp/${my_name}_curl_response.txt \
       $tesla_api_ep/$command_route`
   fi
+
+  check_http_status $http_status
+  response=`cat /tmp/${my_name}_curl_response.txt`
   
-  json_print "$result"
+  json_print "$response"
 }
 
 location() {
@@ -172,15 +197,19 @@ location() {
   check_vehicle_id
   wakeup
 
-  result=`curl -s -X GET \
+  http_status=`curl -s -X GET \
     -H "Cache-Control: no-cache" \
     -H "Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW" \
     -H "Authorization: Bearer $bearer_token" \
-    -w "\n\n" \
+    -w "%{http_code}" \
+    -o /tmp/${my_name}_curl_response.txt \
     $tesla_api_ep/vehicles/$tesla_id/data_request/drive_state`
 
-    lat=`echo $result| $jq_bin '.response.latitude'`
-    lon=`echo $result| $jq_bin '.response.longitude'`
+    check_http_status $http_status
+    response=`cat /tmp/${my_name}_curl_response.txt`
+
+    lat=`echo $response| $jq_bin '.response.latitude'`
+    lon=`echo $response| $jq_bin '.response.longitude'`
 
     google_map="https://maps.google.com/?q=$lat,$lon"
 
