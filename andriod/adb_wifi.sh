@@ -52,7 +52,7 @@ check_device() {
 setup() {
   check_device
   echo "[INFO] setting up device $device ..." | tee -a $log_file
-  #adb -s $device tcpip $adb_default_tcp_port | tee -a $log_file
+  adb -s $device tcpip $adb_default_tcp_port | tee -a $log_file
   exit
 }
 
@@ -87,6 +87,12 @@ while getopts "$options_list" opt ; do
       ;;
   esac
 done
+
+# if nothing specified, just print usage
+if [ $# -eq 0 ] ; then
+  echo "[ERROR] no commands specified!"
+  usage
+fi
 
 if [ -z $device ]; then
   echo "[INFO] Executing ADB with out a device i.e. 'adb $*'" | tee -a $log_file
