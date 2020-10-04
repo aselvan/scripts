@@ -15,14 +15,13 @@
 #
 
 # TODO: modify these to fit your needs, the rest should be fine
-
 # variables that need to be customized
 exclude_dirs="Trash|views|com.apple.mail|creditexpert|javanetexamples|ice|work|VirtualBoxVMs|android|sleepyhead|react-tutorial|.svn"
-mojave_unreadable="com.apple.homed.notbackedup.plist|com.apple.homed.plist"
-exclude_files=".swf|.ova|.vmdk|.mp3|.mp4|.jpg|.jpeg|.JPG|.MTS|.jar|.pst|.ost|.mov|.pack|$mojave_unreadable"
+macos_unreadable="com.apple.homed.notbackedup.plist|com.apple.homed.plist|com.apple.mail-shared.plist|com.apple.AddressBook.plist"
+exclude_files=".swf|.ova|.vmdk|.mp3|.mp4|.jpg|.jpeg|.JPG|.MTS|.jar|.pst|.ost|.mov|.pack|$macos_unreadable"
 
 # other variables don't need to be changed
-options_list="aucm:h"
+options_list="aucm:f:h"
 my_name=`basename $0`
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 virus_report=/tmp/virus_report.log
@@ -39,6 +38,7 @@ clamscan_path_mac="/usr/local/bin"
 clamscan_path_linux="/usr/bin"
 clamscan_bin="$clamscan_path_mac/clamscan"
 freshclam_bin="$clamscan_path_mac/freshclam"
+single_file=""
 clamav_lib_path=""
 # mail variables
 subject="ClamAv virus scan report [Host: $my_host]"
@@ -46,15 +46,29 @@ mail_to=""
 clamscan_opts="-r -i -o --quiet --max-filesize=64M --detect-pua=yes --log=$virus_report --exclude-dir=$exclude_dirs --exclude=$exclude_files --bytecode-unsigned --bytecode-timeout=120000"
 
 usage() {
-  echo "Usage: $my_name [-a] [-u] [-c] [-m <email_address>]"
+  echo "Usage: $my_name [-f <file>] [-a] [-u] [-c] [-m <email_address>]"
   echo "    -a scan from root i.e. entire system [default]"
+  echo "    -c scan only changed files since the last $days_since days"
+  echo "    -f <single_file> scan a single file and exit"
   echo "    -u scan from home i.e. /home or /User depending on MacOS or Linux"
   echo "    -m <email_address> enable email and send scan results"
   exit
 }
 
+scan_single_file() {
+  echo "scanning file: '$single_file' ... " | tee -a $log_file
+  if [ -f $single_file ]; then
+    rm $virus_report
+    $clamscan_bin $clamscan_opts $single_file | tee -a $log_file
+    cat $virus_report
+  else
+    echo "[ERROR] file '$single_file' does not exist!" | tee -a $log_file
+  fi
+  exit
+}
+
 # determine the clamav lib path (located at different place on MacOS and Linux)
-get_clamav_lib_path() {
+get_clamav_path() {
   #clamav_home="$(dirname `which clamscan`)/$(readlink `which clamscan`|xargs -0 dirname|xargs -0 dirname)"
   #the above doesn't work under cron, so hardcoding clamscan path but still dynamically determine exact path.
 
@@ -130,8 +144,15 @@ EOF
   cat $clamav_lib_path/local.ign2 >> $log_file
 }
 
-
 # --------------- main ----------------------
+# get all clamav path
+get_clamav_path
+
+echo "VIRUS SCAN log" > $log_file
+echo "---------------" >> $log_file
+echo "" >> $log_file
+
+# parse commandline
 while getopts "$options_list" opt ; do
   case $opt in 
     a)
@@ -150,18 +171,16 @@ while getopts "$options_list" opt ; do
     m)
       mail_to=$OPTARG
       ;;
+    f)
+      single_file=$OPTARG
+      scan_single_file
+      ;;
     h)
       usage
       ;;
   esac
 done
 
-# get clamav lib path
-get_clamav_lib_path
-
-echo "VIRUS SCAN log" > $log_file
-echo "---------------" >> $log_file
-echo "" >> $log_file
 echo "[INFO] Scan start:   `date`" >> $log_file
 echo "[INFO] Scan host:    $my_host" >> $log_file
 echo "[INFO] Scan path:    $scan_path " >> $log_file
