@@ -28,6 +28,7 @@ virus_report=/tmp/virus_report.log
 changed_files=/tmp/clamscan_files.txt
 changed_only=0
 days_since=8
+max_file_size="128M"
 scan_path="/"
 os_name=`uname -s`
 my_host=`hostname`
@@ -43,7 +44,7 @@ clamav_lib_path=""
 # mail variables
 subject="ClamAv virus scan report [Host: $my_host]"
 mail_to=""
-clamscan_opts="-r -i -o --quiet --max-filesize=64M --detect-pua=yes --log=$virus_report --exclude-dir=$exclude_dirs --exclude=$exclude_files --bytecode-unsigned --bytecode-timeout=120000"
+clamscan_opts="-r -i -o --quiet --max-filesize=$max_file_size --detect-pua=yes --log=$virus_report --exclude-dir=$exclude_dirs --exclude=$exclude_files --bytecode-unsigned --bytecode-timeout=120000"
 
 usage() {
   echo "Usage: $my_name [-f <file>] [-a] [-u] [-c] [-m <email_address>]"
