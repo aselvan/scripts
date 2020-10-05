@@ -15,12 +15,16 @@ usefulness of any information provided by this scripts nor for any sort of damag
 using these scripts may cause.
 
 ## Steps
-1. First, use the transend tools (andriod app or ios app) to configure your card 
-   to connect to your home wifi network. You can also configure via web 
-   interface. For web interface, once the card is powered, by default it 
-   provides a hotspot with ssid "WIFISD" which you can connect to using default 
-   password '12345678' and use browser to configure. Once connected, change 
-   admin user, wifi passwd, ssid etc from the default. 
+1. First, setup "internet mode" on your SD card to connect the card to your home wifi network. 
+   To setup internet mode, <del>use the transend tools (andriod app or ios app) to configure your card</del> 
+   [`update:` Transcend no longer support configuring internet mode their recent mobile apps, so you have to 
+   use web interface]. To configure via web interface, power up the card, once powered, the card by default 
+   will broadcast a hotspot with ssid "WIFISD" which you can join from your desktop or laptop to using 
+   default password wifi password '12345678'. Once connected, go to settings page, change admin user, 
+   wifi passwd, ssid etc from the default... and finally, enable internet mode add your home wifi 
+   ssid/password for the card to connect and save. After this, when powered on, your card will join 
+   the your home wifi! `Note`: you need find the IP assigned to the card by your wifi router to complete 
+   the rest of the steps
 
 2. edit the autorun.sh file and set debug=1, this will run telnetd so you can 
    telnet to the card to complete the rest of the steps. Once you setup the sshd 
