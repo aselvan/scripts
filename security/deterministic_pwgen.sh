@@ -30,7 +30,7 @@
 special_chars_to_avoid="&*~\'\`,[]\\/^}{<|>();?\""
 
 # pwgen option
-pwgen_opt="--remove-chars=$special_chars_to_avoid -N1 -cyn -1 16"
+pwgen_opt="--remove-chars=$special_chars_to_avoid -N1 -cny -1 12"
 options="w:u:hp"
 website=""
 user=""
@@ -44,7 +44,7 @@ usage() {
   #clear
   cat <<EOF
 Usage: $my_name -w <website> -u <username|email> [-p]
-  -w <website>        ---> The website the password is generated for.
+  -w <website>        ---> The website the password is generated for (just use domain name not FQDN)
   -u <username|email> ---> The username used for the website specified above.
   -p                  ---> will print the password to console.
        
