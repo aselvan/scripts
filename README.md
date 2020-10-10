@@ -43,3 +43,6 @@
 
 - #### /tools
   Random scripts for various things
+
+- #### /wifi-sdcards
+  Scripts for wifi enabled SD cards
