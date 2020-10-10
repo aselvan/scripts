@@ -17,20 +17,32 @@
 # DISCLAIMER: Use it at your own risk. I am not responsible for any loss or damage to your property.
 
 sd_path="/mnt/sd/custom"
-log_file="$sd_path/autorun.log"
-pre_access_log="/mnt/mtd/access.sh.log"
+jffs2_fs="/mnt/mtd"
+log_file="$jffs2_fs/autorun.sh.log"
+access_log="$jffs2_fs/access.sh.log"
 # set debug=1 to start telnetd
 debug=0
 
-echo "[INFO] `date`: $0 starting ..." > $log_file
-sync
-
-# make sure we are running on the wifiSD (just check for presence of mount point and this file)
-# ubuntu trys to run this file so we need to make sure it doesn't crap out if someone runs it
-if [ ! -f $sd_path/autorun.sh ] ; then
-   echo "[ERROR] autorun.sh missing, this may not be a Transcend wifiSD card... exiting" >> $log_file
-   exit
+# First, grab the previous logs from jffs2 writable mount to SD card. This allows us to 
+# access/view the log files by booting card twice 
+if [ -f $access_log ]; then
+   cp $access_log $sd_path/.
 fi
+if [ -f $log_file ]; then
+   cp $log_file $sd_path/.
+fi
+
+# --- make SD readonly ASAP! (fat32 can not handle multiple mounts) ---
+# we need our busybox to make SR readonly i.e. 'sed' is not availabe in stock firmware
+cp $sd_path/busybox-armv5l $sd_path/dropbearmulti-armv5l  /sbin/.
+chmod a+x /sbin/busybox-armv5l /sbin/dropbearmulti-armv5l
+
+# Now, make SD read-only
+/sbin/busybox-armv5l sed -i.orig -e 's/ -w / /' -e 's/-o iocharset/-o ro,iocharset/' /usr/bin/refresh_sd
+/usr/bin/refresh_sd
+
+# Rest of the work of autorun.sh starts here ....
+echo "[INFO] `date`: $0 starting ..." > $log_file
 
 # telnet access to initially debug and setup everything.
 # CAUTION: You must comment/remove the line below once dropbear is working as expected.
@@ -38,11 +50,6 @@ if [ $debug -ne 0 ] ; then
   echo "[WARN] debug mode, enabling telnet ... " >> $log_file
   telnetd -l /bin/bash &
 fi
-
-echo "[INFO] copy our busybox ..." >> $log_file
-# setup a busybox with more applets than the one comes with Transcend firmware
-cp $sd_path/busybox-armv5l $sd_path/dropbearmulti-armv5l  /sbin/.
-chmod a+x $sd_path/busybox-armv5l  $sd_path/dropbearmulti-armv5l
 
 # setup a simple wrapper script to run anything using our busybox instead of
 # transcend's stock firmware w/ out messing up anything. This allows running
@@ -74,23 +81,5 @@ echo "[INFO] setup ntp, and hookup script to run after DHCP offer/bind ..." >> $
 cat $sd_path/ntpd.sh >>/etc/dhcp.script
 cat $sd_path/access.sh >>/etc/dhcp.script
 
-# finally, check and see if there is previous log file from before and copy if
-# we find it to SD path. This is done so we can boot twice to learn 
-# the IP address that is assigned (previous log contains IP). This file can't be 
-# copied to SD path the first time as when access.sh runs it is too late to 
-# copy anything to SD.
-if [ -f $pre_access_log ]; then
-   echo "[INFO] $pre_access_log found, copying to $sd_path" >> $log_file
-   cp $pre_access_log $sd_path/.
-else
-   echo "[INFO] $pre_access_log file is not found!" >> $log_file
-fi
-# just before turning sd to readonly for this host, sync the log file
 echo "[INFO] `date`: $0 completed." >> $log_file
 /sbin/busybox-armv5l sync
-
-# safety - change mount to ro (since fat32 can not handle multiple mounts)
-# Update: for now leave it writable since we need to get the IP assigned
-# to this computer which access.sh (as part of dhcp.script we added above)
-busybox-armv5l sed -i.orig -e 's/ -w / /' -e 's/-o iocharset/-o ro,iocharset/' /usr/bin/refresh_sd
-refresh_sd
