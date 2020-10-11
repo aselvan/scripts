@@ -219,6 +219,9 @@ echo "" >> $log_file
 
 # do a freshclam first
 echo "[INFO] Get latest virus signatures..." >> $log_file
+if [ -f $freshclam_log_file ] ; then
+  rm -f $freshclam_log_file
+fi
 $freshclam_bin -l $freshclam_log_file >> $log_file 2>&1
 
 # update urlhaus signature
