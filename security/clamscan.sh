@@ -26,6 +26,7 @@ my_name=`basename $0`
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 virus_report=/tmp/virus_report.log
 changed_files=/tmp/clamscan_files.txt
+freshclam_log_file=/tmp/freshclam.log
 changed_only=0
 days_since=8
 max_file_size="128M"
@@ -218,7 +219,7 @@ echo "" >> $log_file
 
 # do a freshclam first
 echo "[INFO] Get latest virus signatures..." >> $log_file
-$freshclam_bin >> $log_file 2>&1
+$freshclam_bin -l $freshclam_log_file >> $log_file 2>&1
 
 # update urlhaus signature
 get_urlhaus_sig
