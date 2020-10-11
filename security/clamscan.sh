@@ -21,7 +21,7 @@ macos_unreadable="com.apple.homed.notbackedup.plist|com.apple.homed.plist|com.ap
 exclude_files=".swf|.ova|.vmdk|.mp3|.mp4|.jpg|.jpeg|.JPG|.MTS|.jar|.pst|.ost|.mov|.pack|$macos_unreadable"
 
 # other variables don't need to be changed
-options_list="aucm:f:h"
+options_list="hvaucm:f:"
 my_name=`basename $0`
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 virus_report=/tmp/virus_report.log
@@ -39,33 +39,33 @@ clamscan_path_mac="/usr/local/bin"
 clamscan_path_linux="/usr/bin"
 clamscan_bin="$clamscan_path_mac/clamscan"
 freshclam_bin="$clamscan_path_mac/freshclam"
+sha256sum_bin="/usr/local/bin/sha256sum"
 single_file=""
 clamav_lib_path=""
 # mail variables
 subject="ClamAv virus scan report [Host: $my_host]"
 mail_to=""
-clamscan_opts="-r -i -o --quiet --max-filesize=$max_file_size --detect-pua=yes --log=$virus_report --exclude-dir=$exclude_dirs --exclude=$exclude_files --bytecode-unsigned --bytecode-timeout=120000"
+verbose_opt="--quiet"
+clamscan_opts="-r -i -o --max-filesize=$max_file_size --detect-pua=yes --log=$virus_report --exclude-dir=$exclude_dirs --exclude=$exclude_files --bytecode-unsigned --bytecode-timeout=120000"
 
 usage() {
-  echo "Usage: $my_name [-f <file>] [-a] [-u] [-c] [-m <email_address>]"
+  echo "Usage: $my_name [-v] [-f <file>] [-a] [-u] [-c] [-m <email_address>] -v"
   echo "    -a scan from root i.e. entire system [default]"
   echo "    -c scan only changed files since the last $days_since days"
   echo "    -f <single_file> scan a single file and exit"
   echo "    -u scan from home i.e. /home or /User depending on MacOS or Linux"
   echo "    -m <email_address> enable email and send scan results"
+  echo "    -v enable verbose mode"
   exit
 }
 
 scan_single_file() {
   echo "scanning file: '$single_file' ... " | tee -a $log_file
   if [ -f $single_file ]; then
-    rm $virus_report
-    $clamscan_bin $clamscan_opts $single_file | tee -a $log_file
-    cat $virus_report
+    $clamscan_bin $verbose_opt $clamscan_opts $single_file | tee -a $log_file
   else
     echo "[ERROR] file '$single_file' does not exist!" | tee -a $log_file
   fi
-  exit
 }
 
 # determine the clamav lib path (located at different place on MacOS and Linux)
@@ -76,10 +76,12 @@ get_clamav_path() {
   if [ $os_name = "Darwin" ]; then
     clamscan_bin="$clamscan_path_mac/clamscan"
     clamav_lib_path="$(dirname $clamscan_bin)/$(readlink $clamscan_bin|xargs -0 dirname|xargs -0 dirname)/share/clamav/"
+    sha256sum_bin="/usr/local/bin/sha256sum"
   else
     clamscan_bin="$clamscan_path_linux/clamscan"
     freshclam_bin="$clamscan_path_linux/freshclam"
     clamav_lib_path=/var/lib/clamav
+    sha256sum_bin="/usr/bin/sha256sum"
   fi
 }
 
@@ -96,7 +98,7 @@ get_urlhaus_sig() {
   fi
 
   # check if the shasum matches
-  echo "`curl -s $urlhaus_sig_md5_url` $urlhaus_sig_file" | sha256sum -c >> $log_file 2>&1
+  echo "`curl -s $urlhaus_sig_md5_url` $urlhaus_sig_file" | $sha256sum_bin -c >> $log_file 2>&1
   if [ $? -ne 0 ] ; then
     echo "[ERROR] MD5 sum does not match for '$urlhaus_sig_file', skiping urlhaus signature..." >> $log_file
     return
@@ -152,6 +154,9 @@ get_clamav_path
 echo "VIRUS SCAN log" > $log_file
 echo "---------------" >> $log_file
 echo "" >> $log_file
+if [ -f  $virus_report ]; then
+  rm -f $virus_report
+fi
 
 # parse commandline
 while getopts "$options_list" opt ; do
@@ -172,9 +177,12 @@ while getopts "$options_list" opt ; do
     m)
       mail_to=$OPTARG
       ;;
+    v)
+      verbose_opt="-v"
+      ;;
     f)
       single_file=$OPTARG
-      scan_single_file
+      scan_path=$OPTARG
       ;;
     h)
       usage
@@ -184,11 +192,21 @@ done
 
 echo "[INFO] Scan start:   `date`" >> $log_file
 echo "[INFO] Scan host:    $my_host" >> $log_file
+if [ ! -z $mail_to ] ; then
+  echo "[INFO] Email report: Yes" >> $log_file
+fi
 echo "[INFO] Scan path:    $scan_path " >> $log_file
 echo "[INFO] Scan bin:     $clamscan_bin " >> $log_file
 echo "[INFO] Scan lib:     $clamav_lib_path " >> $log_file
-echo "[INFO] Scan options: $clamscan_opts " >> $log_file
+echo "[INFO] Scan options: $verbose_opt $clamscan_opts " >> $log_file
 
+# only if this is for a single scan
+if [ ! -z $single_file ] ; then
+  scan_single_file
+  exit
+fi
+
+# do a full or partial scan as needed
 if [ $changed_only -eq 1 ]; then
   echo "[INFO] Scanning only changed files in the last $days_since days" >> $log_file
 else
@@ -207,17 +225,16 @@ get_urlhaus_sig
 setup_pua
 
 # run the scan
-rm -rf $virus_report
 if [ $changed_only -eq 1 ] ; then
   echo "[INFO] Checking changed files in the last $days_since" >> $log_file
   # get a report of changed files in the last $days_since days
   find $scan_path -type f -mtime -$days_since -exec echo {} \; > $changed_files
   echo "[INFO] Scanning changed files in the last $days_since days under: $scan_path" >> $log_file
-  $clamscan_bin $clamscan_opts -f $changed_files >> $log_file 2>&1
+  $clamscan_bin $verbose_opt $clamscan_opts -f $changed_files >> $log_file 2>&1
   status=$?
 else
   echo "[INFO] Scanning ALL files under: $scan_path" >> $log_file
-  $clamscan_bin $clamscan_opts $scan_path >> $log_file 2>&1
+  $clamscan_bin $verbose_opt $clamscan_opts $scan_path >> $log_file 2>&1
   status=$?
 fi
 
