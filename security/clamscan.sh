@@ -21,7 +21,7 @@ macos_unreadable="com.apple.homed.notbackedup.plist|com.apple.homed.plist|com.ap
 exclude_files=".swf|.ova|.vmdk|.mp3|.mp4|.jpg|.jpeg|.JPG|.MTS|.jar|.pst|.ost|.mov|.pack|$macos_unreadable"
 
 # other variables don't need to be changed
-options_list="hvaucm:f:"
+options_list="hvcp:m:f:l:d:"
 my_name=`basename $0`
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 virus_report=/tmp/virus_report.log
@@ -45,16 +45,18 @@ clamav_lib_path=""
 # mail variables
 subject="ClamAv virus scan report [Host: $my_host]"
 mail_to=""
+exit_code=0
 verbose_opt="--quiet"
 clamscan_opts="-r -i -o --max-filesize=$max_file_size --detect-pua=yes --log=$virus_report --exclude-dir=$exclude_dirs --exclude=$exclude_files --bytecode-unsigned --bytecode-timeout=120000"
 
 usage() {
-  echo "Usage: $my_name [-v] [-f <file>] [-a] [-u] [-c] [-m <email_address>] -v"
-  echo "    -a scan from root i.e. entire system [default]"
+  echo "Usage: $my_name [-v] [-f <file>] [-c] [-m <email_address>] [-l <log_file_path>] [-p <paths_to_scan>] [-d <days>] -v"
+  echo "    -p <paths_to_scan> list of directories to scan in quotes. note: the default is '/'"
   echo "    -c scan only changed files since the last $days_since days"
+  echo "    -d <days> number of days to check for changed files. default: $days_since days"
   echo "    -f <single_file> scan a single file and exit"
-  echo "    -u scan from home i.e. /home or /User depending on MacOS or Linux"
   echo "    -m <email_address> enable email and send scan results"
+  echo "    -l <log_file_path> log file path, default=$log_file"
   echo "    -v enable verbose mode"
   exit
 }
@@ -63,6 +65,7 @@ scan_single_file() {
   echo "scanning file: '$single_file' ... " | tee -a $log_file
   if [ -f $single_file ]; then
     $clamscan_bin $verbose_opt $clamscan_opts $single_file | tee -a $log_file
+    exit_code=$?
   else
     echo "[ERROR] file '$single_file' does not exist!" | tee -a $log_file
   fi
@@ -148,28 +151,11 @@ EOF
 }
 
 # --------------- main ----------------------
-# get all clamav path
-get_clamav_path
-
-echo "VIRUS SCAN log" > $log_file
-echo "---------------" >> $log_file
-echo "" >> $log_file
-if [ -f  $virus_report ]; then
-  rm -f $virus_report
-fi
-
 # parse commandline
 while getopts "$options_list" opt ; do
   case $opt in 
-    a)
-      scan_path="/"
-      ;;
-    u)
-      if [ $os_name = "Darwin" ] ; then    
-        scan_path="/Users"
-      else
-        scan_path="/home"
-      fi
+    p)
+      scan_path="$OPTARG"
       ;;
     c)
       changed_only=1
@@ -184,12 +170,27 @@ while getopts "$options_list" opt ; do
       single_file=$OPTARG
       scan_path=$OPTARG
       ;;
+    l)
+      log_file=$OPTARG
+      ;;
+    d)
+      days_since=$OPTARG
+      ;;
     h)
       usage
       ;;
   esac
 done
 
+# get all clamav path
+get_clamav_path
+
+echo "VIRUS SCAN log" > $log_file
+echo "---------------" >> $log_file
+echo "" >> $log_file
+if [ -f  $virus_report ]; then
+  rm -f $virus_report
+fi
 echo "[INFO] Scan start:   `date`" >> $log_file
 echo "[INFO] Scan host:    $my_host" >> $log_file
 if [ ! -z $mail_to ] ; then
@@ -200,10 +201,11 @@ echo "[INFO] Scan bin:     $clamscan_bin " >> $log_file
 echo "[INFO] Scan lib:     $clamav_lib_path " >> $log_file
 echo "[INFO] Scan options: $verbose_opt $clamscan_opts " >> $log_file
 
+
 # only if this is for a single scan
 if [ ! -z $single_file ] ; then
   scan_single_file
-  exit
+  exit $exit_code
 fi
 
 # do a full or partial scan as needed
@@ -226,20 +228,25 @@ setup_pua
 
 # run the scan
 if [ $changed_only -eq 1 ] ; then
-  echo "[INFO] Checking changed files in the last $days_since" >> $log_file
+  if [ -f $changed_files ] ; then
+    rm -f $changed_files
+  fi
+  touch $changed_files
   # get a report of changed files in the last $days_since days
-  find $scan_path -type f -mtime -$days_since -exec echo {} \; > $changed_files
-  echo "[INFO] Scanning changed files in the last $days_since days under: $scan_path" >> $log_file
+  for dir in $scan_path ; do
+    find $dir -type f -mtime -$days_since -exec echo {} \; >> $changed_files
+  done
+  echo "[INFO] Scanning changed files in the last $days_since day(s) under '$scan_path'" >> $log_file
   $clamscan_bin $verbose_opt $clamscan_opts -f $changed_files >> $log_file 2>&1
-  status=$?
+  exit_code=$?
 else
   echo "[INFO] Scanning ALL files under: $scan_path" >> $log_file
   $clamscan_bin $verbose_opt $clamscan_opts $scan_path >> $log_file 2>&1
-  status=$?
+  exit_code=$?
 fi
 
 echo "[INFO] Scan end for $scan_path: `date`" >> $log_file
-echo "[INFO] return code: $status" >> $log_file
+echo "[INFO] return code: $exit_code" >> $log_file
 echo "[INFO] Following is virus report for: $scan_path" >> $log_file
 echo "" >> $log_file
 cat $virus_report >> $log_file
@@ -247,8 +254,8 @@ echo "[INFO] --- End of virus scan log --- " >> $log_file
 
 # send e-mail if address provided.
 if [ ! -z $mail_to ] ; then
-  # clamscan return (0: no virus; 1: virus found 2: some errors occurec
-  case $status in
+  # clamscan return (0: no virus; 1: virus found 2: some errors occured)
+  case $exit_code in
     0)
 	    subject="ClamAV: success [Host: $my_host]"
       ;;
@@ -260,6 +267,9 @@ if [ ! -z $mail_to ] ; then
       ;;
   esac
 
-  echo "[INFO] Scan complete w/ status $status; Results are e-mailed" |tee -a $log_file
+  echo "[INFO] Scan complete w/ status $exit_code; Results are e-mailed" |tee -a $log_file
   cat $log_file | mail -s "$subject" $mail_to >> $log_file 2>&1
 fi
+
+# exit w/ clamscan status for calling scripts
+exit $exit_code
