@@ -144,7 +144,7 @@ PUA.Win.Packer.MingwGcc-3
 PUA.Win.Packer.Devcue-1
 PUA.Doc.Packed.EncryptedDoc-6563700-0
 PUA.Andr.Trojan.Mobidash-6840972-0
-PUA.Win.Tool.Packed-176 FOUND
+PUA.Win.Tool.Packed-176
 EOF
   chmod a+rw $clamav_lib_path/local.ign2
   echo "[INFO] content of $clamav_lib_path/local.ign2 " >> $log_file
