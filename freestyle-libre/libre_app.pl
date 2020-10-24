@@ -49,6 +49,7 @@
 # v2.5 Jan 08, 2020 -- added disclaimer and version number
 # v3.0 Jan 18, 2020 -- reworked by month, weeks, days to do entire period
 # v3.1 Jan 18, 2020 -- updated the usage
+# v3.2 Oct 24, 2020 -- implemented to export x number of days data to stdout
 #
 ##############################################################################
 use strict;
@@ -59,7 +60,7 @@ use File::Basename;
 use DBI;
 
 # version
-my $version_number="v3.1 date: 1/18/2020";
+my $version_number="v3.2 date: 10/24/2020";
 my $script_name = basename($0);
 
 # commandline parsing
@@ -77,10 +78,31 @@ my $minBGcount=30;
 my $type='libreview';
 my $fname;
 my $export_fname;
+my $export_days=0;
 my $year=0;
 my $months=0;
 my $weeks=0;
 my $days=0;
+
+sub usage {
+  print "Usage: libre_app.pl [options]\n";
+  print "  where options are: \n";
+  print "   --import <filename> --type <liapp|libre|libreview> [libre=reader data; libreview=cloud export - default]\n";
+  print "   --export <filename> this will export all DATA to the file specified\n";
+  print "   --export-days <days> this exports data last x number of 'days' to stdout\n";
+  print "   --db <dbname> \n";
+  print "   --months <number of months> \n";
+  print "   --weeks <number of weeks> \n";
+  print "   --days <number of days> \n";
+  print "   --help usage\n";
+  print "   --debug 1 print debug message\n";
+  exit 0;
+}
+
+sub print_version {
+  print "$script_name $version_number\n";
+  exit 0;
+}
 
 # calculate average
 sub average {
@@ -297,8 +319,6 @@ sub import_libreview_data {
   
 }
 
-
-
 # function to import liapp (andriod/ios app some german guy wrote)
 sub import_liapp_data {
   open (my $fh, $fname) or die "Could not open file '$fname'";
@@ -346,25 +366,6 @@ sub import_liapp_data {
 
 }
 
-sub usage {
-  print "Usage: libre_app.pl [options]\n";
-  print "  where options are: \n";
-  print "   --import <filename> --type <liapp|libre|libreview> [libre=reader data; libreview=cloud export - default]\n";
-  print "   --export <filename>\n";
-  print "   --db <dbname> \n";
-  print "   --months <number of months> \n";
-  print "   --weeks <number of weeks> \n";
-  print "   --days <number of days> \n";
-  print "   --help usage\n";
-  print "   --debug 1 print debug message\n";
-  exit 0;
-}
-
-sub print_version {
-  print "$script_name $version_number\n";
-  exit 0;
-}
-
 sub read_db_data {
   my $sql = shift;
   my @bgData;
@@ -393,6 +394,23 @@ sub export_data {
   }
   close $fh;
   print "Exported total of $count rows.\n";
+}
+
+sub export_days_data {
+  print "# Libre Freestyle CSV data export. $script_name $version_number\n";
+  print "# Exported on: $today\n";
+  print "Date,             BG\n";
+
+  my $days_from = sprintf("datetime('now' , '-%d days')",$export_days);
+  my $days_to   = sprintf("datetime('now' , '-%d days')",0);
+  my $pps = $db_handle->prepare("select timestamp, bg from bgtable where timestamp between $days_from and $days_to");
+  $pps->execute();
+  my $count=0;
+  while (my @row = $pps->fetchrow_array) {
+    print "$row[0], $row[1]\n";
+    $count++;
+  }
+  print "\nExported total of $count rows.\n";
 }
 
 sub compute_a1c_all {
@@ -611,6 +629,12 @@ sub compute_a1c_days {
 }
 
 sub open_db {
+  # check if db exists on current dir
+  if ( ! -f $db_file )  {
+    print "[ERROR] Libre DB ($db_file) does not exist!\n";
+    exit;
+  }
+  
   # open db
   print "Opening DB: $db_file\n";
   $db_handle = DBI->connect("dbi:SQLite:dbname=$db_file", $db_user, $db_password, {
@@ -634,12 +658,19 @@ GetOptions( "import=s"  => \$fname,
             "weeks=i"   => \$weeks,
             "days=i"    => \$days,
             "export=s"  => \$export_fname,
-            "version"   => \&print_version,
-            "help"      => \&usage)
+            "export-days=i" => \$export_days,
+            "version"       => \&print_version,
+            "help"          => \&usage)
 or die ("Error in command line arguments: \n");
 
 # open the DB
 open_db();
+
+# if export days are requested, export to console and quit
+if ($export_days != 0) {
+  export_days_data();
+  exit;
+}
 
 # if export requested, export & quit
 if ( defined $export_fname ) {
