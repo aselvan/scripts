@@ -15,7 +15,7 @@ log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 #acme_server="--server https://acme-v02.api.letsencrypt.org/directory"
 #certbot_args="-agree-tos --manual-public-ip-logging-ok --preferred-challenges=dns $acme_server"
 my_email="aselvan@selvans.net"
-certbot_args="-agree-tos --manual-public-ip-logging-ok --preferred-challenges=dns"
+certbot_args="--agree-tos --manual-public-ip-logging-ok --preferred-challenges=dns"
 certbot_bin="/usr/bin/certbot"
 domain_list="mypassword.us selvans.net"
 
@@ -37,6 +37,7 @@ renew_certs() {
   for d in $domain_list ; do
     echo "[INFO] renewing certs for domanin: $d" | tee -a $log_file
     echo "[INFO] update DNS records on $d when prompted and hit enter to continue..." | tee -a $log_file
+    echo "[INFO] ### NOTE: it may take upto 30min for DNS record to update, so give plenty of time beore continuiing!" | tee -a $log_file
     $certbot_bin certonly --manual -d *.$d -d $d $certbot_args --email $my_email 2>&1 | tee -a $log_file
   done
 }
