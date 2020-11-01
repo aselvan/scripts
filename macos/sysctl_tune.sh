@@ -9,6 +9,9 @@
 # permanently by coping (or appending) the file sysctl.conf in this directory 
 # to /etc/sysctl.conf and reboot.
 #
+# Reference/Credit: 
+# https://rolande.wordpress.com/2020/04/16/performance-tuning-the-network-stack-on-macos-high-sierra-10-13-and-mojave-10-14/
+#
 # Author:  Arul Selvan
 # Version: Oct 31, 2020
 #
