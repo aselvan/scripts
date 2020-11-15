@@ -6,6 +6,8 @@
 # NOTE: From Yosemite onwards, ipfw is no logner supported so and we
 #       have to use PF (pfctl) to setup firewall.
 #
+# See also: pf_rule_simple.conf
+#
 # Author:  Arul Selvan
 # Version: 1.0
 # Date:    Feb 7, 2015
@@ -14,7 +16,7 @@ anchor_name="realpage.com"
 rule_set="/etc/pf.conf"
 
 usage() {
-  echo "Usage: $0 <start|stop|status|allstatus|addip|deleteip|showtable|flushtable>"
+  echo "Usage: $0 <start|stop|status|allstatus|addip|deleteip|showtable|flushtable|blockip|unblockip>"
   exit
 }
 
@@ -60,12 +62,11 @@ do
      echo "Listing firewall rules ..."
      echo "--- Global rules ---"
      /sbin/pfctl -sr
-     echo "--- Anchor $anchor_name rules ---"
+     echo "--- Anchor: $anchor_name rules ---"
      /sbin/pfctl -a $anchor_name -sr
-     echo "--- Whitelist rules ---"
-     /sbin/pfctl -a $anchor_name/white_list -sr
      echo "--- Dynamic table list (if any) ---"
      /sbin/pfctl -a $anchor_name -t dynamic_ips -T show
+     /sbin/pfctl -a $anchor_name -t dynamic_blocked_ips -T show
      break
   elif [ "$1" = "allstatus" ]; then
      echo "Listing firewall rules ..."
@@ -75,7 +76,7 @@ do
   elif [ "$1" = "addip" ]; then
      shift 1
      if [ -z $1 ]; then
-        echo "addip needs IP address as argument"
+        echo "addip needs IP/CIDR/Host address as argument"
         usage
      fi
      echo "Adding $1 to the dynamic_ips table..."
@@ -84,11 +85,29 @@ do
   elif [ "$1" = "deleteip" ]; then
      shift 1
      if [ -z $1 ]; then
-        echo "deleteip needs IP address as argument"
+        echo "deleteip needs IP/CIDR/Host address as argument"
         usage
      fi
      echo "Deleting $1 from the dynamic_ips table..."
      pfctl -a $anchor_name -t dynamic_ips -T delete $1
+     break
+  elif [ "$1" = "blockip" ]; then
+     shift 1
+     if [ -z $1 ]; then
+        echo "blockip needs IP/CIDR/Host address as argument"
+        usage
+     fi
+     echo "Adding $1 to the dynamic_blocked_ips table..."
+     pfctl -a $anchor_name -t dynamic_blocked_ips -T add $1
+     break
+  elif [ "$1" = "unblockip" ]; then
+     shift 1
+     if [ -z $1 ]; then
+        echo "unblockip needs IP/CIDR/Host address as argument"
+        usage
+     fi
+     echo "Deleting $1 from the dynamic_blocked_ips table..."
+     pfctl -a $anchor_name -t dynamic_blocked_ips -T delete $1
      break
   elif [ "$1" = "flushtable" ]; then
      echo "Flushing the dynamic_ips table..."
@@ -96,7 +115,10 @@ do
      break
   elif [ "$1" = "showtable" ]; then
      echo "Showing dynamic_ips table..."
+     echo "--- Allowed table: dynamic_ips ----"
      pfctl -a $anchor_name -t dynamic_ips -T show
+     echo "--- Blocked table: dynamic_blocked_ips ----"
+     pfctl -a $anchor_name -t dynamic_blocked_ips -T show
      break
   else
      usage
