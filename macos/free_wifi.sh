@@ -21,6 +21,9 @@
 # See also: spoof_mac.sh
 #
 
+my_name=`basename $0`
+log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
+
 # google dns for validating connectivity
 gdns=8.8.8.8
 my_mac_addr_file="$HOME/.my_mac_address"
@@ -95,16 +98,23 @@ check_mac() {
     ifconfig $iface hw ether $my_mac    
   fi
 
+  # validate if we are indeed able switch mac address; MacOS is flaky and sometimes doesn't actually work
+  new_mac=`ifconfig $iface|grep ether|awk '{print $2;}'`
+  if [ $new_mac != $mac_addr ] ; then
+    echo "[ERROR] unable to change '$new_mac' to new address '$mac_addr'" | /usr/bin/tee -a $log_file
+    exit 1
+  fi
+
   # take the interface down and up to ask for dhcp
   echo "[INFO] taking iface down and up ..."
   ifconfig $iface down
   sleep 1
   ifconfig $iface up
   sleep 1
-  /bin/echo -n "[INFO] waiting for new IP assignment ."
+  /bin/echo -n "[INFO] waiting for new IP assignment ." | /usr/bin/tee -a $log_file 
   for (( i = 0; i<$ip_wait; i++ )) do
     sleep 1
-    /bin/echo -n .
+    /bin/echo -n . | /usr/bin/tee -a $log_file
     #ip=`ipconfig getifaddr $iface`
     ip=`ip addr show $iface | grep 'inet ' | awk '{print $2}' |cut -f1 -d'/'`
     if [ ! -z "$ip" ] ; then
@@ -116,10 +126,10 @@ check_mac() {
   echo "[INFO] checking for connectivity ..."
   ping_check
   if [ $? -eq 0 ] ; then
-    echo "[SUCCESS] got connectivity!"
+    echo "[SUCCESS] got connectivity with mac address: $mac_addr]" | /usr/bin/tee -a $log_file
     elapsed_time
   else
-    echo "[ERROR] connctivity failed for $mac_addr"
+    echo "[ERROR] connctivity failed for $mac_addr" | /usr/bin/tee -a $log_file
   fi
   return
 }
@@ -137,6 +147,7 @@ search_free_wifi() {
   # authenticated mac (someone who paid for this crappy wifi)
   list_of_macs=`/usr/sbin/arp -an -i $iface|awk '{print $4;}'`
 
+
   # search through all the macs we collected
   for mac in $list_of_macs; do 
     if [ $mac = "(incomplete)" ] ; then
@@ -146,13 +157,16 @@ search_free_wifi() {
     elif [ $mac = $my_mac ] ; then
       continue
     fi
-    echo "[INFO] checking: $mac ..."
+    echo "[INFO] checking: $mac ..." | /usr/bin/tee -a $log_file
     check_mac $mac
   done
 }
 
 #  ------------ main -----------------
 check_root
+
+echo "[INFO] $my_name starting ..." > $log_file
+echo "[INFO] Interface: $iface " | /usr/bin/tee -a $log_file
 
 while getopts "$options_list" opt; do
   case $opt in
@@ -183,15 +197,15 @@ save_mac
 
 # make 3 trys, if we don't get any just exit.
 for (( attempt=0; attempt<3; attempt++ )) {
-  echo "[INFO] searching for wifi. Attempt #$attempt ..."
+  echo "[INFO] searching for wifi. Attempt #$attempt ..." | /usr/bin/tee -a $log_file
   
   search_free_wifi
 
-  echo "[INFO] sleeping $attempt_wait sec to try again ..."
+  echo "[INFO] sleeping $attempt_wait sec to try again ..." | /usr/bin/tee -a $log_file
   sleep $attempt_wait
 }
 
 # if we get here nothing is available, just restore and exit
-echo "[ERROR] unable to find a working macaddr to use, restoring ..."
+echo "[ERROR] unable to find a working macaddr to use, restoring ..." | /usr/bin/tee -a $log_file
 restore_mac
 elapsed_time
