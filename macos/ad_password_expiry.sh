@@ -1,4 +1,4 @@
-#/bin/sh
+#!/bin/sh
 #
 # ad_password_expiry.sh --- check the AD password expiry date
 #
@@ -28,8 +28,8 @@ email_subject="AD password expiring"
 email_threshold=7
 
 usage() {
-  echo "Usage: $0 [-u ad_user_nanme] [-d domain_prefix] "
-  echo "   ex: $0 -u arul -d selvans.net"
+  echo "Usage: $my_name [-u ad_user_nanme] [-d domain_prefix] "
+  echo "   ex: $my_name -u arul -d selvans.net"
   exit 0
 }
 
