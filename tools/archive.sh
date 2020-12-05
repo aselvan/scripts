@@ -143,7 +143,6 @@ archive() {
       error_count=$((error_count + 1))
       continue
     fi
-    echo "Archiveing: $fpath"
     file_count=$((file_count + 1))
 
     # if the error count exceeded a threashold, just quit
