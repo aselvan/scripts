@@ -17,9 +17,9 @@ options_list="e:s:d:n:th"
 # source, dest default path 
 #source_dir="/var/www/html/docserver/data"
 #dest_dir="/archive001/www/www/docserver/data"
-source_dir="/Users/arul/junk"
-dest_dir="/Users/arul/junk.arch"
-log_dir="$dest_dir/log"
+source_dir=""
+dest_dir=""
+log_dir=""
 archive_list_file="/tmp/${run_date}_archive_list"
 archive_failure_list_file="/tmp/${run_date}_archive_failure_list"
 num_days=90
@@ -35,10 +35,10 @@ email_address=""
 
 usage() {
   echo "Usage: $my_name [options]"
-  echo "  -s <path>   --- source path to archive [default: $source_dir]"
-  echo "  -d <path>   --- destination path to move files [default: $dest_path]"
-  echo "  -e <email>  --- email address to send alerts of any failure"
+  echo "  -s <path>   --- source path to archive"
+  echo "  -d <path>   --- destination path to move files to"
   echo "  -n <days>   --- files older than 'days' will be moved to archive [default: $num_days]"
+  echo "  -e <email>  --- email address to send alerts of any failure"
   echo "  -t          --- trial run to create list of files to be archieved but dont actually archive"
   exit 0
 }
@@ -46,11 +46,11 @@ usage() {
 copy_logs() {
   cp $log_file $log_dir/${run_date}_$my_name.log
   if [ -f $archive_list_file ] ; then
-    gzip $archive_list_file
+    gzip --force $archive_list_file
     cp $archive_list_file.gz $log_dir/.
   fi
   if [ -f $archive_failure_list_file ] ; then
-    gzip $archive_failure_list_file
+    gzip --force $archive_failure_list_file
     cp $archive_failure_list_file.gz $log_dir/.
   fi
 }
@@ -88,6 +88,7 @@ create_archive_list() {
     quit 1
   fi
 
+  log_dir="$dest_dir/log"
   mkdir -p $log_dir
   if [ $? -ne 0 ] ; then
     echo "[ERROR] unable to create log dir: $log_dir" |tee -a $log_file
@@ -188,6 +189,10 @@ while getopts "$options_list" opt; do
 done
 
 echo "[INFO] starting '$my_name $@'"  | tee $log_file
+if [[ -z $source_dir || -z $dest_dir ]] ; then
+  echo "[ERROR] required arguments source or destination path missing!" | tee -a $log_file
+  usage
+fi
 echo "[INFO] source path: $source_dir" | tee -a $log_file
 echo "[INFO] dest path: $dest_dir" | tee -a $log_file
 echo "[INFO] archive older than: $num_days days" | tee -a $log_file
