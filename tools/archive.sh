@@ -50,8 +50,7 @@ copy_logs() {
     cp $archive_list_file.gz $log_dir/.
   fi
   if [ -f $archive_failure_list_file ] ; then
-    gzip --force $archive_failure_list_file
-    cp $archive_failure_list_file.gz $log_dir/.
+    cp $archive_failure_list_file $log_dir/.
   fi
 }
 
@@ -75,7 +74,8 @@ quit() {
 
   # only send mail for failure if e-mail address provided
   if [[ ! -z $email_address && $error_code -ne 0 ]] ; then
-    cat $log_file | mail -s "$email_subject" $email_address
+    echo "[INFO] e-mailing results to $email_address" | tee -a $log_file
+    cat $log_file $archive_failure_list_file | mail -s "$email_subject" $email_address
   fi
   
   exit $error_code
@@ -83,6 +83,8 @@ quit() {
 
 create_archive_list() {
   echo "[INFO] creating archive list ..." | tee -a $log_file
+  echo "$run_date: Archive failure list" > $archive_failure_list_file
+
   if [ ! -w $dest_dir ] ; then
     echo "[ERROR] destination path: $dest_dir does not exists or writable!" | tee -a $log_file
     quit 1
@@ -117,21 +119,41 @@ trial_archive() {
 archive() {
   echo "[INFO] archive run ..." | tee -a $log_file
   create_archive_list
-  touch $archive_failure_list_file
+  
   file_count=0
   cd $source_dir
   while read fpath ; do
+    # if the error count exceeded a threashold, just quit
+    if [ $error_count -gt $too_many_errors ] ; then
+      echo "[ERROR] Too many errors, error count $error_count exceeded thresold of $too_many_errors, bailing out." | tee -a $log_file
+      echo "[ERROR] See $archive_failure_list_file for details" | tee -a $log_file
+      quit 5
+    fi
+
     if [ ! -f $source_dir/$fpath ] ; then
       echo "$source_dir/$fpath does not exists!, skiping..." >> $archive_failure_list_file
-      global_error=5
+      global_error=6
       error_count=$((error_count + 1))      
       continue
     fi
 
-    # make sure destination contains the path structure we try to move
+    # ensure destination exists/writable with the path structure we try to move, create if necessary
     dpath=`dirname $dest_dir/$fpath`
     if [ ! -d $dpath ] ; then
       mkdir -p $dpath
+      if [ $? -ne 0 ] ; then
+        echo "mkdir -p $dpath failed!, skiping '$fpath' entry ... " >> $archive_failure_list_file
+        global_error=7
+        error_count=$((error_count + 1))
+        continue
+      fi
+    else
+      if [ ! -w $dpath ] ; then
+        echo "$dpath is not writable, skiping '$fpath' entry ... " >> $archive_failure_list_file
+        global_error=8
+        error_count=$((error_count + 1))
+        continue
+      fi
     fi
 
     # now move the file
@@ -139,17 +161,11 @@ archive() {
     if [ $? -ne 0 ] ; then
       # move failed
       echo "mv $source_dir/$fpath $dest_dir/$fpath failed!, skiping ... " >> $archive_failure_list_file
-      global_error=5
+      global_error=9
       error_count=$((error_count + 1))
       continue
     fi
     file_count=$((file_count + 1))
-
-    # if the error count exceeded a threashold, just quit
-    if [ $error_count -gt $too_many_errors ] ; then
-      echo "[ERROR] Too many errors (error count $error_count > $too_many_errors), bailing out." | tee -a $log_file
-      quit 6
-    fi
   done < $archive_list_file
 
   echo "[INFO] archieved $file_count files to $dest_dir" | tee -a $log_file
@@ -188,6 +204,7 @@ while getopts "$options_list" opt; do
 done
 
 echo "[INFO] starting '$my_name $@'"  | tee $log_file
+
 if [[ -z $source_dir || -z $dest_dir ]] ; then
   echo "[ERROR] required arguments source or destination path missing!" | tee -a $log_file
   usage
