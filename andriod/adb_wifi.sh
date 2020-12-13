@@ -15,7 +15,7 @@
 # Author: Arul Selvan
 # Version: Oct 3, 2020
 #
-options_list="s:c:lh"
+options_list="s:c:rlh"
 my_name=`basename $0`
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 device=""
@@ -27,8 +27,17 @@ usage() {
   echo "  -c <device> execute the <adb_args> on the specifed/already setup device"
   echo "     NOTE: if there is just one device the -c option is not needed"
   echo "  -l show list of devices"
+  echo "  -r restart adb service"
   echo "  -h help"
   exit
+}
+
+restart_adb() {
+  echo "[INFO] restarting adb ..." | tee -a $log_file
+  adb kill-server
+  sleep 2
+  adb start-server
+  sleep 2
 }
 
 check_device() {
@@ -51,8 +60,16 @@ check_device() {
 
 setup() {
   check_device
+
+  # for some reason adb does not show the device, just restart it once
+  restart_adb
+
   echo "[INFO] setting up device $device ..." | tee -a $log_file
   adb -s $device tcpip $adb_default_tcp_port | tee -a $log_file
+
+  sleep 2
+  # list to show the device
+  list
   exit
 }
 
@@ -81,6 +98,10 @@ while getopts "$options_list" opt ; do
       ;;
     l)
       list $*
+      ;;
+    r)
+      restart_adb
+      exit
       ;;
     h)
       usage
