@@ -1,0 +1,47 @@
+#
+# auto_sshfs: MacOS automount map for sshfs
+#
+# auto_sshfs --- MacOS auto mount definition for automounter for sshfs.
+#
+# Pre req:
+#  - You must have the following packages installed for this script to work
+#  - setup ssh keybased login to avoid entering password on mount
+#
+# brew install sshfs
+#
+# Setup/Install:
+# 
+# Copy this file to /etc & edit /etc/auto_master and add an entry as shown below
+#
+# /Users/arul/mnt/sshfs     /etc/auto_sshfs
+# 
+# The first entry above is a mount point where sshfs will be mounted under 
+# using the specified 'mountname' below. The second entry is path or link
+# to this file. This also needs mount_sshfs.sh script which is found in the 
+# same directory as this file and should be symlinked (or copied) to /sbin  
+# as shown below for ssh automount to work.
+#
+# ln -s mount_sshfs.sh /sbin/mount_sshfs
+#
+# Note: Apple makes it harder now (i.e. since Catalina update) by making /sbin 
+# readonly so you have to turn off SIP in order to place this as a soft link 
+# (or copy) under /sbin. 
+#
+# Once linked (or copied), restart the automountd like shown below
+#
+# sudo automount -vc
+#
+# Finally, when the user cd to the 'mountname', automountd will call 
+# /sbin/mount_<fstype> i.e. mount_sshfs and pass on the 'hostpath' argument. 
+#
+# Author:  Arul Selvan
+# Version: Aug 29, 2014 
+# Version: Apr 12. 2020 (updated for catalina as MacOS changed automounter behaviour)
+#
+# -------------------- mount entry start ------------------------
+# mount entry format:
+#
+# mountname mountoptions hostpath (i.e. ssh commandline ex: user@host:/path/path)
+#
+# CAUTION: Change the directory name, user, path etc before using this file.
+work-data -fstype=sshfs,nodev,nobrowse,nosuid,allow_other,uid=501,gid=20 aselvan@aselvanrp:/Users/aselvan/data
