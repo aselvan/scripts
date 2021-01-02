@@ -14,7 +14,7 @@ log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 # note: no need to add acme_server argument to certbot as it defaults to this. This is here for reference
 #acme_server="--server https://acme-v02.api.letsencrypt.org/directory"
 #certbot_args="-agree-tos --manual-public-ip-logging-ok --preferred-challenges=dns $acme_server"
-my_email="aselvan@selvans.net"
+my_email=""
 certbot_args="--agree-tos --manual-public-ip-logging-ok --preferred-challenges=dns"
 certbot_bin="/usr/bin/certbot"
 domain_list="mypassword.us selvans.net"
@@ -22,7 +22,7 @@ domain_list="mypassword.us selvans.net"
 usage() {
   echo "Usage: $my_name [options]"
   echo "  -l list existing certs on the server this script is run and exit"
-  echo "  -e <email> email address to use for certificate renewal process"
+  echo "  -e <email> email address required for renew"
   echo "  -h usage"
   exit
 }
@@ -59,6 +59,12 @@ while getopts "$options_list" opt ; do
       ;;
   esac
 done
+
+# ensure we have e-mail address
+if [ -z $my_email ] ; then
+  echo "[ERROR] missing argument! email address is required for renewing certs" | tee -a $log_file
+  usage
+fi
 
 # just confrim before renewal
 echo "[INFO] about to renew the following domains: $domain_list" | tee -a $log_file
