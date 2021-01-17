@@ -38,8 +38,7 @@ default_macos_scanpath="/Applications /Library /Users /usr/local"
 os_name=`uname -s`
 my_host=`hostname`
 urlhaus_sig_file="urlhaus.ndb"
-urlhaus_sig_url="https://urlhaus.abuse.ch/downloads/$urlhaus_sig_file"
-urlhaus_sig_md5_url="https://urlhaus.abuse.ch/downloads/$urlhaus_sig_file.sha256"
+urlhaus_sig_url="https://urlhaus.abuse.ch/downloads"
 clamscan_path_mac="/usr/local/bin"
 clamscan_path_linux="/usr/bin"
 clamscan_bin="$clamscan_path_mac/clamscan"
@@ -103,16 +102,21 @@ get_urlhaus_sig() {
   if [ -f $urlhaus_sig_file ]; then
     rm -f $urlhaus_sig_file
   fi
-  # download the urlhaus clamv sig
-  curl -s $urlhaus_sig_url -o $urlhaus_sig_file
+
+  echo "[INFO] downloading $urlhaus_sig_url/{$urlhaus_sig_file,$urlhaus_sig_file.sha256} " >> $log_file
+  # download the urlhaus clamv database and sha256sum of the database
+  # note: urlhaus creates these 2 files every minute so we have to get both database
+  #       and sha256sum files at one shot otherwise, they will be mismatched.
+  curl -s -O "$urlhaus_sig_url/{$urlhaus_sig_file,$urlhaus_sig_file.sha256}"
   if [ $? -ne 0 ]; then
     echo "[ERROR] failed to download urlhaus signature file '$urlhaus_sig_file'" >> $log_file
     exit_code=11
     return
   fi
 
-  # check if the shasum matches
-  echo "`curl -s $urlhaus_sig_md5_url` $urlhaus_sig_file" | $sha256sum_bin -c >> $log_file 2>&1
+  # check if the sha256sum matches
+  echo "[INFO] matching sha256sum: `cat $urlhaus_sig_file.sha256` $urlhaus_sig_file|$sha256sum_bin -c" >> $log_file  
+  echo "`cat $urlhaus_sig_file.sha256` $urlhaus_sig_file" | $sha256sum_bin -c >> $log_file 2>&1
   if [ $? -ne 0 ] ; then
     echo "[ERROR] MD5 sum does not match for '$urlhaus_sig_file', skiping urlhaus signature..." >> $log_file
     exit_code=12
@@ -120,6 +124,7 @@ get_urlhaus_sig() {
   fi
   
   # finally scan it before adding to clamscan lib
+  echo "[INFO] sha256sum matched, scanning $urlhaus_sig_file " >> $log_file    
   $clamscan_bin $urlhaus_sig_file >/dev/null 2>&1
   if [ $? -ne 0 ] ; then
     echo "[ERROR] scan failed for $urlhaus_sig_file, so ignoring the file" >> $log_file
