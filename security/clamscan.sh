@@ -30,7 +30,11 @@ freshclam_log_file=/tmp/freshclam.log
 changed_only=0
 days_since=8
 max_file_size="128M"
-scan_path="/"
+default_linux_scan_path="/"
+scan_path="$default_linux_scan_path"
+# use this for macOS since starting from catalina lot of OS area is mounted under "/"
+# that is not writeable anyway (unless SIP disabled) so dont bother scanning
+default_macos_scanpath="/Applications /Library /Users /usr/local"
 os_name=`uname -s`
 my_host=`hostname`
 urlhaus_sig_file="urlhaus.ndb"
@@ -82,6 +86,7 @@ get_clamav_path() {
   #the above doesn't work under cron, so hardcoding clamscan path but still dynamically determine exact path.
 
   if [ $os_name = "Darwin" ]; then
+    scan_path=$default_macos_scanpath
     clamscan_bin="$clamscan_path_mac/clamscan"
     clamav_lib_path="$(dirname $clamscan_bin)/$(readlink $clamscan_bin|xargs -0 dirname|xargs -0 dirname)/share/clamav/"
     sha256sum_bin="/usr/local/bin/sha256sum"
