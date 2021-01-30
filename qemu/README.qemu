@@ -46,3 +46,14 @@
   5.1 Shutdown the VM
   5.2 run the following
     sudo qemu-img resize original.qcow2 +8G # add 8G more
+#
+# NOTE: MacOS BigSur problems
+# updated: Jan 30, 2021 [ Credit: https://sizeof.cat/post/qemu-and-macos-bigsur/ ]
+If you try to run QEMU under macOS Big Sur with the -machine accel=hvf flag (basically 
+with Apple’s Hypervisor Framework) you’ll get one ugly error; every time hv_vm_create() 
+runs it returns an HV_ERROR. The reason is that the com.apple.vm.hypervisor 
+entitlement (used in macOS 10.15) has been deprecated and replaced by 
+com.apple.security.hypervisor. You need to sign your binary with the correct 
+entitlement. Run the command below with the entitlements.xml file found in this dir
+
+$ codesign -s - --entitlements entitlements.xml --force /usr/local/bin/qemu-system-x86_64
