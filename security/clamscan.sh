@@ -18,8 +18,8 @@
 # variables that need to be customized
 exclude_dirs="Trash|views|com.apple.mail|creditexpert|javanetexamples|ice|work|VirtualBoxVMs|android|sleepyhead|react-tutorial|.svn"
 macos_unreadable="com.apple.homed.notbackedup.plist|com.apple.homed.plist|com.apple.mail-shared.plist|com.apple.AddressBook.plist"
-macos_false_positive="EPSON.*FAX.gz|EPSON.*FAX.*A3.gz"
-exclude_files=".qcow2|.swf|.ova|.vmdk|.mp3|.mp4|.jpg|.jpeg|.JPG|.MTS|.jar|.pst|.ost|.mov|.pack|$macos_unreadable|$macos_false_positive"
+macos_false_positive="--exclude=EPSON.*FAX.*.gz"
+exclude_files=".qcow2|.swf|.ova|.vmdk|.mp3|.mp4|.jpg|.jpeg|.JPG|.MTS|.jar|.pst|.ost|.mov|.pack|$macos_unreadable"
 pua_args="--detect-pua=yes --exclude-pua=PwTool --exclude-pua=NetTool --exclude-pua=P2P --exclude-pua=Tool"
 
 # other variables don't need to be changed
@@ -54,7 +54,7 @@ subject="ClamAv virus scan report [Host: $my_host]"
 mail_to=""
 exit_code=0
 verbose_opt="--quiet"
-clamscan_opts="-r -i -o --max-filesize=$max_file_size $pua_args --log=$virus_report --exclude-dir=\"$exclude_dirs\" --exclude=\"$exclude_files\" --bytecode-unsigned --bytecode-timeout=120000"
+clamscan_opts="-r -i -o --max-filesize=$max_file_size $pua_args --log=$virus_report --exclude-dir=\"$exclude_dirs\" --exclude=\"$exclude_files\" $macos_false_positive --bytecode-unsigned --bytecode-timeout=120000"
 
 usage() {
   echo "Usage: $my_name [options]"
