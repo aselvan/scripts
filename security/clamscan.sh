@@ -18,7 +18,9 @@
 # variables that need to be customized
 exclude_dirs="Trash|views|com.apple.mail|creditexpert|javanetexamples|ice|work|VirtualBoxVMs|android|sleepyhead|react-tutorial|.svn"
 macos_unreadable="com.apple.homed.notbackedup.plist|com.apple.homed.plist|com.apple.mail-shared.plist|com.apple.AddressBook.plist"
-exclude_files=".swf|.ova|.vmdk|.mp3|.mp4|.jpg|.jpeg|.JPG|.MTS|.jar|.pst|.ost|.mov|.pack|$macos_unreadable"
+macos_false_positive="EPSON.*FAX.gz|EPSON.*FAX.*A3.gz"
+exclude_files=".qcow2|.swf|.ova|.vmdk|.mp3|.mp4|.jpg|.jpeg|.JPG|.MTS|.jar|.pst|.ost|.mov|.pack|$macos_unreadable|$macos_false_positive"
+pua_args="--detect-pua=yes --exclude-pua=PwTool --exclude-pua=NetTool --exclude-pua=P2P --exclude-pua=Tool"
 
 # other variables don't need to be changed
 options_list="uhvcp:m:f:l:d:"
@@ -52,7 +54,7 @@ subject="ClamAv virus scan report [Host: $my_host]"
 mail_to=""
 exit_code=0
 verbose_opt="--quiet"
-clamscan_opts="-r -i -o --max-filesize=$max_file_size --detect-pua=yes --log=$virus_report --exclude-dir=$exclude_dirs --exclude=$exclude_files --bytecode-unsigned --bytecode-timeout=120000"
+clamscan_opts="-r -i -o --max-filesize=$max_file_size $pua_args --log=$virus_report --exclude-dir=\"$exclude_dirs\" --exclude=\"$exclude_files\" --bytecode-unsigned --bytecode-timeout=120000"
 
 usage() {
   echo "Usage: $my_name [options]"
@@ -271,10 +273,12 @@ if [ $changed_only -eq 1 ] ; then
   for dir in $scan_path ; do
     find $dir -type f -mtime -$days_since -exec echo {} \; >> $changed_files
   done
+  echo "[INFO] Full command: $clamscan_bin $verbose_opt $clamscan_opts -f $changed_files" >> $log_file  
   echo "[INFO] Scanning changed files in the last $days_since day(s) under '$scan_path'" >> $log_file
   $clamscan_bin $verbose_opt $clamscan_opts -f $changed_files >> $log_file 2>&1
   exit_code=$?
 else
+  echo "[INFO] Full command: $clamscan_bin $verbose_opt $clamscan_opts $scan_path" >> $log_file
   echo "[INFO] Scanning ALL files under: $scan_path" >> $log_file
   $clamscan_bin $verbose_opt $clamscan_opts $scan_path >> $log_file 2>&1
   exit_code=$?
