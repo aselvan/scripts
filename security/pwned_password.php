@@ -1,3 +1,4 @@
+#!/usr/bin/php
 <?php
 /**
 * Simple method to use the API from  
