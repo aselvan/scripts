@@ -14,7 +14,7 @@
 function checkPawnedPasswords(string $password) : int {
     $sha1 = strtoupper(sha1($password));
     $first_five_digit=substr($sha1,0,5);
-    echo "[INFO] sending hash to troyhunt.com: $first_five_digit\n";
+    echo "[INFO] sending partial hash ($first_five_digit) of your full hash ($sha1) to troyhunt.com to check\n";
     $data = file_get_contents('https://api.pwnedpasswords.com/range/'.$first_five_digit);
 
     if (strpos($data, substr($sha1, 5))) {
@@ -29,12 +29,12 @@ echo "Enter your password to check: ";
 system('stty -echo');
 trim(fscanf(STDIN, "%s\n", $password));
 system('stty echo');
-echo "\n[INFO] don't worry, only sending first 5 char of your password's SHA1\n";
+echo "\n[INFO] don't worry, will only use first 5 char of your password hash\n";
 
 # check the password against Troy's DB
 $count = checkPawnedPasswords($password);
 if ($count > 0) {
-  echo "[WARNING] Your password is found $count times!\n";
+  echo "[WARN] Oops, your password is found $count times!\n";
 }
 else {
   echo "[INFO] Good news, your password is not found\n";
