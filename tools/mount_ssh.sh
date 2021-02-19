@@ -14,19 +14,34 @@
 #
 
 # works with user login or elevated
-user=`who -m | awk '{print $1;}'`
+user_name=`who -m | awk '{print $1;}'`
 os_name=`uname -s`
 mount_bin=sshfs
 mount_option=""
 umount_option=""
+options="r:l:u:v:dh"
+local_path=""
 remote_path=""
-mount_point="$HOME/sshfs_mnt"
+mount=1
+volume_name=""
+my_name=`basename $0`
+log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
+
 
 usage() {
-  echo "Usage: "
-  echo "  $0 mount <remote_path> <mount_point>"
-  echo "  $0 unmount <mount_point>"
-  echo "  Examples: $0 mount user@host:/path /mnt/path (or) $0 ummount /mnt/path"
+  cat <<EOF
+  
+Usage: $my_name [options]
+  
+  -r <remote_path> ==> remote host/path to mount. example: host.domain.tld:/share/path
+  -l <local_path>  ==> local path to mount the share. example: ~/mnt/sshfs
+  -u <user>        ==> user name to use for authentication [default: $user_name]
+  -v <vol label>   ==> optional volume name to use [default: remote_path]
+  -d               ==> unmount the already mounted local path
+
+  example: $my_name -r host.domain.tld:/share/path -l ~/mnt/sshfs -u $user_name -d MyData
+
+EOF
   exit
 }
 
@@ -34,54 +49,46 @@ usage() {
 setup_vars() {
   if [ $os_name = "Darwin" ]; then
     umount_bin=umount
-    mount_option="-ovolname=$remote_path"
+    mount_option="-ovolname=$volume_name"
   else
     umount_bin=fusermount
     umount_option="-u"
   fi
 }
 
-mount() {
-  remote_path=$1
-  if [ -z $remote_path ] ; then
+do_mount() {
+  if [[ -z $remote_path || -z $local_path ]] ; then
+    echo "[ERROR] missing mount args!" | tee -a $log_file
     usage
   fi
-  if [ -z $2 ]; then
-    echo "[INFO] local mount point not provided, creating default ($mount_point) directory"
-    mkdir -p $mount_point
-  else
-    mount_point=$2
-  fi
 
-  setup_vars
-
-  echo "[INFO] mounting $1 @ $mount_point"
-  $mount_bin $1 $mount_point $mount_option
+  echo "[INFO] mounting '$user_name@$remote_path' at mount point '$local_path' ..." | tee -a $log_file
+  $mount_bin $user_name@$remote_path $local_path $mount_option
   status=$?
   if [ $status -ne 0 ] ; then
-    echo "[ERROR] mount failed!, errorcode=$status"
+    echo "[ERROR] mount failed!, errorcode=$status" | tee -a $log_file
   else
-    echo "[INFO] successfully mounted $1 @ $mount_point"
+    echo "[INFO] successfully mounted '$user_name@$remote_path' at '$local_path'" | tee -a $log_file
   fi
 }
 
-unmount() {
-  if [ -z $1 ] ; then
+do_unmount() {
+  if [ -z $local_path ]; then
+    echo "[ERROR] missing unmount args!" | tee -a $log_file
     usage
   fi
-  
-  setup_vars
 
-  echo "[INFO] unmounting $1"
-  $umount_bin $umount_option $1
+  echo "[INFO] unmounting $local_path ... " | tee -a $log_file
+  $umount_bin $umount_option $local_path
   status=$?
   if [ $status -ne 0 ] ; then
-    echo "[ERROR] unmount failed!, errorcode=$status"
+    echo "[ERROR] unmount failed!, errorcode=$status" | tee -a $log_file
   else
-    echo "[INFO] successfully unmounted $1"
+    echo "[INFO] successfully unmounted $1" | tee -a $log_file
   fi
 }
 
+# ---------------- main entry --------------------
 
 # check if required tools are available
 if [ ! -x "$(which $mount_bin)" ] ; then
@@ -90,11 +97,41 @@ if [ ! -x "$(which $mount_bin)" ] ; then
   exit
 fi
 
-case $1 in
-  mount|unmount) "$@"
-  ;;
-  *)
-  usage
-  ;;
-esac
+# commandline parse
+while getopts $options opt; do
+  case $opt in
+    r)
+      remote_path=$OPTARG
+      ;;
+    l)
+      local_path=$OPTARG
+      ;;
+    u)
+      user_name=$OPTARG
+      ;;
+    v)
+      volume_name=$OPTARG
+      ;;
+    d)
+      mount=0
+      ;;
+    ?)
+      usage
+      ;;
+    h)
+      usage
+      ;;
+    esac
+done
 
+echo "[INFO] $my_name starting ..." | tee $log_file
+setup_vars
+
+if [ $mount -eq 1 ] ; then
+  if [ -z $volume_name ] ; then
+    $volume_name="$remote_path"
+  fi
+  do_mount
+else
+  do_unmount
+fi
