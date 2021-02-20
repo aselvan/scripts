@@ -23,7 +23,8 @@ pi_is_home() {
   
   # TODO: copy the tesla dashcam data here... (need to figure out how often we do this)
 
-  # do any other stuff we want here.
+  # update our git to get all the code with new release so pi is updated with newly released code
+  (cd /root/scripts; /usr/bin/git pull 2>&1 >> $log_file)
 }
 
 pi_is_not_home() {
