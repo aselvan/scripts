@@ -9,7 +9,7 @@
 # Note: copy this script to /root/scripts or other place refered in crontab path
 #
 # Author:  Arul Selvan
-# Version: Jul 4, 202
+# Version: Jul 4, 2020
 
 # google dns for validating connectivity
 gdns=8.8.8.8
@@ -71,14 +71,17 @@ my_ip=`dig -p443 +short myip.opendns.com @resolver1.opendns.com`
 pi_hostname=`hostname`
 timestamp=`date`
 
+# find location
+my_latlon=`curl -s ipinfo.io/loc`
+
 # post a message to the IFTTT
 echo "[INFO] sending message via IFTTT!" >> $log_file
 ifttt_endpoint="$ifttt_api/$IFTTT_KEY"
-curl -w "\n" -s -X POST \
-  -F "value1=$pi_hostname's public IP is '$my_ip'" \
-  -F "value2=$pi_hostname is/was powered on at $timestamp" \
-  $ifttt_endpoint >> $log_file 2>&1
 
+curl -w "\n" -s -X POST \
+  -H "Content-Type: application/json" \
+  -d "{\"value1\":\"$pi_hostname public IP is: $my_ip\", \"value2\":\"$pi_hostname is/was powered on at $timestamp\",\"value3\":\"$my_latlon\"}" \
+  $ifttt_endpoint >> $log_file 2>&1
 
 echo "[INFO] nothing more for now, exiting" >> $log_file
 
