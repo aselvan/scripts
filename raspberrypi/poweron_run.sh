@@ -72,7 +72,8 @@ pi_hostname=`hostname`
 timestamp=`date`
 
 # find location
-my_latlon=`curl -s ipinfo.io/loc`
+my_latlon="https://www.google.com/maps?q=`curl -s ipinfo.io/loc`"
+echo "[INFO] current $pi_hostname location: $my_latlon" >> $log_file
 
 # post a message to the IFTTT
 echo "[INFO] sending message via IFTTT!" >> $log_file
