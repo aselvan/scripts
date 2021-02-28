@@ -13,10 +13,10 @@
 
 os_name=`uname -s`
 my_name=`basename $0`
-options="s:vqh"
+options="s:vlh"
 
-info=1
-operation=""
+do_log=0
+operation="view"
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 encFileBaseName="kanakku.txt"
 search_string=""
@@ -30,8 +30,8 @@ usage() {
 Usage: $my_name [options]
   
   -s <string> ==> decrypt and regex search for 'string' in the content
-  -v          ==> decrypt and open the file w/ vi (view)
-  -q          ==> no information output to console.
+  -v          ==> decrypt and open the file w/ vi (view) [default view]
+  -l          ==> log [default: no logging].
 
   example: $my_name -s foobar
 
@@ -42,7 +42,7 @@ EOF
 log() {
   local msg=$1
 
-  if [ $info -eq 0 ] ; then
+  if [ $do_log -eq 0 ] ; then
     return
   fi
   echo $msg |tee -a $log_file
@@ -116,8 +116,8 @@ while getopts $options opt; do
     v)
       operation="view"
       ;;
-    q)
-      info=0
+    l)
+      do_log=1
       ;;
     ?)
       usage
@@ -132,10 +132,6 @@ echo "" > $log_file
 log "[INFO] `date`: $my_name starting ..."
 do_check
 
-if [ -z $operation ] ; then
-  log "[INFO] missing arguments!"
-  usage
-fi
 
 if [ $operation = "view" ] ; then
   do_view
