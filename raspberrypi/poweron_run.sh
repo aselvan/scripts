@@ -20,6 +20,24 @@ home_public_ip=`dig +short selvans.net @$gdns`
 ifttt_event_name="pizero"
 ifttt_api="https://maker.ifttt.com/trigger/$ifttt_event_name/with/key"
 ssh_port=22
+publish_ip_url_file="/root/.publish_ip_url"
+
+publish_ip() {
+  # get publish_ip_url; NOTE: URL should take host & ip as query parameter
+  if [ ! -f $publish_ip_url_file ] ; then
+    echo "[WARN] no publish IP url provided, skiping." >> $log_file
+    return
+  else
+    publish_ip_url=`cat $publish_ip_url_file`
+  fi
+
+  echo "[INFO] publish our IP using $publish_ip_url" >> $log_file
+
+  my_ip=`dig -p443 +short myip.opendns.com @resolver1.opendns.com`
+  url="$publish_ip_url?host=$pi_hostname&ip=$my_ip"
+  echo "[INFO] Publishing to: $url" >> $log_file
+  curl -w "\n" -s $url >> $log_file 2>&1
+}
 
 #  ---------- main ---------------
 echo "[INFO] `date`: $my_name starting..." >> $log_file
@@ -83,6 +101,9 @@ curl -w "\n" -s -X POST \
   -H "Content-Type: application/json" \
   -d "{\"value1\":\"$pi_hostname public IP is: $my_ip\", \"value2\":\"$pi_hostname is/was powered on at $timestamp\",\"value3\":\"$my_latlon\"}" \
   $ifttt_endpoint >> $log_file 2>&1
+
+# publish our public IP
+publish_ip
 
 echo "[INFO] nothing more for now, exiting" >> $log_file
 
