@@ -1,4 +1,4 @@
-#/bin/sh
+#!/bin/bash
 #
 # mount_ssh.sh --- convenient wrapper to mount remote directory via sshfs
 #
