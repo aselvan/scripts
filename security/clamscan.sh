@@ -73,7 +73,7 @@ usage() {
 scan_single_file() {
   echo "[INFO] scanning file: '$single_file' ... " | tee -a $log_file
   if [ -f "$single_file" ]; then
-    $clamscan_bin $verbose_opt $clamscan_opts $single_file >> $log_file
+    $clamscan_bin $verbose_opt $clamscan_opts "$single_file" >> $log_file
     exit_code=$?
     echo "[INFO] scan results..." | tee -a $log_file
     cat $virus_report
