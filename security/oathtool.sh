@@ -3,7 +3,7 @@
 #
 # oathtool.sh --- simple wrapper over oathtool to keep the secret keys in encrypted form
 #
-# The script uses the encrupted secret keys and generates TOTP passwords and directly 
+# The script uses the encrypted secret keys and generates TOTP passwords and directly 
 # copies to the paste buffer continually as the key changes every 30 sec allowing you
 # to simply Ctrl+v (linux) or Command+ (macOS) to the browser or other apps that needs
 # the OTP code. No need to grab the phone, and get the code and type it in.
@@ -16,8 +16,10 @@
 # Version: Feb 8, 2020 
 #
 
-# oathtool args
+# default oathtool option
 oathtool_opt="--totp -b"
+
+# commandline options
 options="a:k:t:h"
 secret=""
 file=""
@@ -26,6 +28,7 @@ op_type=""
 secret_file_dir="$HOME/.oathtool"
 os_name=`uname -s`
 name=`basename $0`
+base32_error="base32 decoding failed"
 
 # encyption type/tool (default is gpg w/ default key)
 enc_type=gpg
@@ -112,11 +115,22 @@ get() {
 
   # go in a loop and continue to copy the key to paste buffer until 120 sec  
   echo "[INFO] OTP is continually copied to paste buffer for 2 minutes, Ctrl+c to quit"
+
+  # check once to determine if the key is hex or base32
+  # Note: Symentac VIPAccess key is hex and google & others are base32 encoded
+  oathtool_err=`oathtool $oathtool_opt $decrypted_key 2>&1 >/dev/null`
+  if [[ "$oathtool_err" == *"$base32_error"* ]] ; then
+    echo "[INFO] secret key is not base32 encoded, adjusting oathtool option."
+    oathtool_opt="--totp"
+  fi
+
+  # loop for 2 min and generate code and copy to paste buffer.
   for (( i=0; i<120; i++)) do
     echo -n "."
-    oathtool --totp -b $decrypted_key | tr -d '\n' | $pbc
+    oathtool $oathtool_opt $decrypted_key | tr -d '\n' | $pbc
     sleep 1
   done
+  
   echo ""
   echo "[INFO] $name completed."
 }
