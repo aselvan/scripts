@@ -2,12 +2,21 @@
 #
 # symantec_vipaccess_key.sh --- extract the secret key from Symantec VIPAccess app
 #
+# Description:
+# -----------
 # This script extracts the secret keys (and ID) from Symantec VIPAccess application 
 # on MacOS so it can be used in Google Authenticator, or oathtool or any 2F TOTP 
-# generators. No need for multiple apps for 2F
+# generators, no need for multiple apps for 2F needs on your phone or desktop.
 #
-# See: oathtool.sh in this directory which generates OTP using secret keys stored
-# in encrypted form. The key obtained by this script can be used with that script.
+# How to use:
+# ----------
+# The extracted secret key can be added to Google Authenticator app by typeing in 
+# the key or create a QR code as shown below to scan it in Google Authenticator
+#
+# qrencode -o key.png "otpauth://totp/mywebsite:mykey?secret=<outputofthisscript>issuer=SymentacVIP"
+#
+# Also, you can use this extracted key with oathtool.sh found in this directory
+# to generate your TOTP on MacOS, or Linux (see oathtool.sh)
 #
 # Ref: https://github.com/ykhemani/vipaccess
 # Ref: https://github.com/p120ph37
