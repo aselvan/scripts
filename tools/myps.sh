@@ -37,11 +37,22 @@ do_format_size() {
     if [ $v -gt 1024 ] ; then
       v="$(((v+512)/1024))"
       echo "$v GB"
+    else 
+      echo "$v MB"
     fi
-    echo "$v MB"
   else
     echo "$v KB"
   fi
+}
+
+do_format_cmd() {
+  local c=$1
+  if [[ $c = -* ]] ; then
+    c=$(echo -n $c | sed 's/^-//')
+  fi
+
+  c=`basename "$c"`
+  echo $c
 }
 
 do_cpu() {
@@ -50,10 +61,10 @@ do_cpu() {
     ps_opt="-w -r -eo pid=,%cpu=,comm="
   fi
 
-  printf "%s\t %s\t\t %s\n" PID %CPU COMMAND
+  printf "%s\t %s\t %s\n" PID %CPU COMMAND
   while read -r pid pcpu cmd; do
-    cmd=`basename "$cmd"`
-    printf "%s\t %s\t %s\t %s\n" "$pid" "$pcpu" "$rss" "$cmd"
+    cmd=`do_format_cmd "$cmd"`
+    printf "%s\t %s\t %s\t %s\n" "$pid" "$pcpu" "$cmd"
   done < <(ps $ps_opt | head -n$count)
   exit
 }
@@ -64,18 +75,17 @@ do_memory() {
     ps_opt="-w -m -eo pid=,%mem=,rss=,vsz=,comm="
   fi
 
-  printf "%s\t %s\t %s\t %s\t\t%s\n" PID %MEM RSS VSZ COMMAND
+  printf "%s\t %s\t %s\t %s\t%s\n" PID %MEM RSS VSZ COMMAND
   while read -r pid mem rss vsz cmd; do
-    cmd=`basename "$cmd"`
+    cmd=`do_format_cmd "$cmd"`
     rss=`do_format_size $rss`
-    #vsz=`do_format_size $vsz`
+    vsz=`do_format_size $vsz`
     printf "%s\t %s\t %s\t %s\t %s\n" "$pid" "$mem" "$rss" "$vsz" "$cmd"
   done < <(ps $ps_opt | head -n$count)
   exit
 }
 
 # ---------------- main entry --------------------
-
 # commandline parse
 while getopts $options opt; do
   case $opt in
