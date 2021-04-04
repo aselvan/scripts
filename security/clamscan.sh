@@ -202,9 +202,6 @@ update_all() {
 
 # first, clamav path for target OS, write log header etc.
 get_clamav_path
-echo "VIRUS SCAN log" > $log_file
-echo "---------------" >> $log_file
-echo "" >> $log_file
 if [ -f  $virus_report ]; then
   rm -f $virus_report
 fi
@@ -235,6 +232,7 @@ while getopts "$options_list" opt ; do
       days_since=$OPTARG
       ;;
     u)
+      echo "[INFO] updating virus definitions ..." > $log_file
       update_all
       exit $exit_code
       ;;
@@ -244,7 +242,8 @@ while getopts "$options_list" opt ; do
   esac
 done
 
-
+echo "[INFO] -------------------- VIRUS SCAN log starting --------------------" > $log_file
+echo "" >> $log_file
 echo "[INFO] Scan start:   `date`" >> $log_file
 echo "[INFO] Scan host:    $my_host" >> $log_file
 if [ ! -z $mail_to ] ; then
@@ -291,7 +290,9 @@ echo "[INFO] return code: $exit_code" >> $log_file
 echo "[INFO] Following is virus report for: $scan_path" >> $log_file
 echo "" >> $log_file
 cat $virus_report >> $log_file
-echo "[INFO] --- End of virus scan log --- " >> $log_file
+echo "" >> $log_file
+echo "[INFO] -------------------- VIRUS SCAN log end --------------------" >> $log_file
+
 
 # send e-mail if address provided.
 if [ ! -z $mail_to ] ; then
