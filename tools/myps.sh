@@ -70,7 +70,7 @@ do_cpu() {
 }
 
 do_memory() {
-  local ps_opt="--sort -pmem -eo pid=,pmem=,rss=,vsz=,comm="
+  local ps_opt="--sort -rss -eo pid=,pmem=,rss=,vsz=,comm="
   if [ $os_name = "Darwin" ] ; then
     ps_opt="-w -m -eo pid=,%mem=,rss=,vsz=,comm="
   fi
