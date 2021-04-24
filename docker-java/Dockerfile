@@ -3,11 +3,16 @@
 #
 # This builds a compact docker image of openjdk with selective java components
 #
-# build the image w/ the following command.
-#   docker build --rm -t java .
+# Build:
+#   docker build --rm -t docker.pkg.github.com/aselvan/docker/openjdk:16 .
 #
-# test the java vm w/ following command after build (it should print VM flags and version)
-#   docker run --rm -it java java -XX:+PrintFlagsFinal -version
+# Push:
+#   cat ~/.git_docker_token |docker login docker.pkg.github.com -u aselvan --password-stdin
+#   docker push docker.pkg.github.com/aselvan/docker/openjdk:16
+#
+# Test:
+#   test the java vm w/ following command after build (it should print VM flags and version)
+#   docker run --rm -it docker.pkg.github.com/aselvan/docker/openjdk:16 java -XX:+PrintFlagsFinal -version
 #
 # Author:  Arul Selvan
 # Version: Aug 16, 2020
@@ -15,7 +20,7 @@
 
 # stage1:
 # base image w/ full JDK
-FROM openjdk:16-jdk-alpine3.12 AS jdkimage
+FROM openjdk:16-jdk-alpine3.13 AS jdkimage
 
 # select a small subset of jvm components needed.
 RUN $JAVA_HOME/bin/jlink \
@@ -28,8 +33,14 @@ RUN $JAVA_HOME/bin/jlink \
 
 # stage2:
 # base image w/ out JDK
-FROM alpine:3.12
-MAINTAINER Arul Selvan <github@selvans.net>
+FROM alpine:3.13
+LABEL net.selvans.image.author="Arul Selvan <github@selvans.net>"
+LABEL net.selvans.image.maintainer="Arul Selvan <github@selvans.net>"
+LABEL net.selvans.image.description="compact docker image of openjdk16 with selective java components"
+LABEL net.selvans.image.url="https://selvans.net/"
+LABEL net.selvans.image.version="1.1"
+LABEL net.selvans.image.openjdk.version="16"
+
 COPY --from=jdkimage /opt/jdk-minimal /opt/java
 ENV JAVA_HOME=/opt/java
 ENV PATH="/opt/java/bin:$PATH"
