@@ -13,9 +13,6 @@
 
 - #### /docker-jitsi
   Run your own Jitsi (opensource equivelent of google meet, zoom etc) audio/video conf with dockerized images.
-
-- #### /docker-kalilinux
-  Convenient wrapper script to run kali linux docker image.
   
 - #### /firewall
   PF (packet filter) based firewall script to tighten your macOS (works on Yosemite onwards) with your own firewall. Very simple to setup by editing the /etc/pf.conf file (read the pf_rules_simple.conf)
