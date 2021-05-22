@@ -50,7 +50,7 @@
 # v3.0 Jan 18, 2020 -- reworked by month, weeks, days to do entire period
 # v3.1 Jan 18, 2020 -- updated the usage
 # v3.2 Oct 24, 2020 -- implemented to export x number of days data to stdout
-#
+# v3.3 May 22, 2021 -- minor change to print version at start
 ##############################################################################
 use strict;
 use warnings;
@@ -60,7 +60,7 @@ use File::Basename;
 use DBI;
 
 # version
-my $version_number="v3.2 date: 10/24/2020";
+my $version_string="libre_app.pl v3.3; build 10/24/2020; (c) 2018-2021 selvans.net ";
 my $script_name = basename($0);
 
 # commandline parsing
@@ -100,7 +100,7 @@ sub usage {
 }
 
 sub print_version {
-  print "$script_name $version_number\n";
+  print "$version_string\n";
   exit 0;
 }
 
@@ -397,7 +397,7 @@ sub export_data {
 }
 
 sub export_days_data {
-  print "# Libre Freestyle CSV data export. $script_name $version_number\n";
+  print "# Libre Freestyle CSV data export. $version_string\n";
   print "# Exported on: $today\n";
   print "Date,             BG\n";
 
@@ -636,7 +636,7 @@ sub open_db {
   }
   
   # open db
-  print "Opening DB: $db_file\n";
+  if ($debug == 1) { print "[DEBUG] Opening DB: $db_file\n"; }        
   $db_handle = DBI->connect("dbi:SQLite:dbname=$db_file", $db_user, $db_password, {
     PrintError       => 0,
     RaiseError       => 0,
@@ -662,6 +662,8 @@ GetOptions( "import=s"  => \$fname,
             "version"       => \&print_version,
             "help"          => \&usage)
 or die ("Error in command line arguments: \n");
+
+print "$version_string\n";
 
 # open the DB
 open_db();
