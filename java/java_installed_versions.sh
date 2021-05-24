@@ -14,7 +14,7 @@ std_java_location="/usr/lib/jvm/"
 echo "[INFO] checking java versions on `hostname` ..." | tee $log_file
 
 # NOTE: This is not a fool proof way as someone could have installed java anywhere like /opt/myjava
-java_dirs=`find $std_java_location -maxdepth 1 -type d |tail -n2`
+java_dirs=`find $std_java_location -maxdepth 1 -type d |awk 'NR >1 {print $1; }'`
 
 for jdir in $java_dirs ; do
   if [ -x $jdir/bin/java ] ; then
