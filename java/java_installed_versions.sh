@@ -11,6 +11,11 @@ my_name=`basename $0`
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 std_java_location="/usr/lib/jvm/"
 
+if [ ! -d $std_java_location ]; then
+  echo "[INFO] `hostname` doesn't appear to have java installed ... exiting"
+  exit 1
+fi
+
 echo "[INFO] checking java versions on `hostname` ..." | tee $log_file
 
 # NOTE: This is not a fool proof way as someone could have installed java anywhere like /opt/myjava
