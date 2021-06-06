@@ -9,8 +9,8 @@
 # the OTP code. No need to grab the phone, and get the code and type it in.
 #
 # preq: oath-toolkit, openssl, tr (should be available on base install)
-#   Mac:   brew install oath-toolkit openssl
-#   Linux: apt-get install oathtool xsel
+#   Mac:   brew install oath-toolkit openssl qrencode zbar
+#   Linux: apt-get install oathtool xsel qrdecode zbar-tools
 #
 # Author:  Arul Selvan
 # Version: Feb 8, 2020 
@@ -50,8 +50,15 @@ USAGE: $name -k <name> | -a <secret> -k <name> [-t <type>]
   -a <secret> content of secret key to be encrypted and stored by the <name> under $secret_file_dir
   -t <type>   encryption tool or type, values can be gpg or openssl [default: gpg]
 
-  example: $name -k gmail  
-  example: $name -a 'sfwedfv835sdfjf453' -k gmail [-t openssl]
+  Examples:
+  # generate TOTP code and copy to paste buffer for the secret under the key 'gmail'
+  $name -k gmail
+  
+  # adds the secret under the key 'gmail'
+  $name -k gmail -a 'sfwedfv835sdfjf453' [-t openssl]
+
+  # extract the secret from my_gmail_qrcode_image.png and adds to keystore.
+  $name -k gmail -a \$(zbarimg -q my_gmail_qrcode_image.png |awk -F':' '{print $2;}')
 
 EOF
   exit
@@ -164,11 +171,6 @@ while getopts $options opt; do
       ;;
     esac
 done
-
-if [[ -z $file && -z $secret ]]; then
-  echo "[ERROR] missing arguments!"
-  usage
-fi
 
 # install ctrl+c handler
 trap ctrl_c INT
