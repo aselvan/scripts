@@ -19,7 +19,7 @@ usage() {
 Usage: $my_name [options]
   
   -m         ==> show top $count process consuming memory
-  -c         ==> show top $count process consuming cpu
+  -c         ==> show top $count process consuming cpu [default w/ no args]
   -t <count> ==> set the number of process to list [must be first arg]
   -h         ==> help
 
@@ -107,4 +107,5 @@ while getopts $options opt; do
     esac
 done
 
-usage
+# by default w/ no arg, do_cpu which is typical thing one would like to do anyways.
+do_cpu
