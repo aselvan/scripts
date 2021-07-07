@@ -36,6 +36,9 @@ attempt_wait=30
 ip_wait=30
 options_list="i:h"
 my_name=`basename $0`
+airport_bin="/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport"
+link_local="169.254"
+default_ssid="AA-Inflight"
 
 usage() {
   echo "Usage: $my_name [-e interface] [-h]"
@@ -60,6 +63,7 @@ restore_mac() {
   echo "[INFO] restoring mac to $my_mac ..."
 
   if [ $os_name = "Darwin" ]; then
+    $airport_bin $iface -z
     ifconfig $iface ether $my_mac
   else
     ifconfig $iface hw ether $my_mac
@@ -92,24 +96,38 @@ elapsed_time() {
   exit
 }
 
+
 check_mac() {
   mac_addr=$1
 
-  echo "[INFO] taking iface down ..."  
-  ifconfig $iface down  
-  sleep 1
   echo "[INFO] changing mac to $mac_addr ..."
   if [ $os_name = "Darwin" ]; then  
+    echo "[INFO] disabling interface to switch macaddr ..."  
+    $airport_bin $iface -z
     ifconfig $iface ether $mac_addr
   else
     ifconfig $iface hw ether $my_mac    
   fi
   sleep 2
+  # the disassociate above does not autoconnect, we are trying manual
+	wifi_access_point=`airport -s |awk 'NR > 1 {print $1;}'|sort|uniq|head -n1`
+  networksetup -setairportnetwork $iface $wifi_access_point
 
-  # take the interface down and up to ask for dhcp
-  echo "[INFO] taking iface up ..."
-  ifconfig $iface up
-  sleep 2
+  # enable interface (hopefully mac changed) and ask for dhcp
+  echo "[INFO] enable/disable interface to connect again to access point or captive portal ..."
+  # wait till it becomes active 
+  echo "[INFO] waiting for $iface to be active ..."
+  for (( n_try=0; n_try<6; n_try++ )) {
+    ifconfig $iface down
+    ifconfig $iface up
+    # make sure interface is active
+    local iface_status=`ifconfig $iface | grep status|awk -F: '{print $2}'`
+    if [[ $iface_status = *"active"* ]] ; then
+      break
+    fi
+    sleep 2
+  }
+
   /bin/echo -n "[INFO] waiting for new IP assignment ." | /usr/bin/tee -a $log_file 
   for (( i = 0; i<$ip_wait; i++ )) do
     sleep 1
@@ -128,7 +146,7 @@ check_mac() {
     echo "[SUCCESS] got connectivity with mac address: $mac_addr]" | /usr/bin/tee -a $log_file
     elapsed_time
   else
-    echo "[ERROR] connctivity failed for $mac_addr" | /usr/bin/tee -a $log_file
+    echo "[ERROR] connctivity failed for $mac_addr; moving on to next address" | /usr/bin/tee -a $log_file
   fi
   return
 }
@@ -139,6 +157,21 @@ search_free_wifi() {
   #my_net=`ipconfig getifaddr $iface|awk -F. '{print $1"."$2"."$3".0/24"; }'`
   my_net=`ip addr show $iface | grep 'inet ' | awk '{print $2}' |cut -f1 -d'/'|awk -F. '{print $1"."$2"."$3".0/24";}'`
 
+  # ensure we are not on link-local i.e. not connected to anywhere
+  if [[ *"$my_net"* = *"$link_local"* ]] ; then
+    echo "[INFO] you are on link-local ($my_net) i.e. not connected to any network... exiting"
+    exit 3
+  fi
+
+  # make sure interface is active
+  local iface_status=`ifconfig $iface | grep status|awk -F: '{print $2}'`
+  
+  if [[ $iface_status = *"inactive"* ]] ; then
+    echo "[WARN] interface $iface is not active, connect to wifi access point and try again... exiting"
+    exit 2
+  fi
+  
+  # collect mac on the network 
   echo "[INFO] scanning net $my_net"
   nmap --host-timeout 3 -T5 $my_net >/dev/null 2>&1
 
