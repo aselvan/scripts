@@ -20,6 +20,9 @@
 my_mac_addr_file="$HOME/.my_mac_address"
 iface="en0"
 options_list="i:m:lsrh"
+airport_bin="/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport"
+wifi_access_point="AA-Inflight"
+
 
 check_root() {
   if [ `id -u` -ne 0 ] ; then
@@ -35,7 +38,11 @@ restore_mac() {
   fi
   my_mac=`cat $my_mac_addr_file`
   echo "[INFO] restoring mac to $my_mac on interface '$iface' ..."
+  $airport_bin $iface -z
   ifconfig $iface ether $my_mac
+  networksetup -setairportnetwork $iface $wifi_access_point
+  ifconfig $iface down
+  ifconfig $iface up
   exit
 }
 

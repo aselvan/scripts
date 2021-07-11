@@ -38,7 +38,7 @@ options_list="i:h"
 my_name=`basename $0`
 airport_bin="/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport"
 link_local="169.254"
-default_ssid="AA-Inflight"
+wifi_access_point="AA-Inflight"
 
 usage() {
   echo "Usage: $my_name [-e interface] [-h]"
@@ -110,7 +110,8 @@ check_mac() {
   fi
   sleep 2
   # the disassociate above does not autoconnect, we are trying manual
-	wifi_access_point=`airport -s |awk 'NR > 1 {print $1;}'|sort|uniq|head -n1`
+	#wifi_access_point=`airport -s |awk 'NR > 1 {print $1;}'|sort|uniq|head -n1`
+  echo "[INFO]  networksetup -setairportnetwork $iface $wifi_access_point ..." | /usr/bin/tee -a $log_file
   networksetup -setairportnetwork $iface $wifi_access_point
 
   # enable interface (hopefully mac changed) and ask for dhcp
@@ -143,7 +144,7 @@ check_mac() {
   echo "[INFO] checking for connectivity ..."
   ping_check
   if [ $? -eq 0 ] ; then
-    echo "[SUCCESS] got connectivity with mac address: $mac_addr]" | /usr/bin/tee -a $log_file
+    echo "[SUCCESS] got connectivity with mac address: $mac_addr" | /usr/bin/tee -a $log_file
     elapsed_time
   else
     echo "[ERROR] connctivity failed for $mac_addr; moving on to next address" | /usr/bin/tee -a $log_file
