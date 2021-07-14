@@ -34,15 +34,16 @@ os_name=`uname -s`
 SECONDS=0
 attempt_wait=30
 ip_wait=30
-options_list="i:h"
+options_list="i:a:h"
 my_name=`basename $0`
 airport_bin="/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport"
 link_local="169.254"
-wifi_access_point="AA-Inflight"
+ap_ssid="AA-Inflight"
 
 usage() {
-  echo "Usage: $my_name [-e interface] [-h]"
+  echo "Usage: $my_name [-e <interface>] [-h] [-a <AP ssid>]"
   echo "  -e <interface> is the network interface default: en0"
+  echo "  -a <AP ssid> connnect to the wifi ssid provided. default: $wifi_access_point"
   echo "  -h usage/help"
   exit
 }
@@ -65,6 +66,7 @@ restore_mac() {
   if [ $os_name = "Darwin" ]; then
     $airport_bin $iface -z
     ifconfig $iface ether $my_mac
+    networksetup -setairportnetwork $iface $ap_ssid    
   else
     ifconfig $iface hw ether $my_mac
   fi
@@ -83,19 +85,11 @@ save_mac() {
   fi
 }
 
-
-
-usage() {
-  echo "Usage: $0 [interface]"
-  exit
-}
-
 elapsed_time() {
   duration=$SECONDS
   echo "[INFO] Total elapsed time is $(($duration / 60)) minutes and $(($duration % 60)) seconds"
   exit
 }
-
 
 check_mac() {
   mac_addr=$1
@@ -110,9 +104,9 @@ check_mac() {
   fi
   sleep 2
   # the disassociate above does not autoconnect, we are trying manual
-	#wifi_access_point=`airport -s |awk 'NR > 1 {print $1;}'|sort|uniq|head -n1`
-  echo "[INFO]  networksetup -setairportnetwork $iface $wifi_access_point ..." | /usr/bin/tee -a $log_file
-  networksetup -setairportnetwork $iface $wifi_access_point
+	#ap_ssid=`airport -s |awk 'NR > 1 {print $1;}'|sort|uniq|head -n1`
+  echo "[INFO]  networksetup -setairportnetwork $iface $ap_ssid ..." | /usr/bin/tee -a $log_file
+  networksetup -setairportnetwork $iface $ap_ssid
 
   # enable interface (hopefully mac changed) and ask for dhcp
   echo "[INFO] enable/disable interface to connect again to access point or captive portal ..."
@@ -197,15 +191,13 @@ search_free_wifi() {
 }
 
 #  ------------ main -----------------
-check_root
-
-echo "[INFO] $my_name starting ..." > $log_file
-echo "[INFO] Interface: $iface " | /usr/bin/tee -a $log_file
-
 while getopts "$options_list" opt; do
   case $opt in
     i)
       iface=$OPTARG
+      ;;
+    a)
+      ap_ssid=$OPTARG
       ;;
     h)
       usage
@@ -215,6 +207,11 @@ while getopts "$options_list" opt; do
      ;;
    esac
 done
+
+check_root
+echo "[INFO] $my_name starting ..." > $log_file
+echo "[INFO] Interface: $iface " | /usr/bin/tee -a $log_file
+echo "[INFO] Using access point: $ap_ssid " | /usr/bin/tee -a $log_file
 
 # before we do anything check if we have connectivity, if so exit. This 
 # allows this script to be added to recurring cronjob
@@ -228,6 +225,9 @@ fi
 
 # save our mac address first
 save_mac
+
+# start w/ a clean state w/ our own mac and chosen ap
+restore_mac
 
 # make 3 trys, if we don't get any just exit.
 for (( attempt=0; attempt<3; attempt++ )) {
