@@ -17,7 +17,7 @@ log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 my_email=""
 certbot_args="--agree-tos --manual-public-ip-logging-ok --preferred-challenges=dns"
 certbot_bin="/usr/bin/certbot"
-domain_list="mypassword.us selvans.net"
+domain_list="selvans.net mypassword.us"
 
 usage() {
   echo "Usage: $my_name [options]"
