@@ -109,7 +109,8 @@ dl=$(cat $speedtest_out|awk '/Download:/ {print $2;}')
 ul=$(cat $speedtest_out|awk '/Upload:/ {print $2;}')
 ms=$(cat $speedtest_out|awk '/Ping:/ {print $2;}')
 
-speedtest_out="measured bandwidth: $dl Mbps (download) ; $ul Mbps (upload) ; $ms ms (ping)"
+ts=$(date +"%D %H:%M %p")
+speedtest_out="[$ts] measured bandwidth: $dl Mbps (download) ; $ul Mbps (upload) ; $ms ms (ping)"
 echo "[INFO] $speedtest_out" | /usr/bin/tee -a $run_logfile
 
 if [[ -z $dl || -z $ul ]] ; then
