@@ -30,7 +30,7 @@ line_count=0
 total=0
 average=0
 speedtest_bin="/usr/bin/speedtest-cli"
-speedtest_opt="--simple --timeout 30"
+speedtest_opt="--secure --simple --timeout 30"
 
 # email details
 email_subject="SpeedTest low speed detected"
@@ -72,7 +72,8 @@ while getopts "$options_list" opt; do
    esac
 done
 
-echo "[INFO] $my_name starting ... " |/usr/bin/tee $run_logfile
+ts=$(date +"%D %H:%M %p")
+echo "[INFO] $my_name starting at [$ts] ... " |/usr/bin/tee $run_logfile
 if [ -f $speedtest_out ] ; then
   rm $speedtest_out
 fi
@@ -108,8 +109,7 @@ dl=$(cat $speedtest_out|awk '/Download:/ {print $2;}')
 ul=$(cat $speedtest_out|awk '/Upload:/ {print $2;}')
 ms=$(cat $speedtest_out|awk '/Ping:/ {print $2;}')
 
-ts=$(date +"%D %H:%M %p")
-speedtest_out="[$ts] measured bandwidth: $dl Mbps (download) ; $ul Mbps (upload) ; $ms ms (ping)"
+speedtest_out="measured bandwidth: $dl Mbps (download) ; $ul Mbps (upload) ; $ms ms (ping)"
 echo "[INFO] $speedtest_out" | /usr/bin/tee -a $run_logfile
 
 if [[ -z $dl || -z $ul ]] ; then
