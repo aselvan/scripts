@@ -6,7 +6,7 @@
 # Version: May 17, 2020
 #
 
-log_dir="${HOME}/tmp/logs"
+log_dir="${HOME}/tmp"
 log_file="${log_dir}/libre_view_import.log"
 libre_app="./libre_app.pl"
 libre_export_file="libre_data_export.csv"
