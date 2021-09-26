@@ -61,7 +61,7 @@ os_name=`uname -s`
 sleep_time=30
 
 usage() {
-  echo "Usage: $my_name <id|state|wakeup|charge|climate|drive|honk|start|sentry|lock|unlock|location|update|log|light}>"
+  echo "Usage: $my_name <id|state|wakeup|charge|climate|drive|honk|start|sentry|lock|unlock|location|update|log|light|data}>"
   echo ""
   exit 0
 }
@@ -95,7 +95,7 @@ check_http_status() {
 }
 
 json_print() {
-  data=$1
+  local data=$1
   if [ -x $jq_bin ] ; then
     echo $data | $jq_bin
     if [ $? -ne 0 ] ; then
@@ -309,6 +309,9 @@ case $1 in
   unlock)
     execute "vehicles/$tesla_id/command/door_unlock" "POST" "on=true"
   ;;
+  data)
+    execute "vehicles/$tesla_id/vehicle_data" 
+  ;;
   location) "$@"
   ;;
   log)
@@ -320,4 +323,3 @@ case $1 in
   *) usage
   ;;
 esac
-
