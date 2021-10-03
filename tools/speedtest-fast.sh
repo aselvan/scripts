@@ -18,7 +18,7 @@ options_list="e:n:s:h"
 
 # For HTML file content (change as needed)
 title="selvans.net speed test results"
-desc="This file contains selvans.net speed test measured by speedtest-cli tool"
+desc="This file contains selvans.net speed test measured by netflix provided fast.com tool"
 sed_st="s/__TITLE__/$title/g;s/__DESC__/$desc/g"
 
 # location of www path, speedtest history file etc.
@@ -124,8 +124,8 @@ average=$(echo "$total / $nrun"|/usr/bin/bc)
 echo "[INFO] creating HTML file ($html_file) ..." |/usr/bin/tee -a $run_logfile
 cat $std_header| sed -e "$sed_st"  > $html_file
 echo "<body><pre>" >> $html_file
-echo "<h2>Speed Test: Measured with speedtest-cli tool</h2>" >> $html_file
-echo "<h3>$speedtest_bin $speedtest_opt</h3>" >> $html_file
+echo "<h2>Speed Test: Measured with Netflix provided fast.com testing tool</h2>" >> $html_file
+echo "<h3>$speedtest_bin </h3>" >> $html_file
 echo "<h3>Average of last $nrun runs: $average Mbps</h3>" >>$html_file
 tac $log_file  >> $html_file
 echo "</pre></body></html>" >> $html_file
