@@ -18,9 +18,9 @@ KEYS_HOME="$HOME/data/personal/keys"
 my_name=`basename $0`
 
 # add/change your remote location settings here.
-remote_host=aselvanrp
-remote_user=aselvan
-remote_path="/Users/aselvan/data/personal/encrypted"
+remote_host=trex
+remote_user=root
+remote_path="/root/kanakku"
 remote_scp_path="$remote_user@$remote_host:$remote_path"
 encFileName=kanakku.txt.enc
 encFileNameGpg=kanakku.txt.gpg
