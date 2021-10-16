@@ -24,7 +24,7 @@ sed_st="s/__TITLE__/$title/g;s/__DESC__/$desc/g"
 # location of www path, speedtest history file etc.
 home_dir=/root/speed_test
 www_root=/var/www
-speedtest_out=$home_dir/speed_test.log
+speedtest_outfile=$home_dir/speed_test.log
 log_file=$home_dir/speed_test.txt
 log_file_reverse=$home_dir/speed_test_reverse.txt
 html_file=$home_dir/speed_test.html
@@ -76,8 +76,8 @@ done
 
 ts=$(date +"%D %H:%M %p")
 echo "[INFO] $my_name starting at [$ts] ... " |/usr/bin/tee $run_logfile
-if [ -f $speedtest_out ] ; then
-  rm $speedtest_out
+if [ -f $speedtest_outfile ] ; then
+  rm $speedtest_outfile
 fi
 
 if [ ! -x $speedtest_bin ]; then
@@ -86,25 +86,23 @@ fi
 
 echo "[INFO] running $speedtest_bin ... " |/usr/bin/tee -a $run_logfile
 # run the test
-$speedtest_bin  > $speedtest_out 2>&1
+$speedtest_bin  > $speedtest_outfile 2>&1
 if [ $? -ne 0 ] ; then
-  echo "[WARN] non-zero exit running '$speedtest_bin', bailing out..." |/usr/bin/tee -a $run_logfile
+  echo "[ERROR] non-zero exit running '$speedtest_bin', bailing out..." |/usr/bin/tee -a $run_logfile
   exit 1
 fi
 
-echo "[INFO] parsing results ... " | /usr/bin/tee -a $run_logfile
-
+echo "[INFO] parsing results ..." | /usr/bin/tee -a $run_logfile
 # fast (go implementation by ddooo) writes a ticker with spinning graphic on console
 # we capture that to a file and use awk to get the last line which is the total download speed
-dl=$(cat $speedtest_out|awk -F'>' '{ print $2;}'|awk '{print $1;}')
+dl=$(cat $speedtest_outfile|awk -F'>' '{ print $2;}'|awk '{print $1;}')
+echo "[INFO] parsed download measure: '$dl' Mbps" | /usr/bin/tee -a $run_logfile
 
-speedtest_out="[$ts] measured bandwidth: $dl Mbps (download) ; N/A Mbps (upload) ; N/A ms (ping)"
-echo "[INFO] $speedtest_out" | /usr/bin/tee -a $run_logfile
-
+speedtest_output="[$ts] measured bandwidth: $dl Mbps (download) ; N/A Mbps (upload) ; N/A ms (ping)"
 if [ -z $dl ] ; then
   echo "[$ts] Unexpected output 0 " >> $log_file 
 else
-	echo $speedtest_out >> $log_file
+	echo $speedtest_output >> $log_file
 fi
 
 # calculate average for the last nrun 
@@ -135,7 +133,7 @@ mv $html_file ${www_root}/.
 # first, convert $dl to integer for comparison
 dl_int=$( printf "%.0f" $dl )
 if [[ $dl_int -le $low_speed && ! -z $email_address ]] ; then
-  echo "[INFO] low speed detected: the speed $dl_int Mbps is < $low_speed Mbps, so sending e-mail ..." | /usr/bin/tee -a $run_logfile
+  echo "[WARN] low speed detected: $dl_int Mbps is < $low_speed Mbps, so sending e-mail ..." | /usr/bin/tee -a $run_logfile
   cat $run_logfile | /usr/bin/mail -s "$email_subject" $email_address
 fi
 echo "[INFO] all done." |/usr/bin/tee -a $run_logfile
