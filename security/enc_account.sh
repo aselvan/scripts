@@ -27,8 +27,13 @@ encFileNameGpg=kanakku.txt.gpg
 encFileNameYubi=kanakku.txt.yubi
 plainFile=$1
 
+# receipient keys for PGP (arul,deepak...)
+arul_keyid=451A1B6C
+arul_work_keyid=F81609CB
+deepak_keyid=091CB3D0
+
 # gpg keys to encrypt with gpg.
-gpg_opt="-qe -r 451A1B6C -r F81609CB -o $encFileNameGpg"
+gpg_opt="-qe -r $arul_keyid -r $arul_work_keyid -r $deepak_keyid -o $encFileNameGpg"
 
 echo "[INFO] $my_name starting ... " | tee $log_file
 
