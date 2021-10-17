@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # gdrive_rsync.sh
 #   Wrapper script to backup (i.e. copy www/photos, www/video to gdrive) using google-drive-ocamlfuse 
@@ -15,7 +15,7 @@ options_list="e:h"
 
 # rsync options
 # note: -a option contains -l and -D so we use no-XXX to remove them as we don't need them
-rsync_opts="-aq --no-links --no-D --delete-after --inplace --exclude={'*.html','*.backup','*.m3u','*.sh','thumb','jdothumb','*.exe','*.EXE'}"
+rsync_opts="-aq --no-links --no-D --delete --inplace --exclude={*.html,*.htm,*.backup,*.m3u,*.sh,thumb,jdothumb,*.exe,*.EXE} --delete-excluded"
 
 # TODO: backup locations (change as needed)
 photos_src="/var/www/photos"
