@@ -15,7 +15,7 @@ options_list="e:h"
 
 # rsync options
 # note: -a option contains -l and -D so we use no-XXX to remove them as we don't need them
-rsync_opts="-aq --no-links --no-D --delete --inplace --exclude={'*.html','*.htm','*.backup','*.m3u','*.sh','thumb','jdothumb','*.exe','*.EXE'} --delete-excluded"
+rsync_opts="-aq --no-links --no-D --delete --inplace --exclude=*.html --exclude=*.htm --exclude=*.backup --exclude=*.m3u --exclude=*.sh --exclude=thumb --exclude=jdothumb --exclude=*.exe --exclude=*.EXE --delete-excluded"
 
 # TODO: backup locations (change as needed)
 photos_src="/var/www/photos"
