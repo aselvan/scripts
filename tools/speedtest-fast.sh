@@ -14,7 +14,7 @@
 
 my_name=`basename $0`
 run_logfile="/tmp/$(echo $my_name|cut -d. -f1).log"
-options_list="e:n:s:h"
+options_list="e:n:s:r:w:h"
 
 # For HTML file content (change as needed)
 title="selvans.net speed test results"
@@ -29,9 +29,10 @@ log_file=$home_dir/speed_test.txt
 log_file_reverse=$home_dir/speed_test_reverse.txt
 html_file=$home_dir/speed_test.html
 std_header=$www_root/std_header.html
-line_count=0
+line_count=1
 total=0
 average=0
+dl=""
 speedtest_bin="/snap/bin/fast"
 
 # email details
@@ -39,6 +40,8 @@ email_subject="SpeedTest low speed detected"
 email_address=""
 low_speed=50 # anything below 50Mbit considered low speed
 nrun=18
+retry_count=1
+retry_wait=60
 os_name=`uname -s`
 
 usage() {
@@ -46,7 +49,25 @@ usage() {
   echo "  -e <email_address> --- email address to send results"
   echo "  -n <number>        --- number of last runs to calculate average [default: $nrun]"
   echo "  -s <number>        --- speed in mbit below this number is assumed low speed [default: $low_speed]"
+  echo "  -r <number>        --- number of attempts in case fast.com is not responding [default: $retry_count]"
+  echo "  -w <number>        --- number of seconds to wait between attempts [default: $retry_wait]"
   exit 0
+}
+
+do_speedtest() {
+  local result=0
+  # run the test
+  echo "[INFO] running $speedtest_bin ... " |/usr/bin/tee -a $run_logfile
+  $speedtest_bin  > $speedtest_outfile 2>&1
+  if [ $? -ne 0 ] ; then
+    echo "[ERROR] non-zero exit running '$speedtest_bin', bailing out..." |/usr/bin/tee -a $run_logfile
+    exit 1
+  fi
+
+  echo "[INFO] parsing results ..." | /usr/bin/tee -a $run_logfile
+  # fast (go implementation by ddooo) writes a ticker with spinning graphic on console
+  # we capture that to a file and use awk to get the last line which is the total download speed
+  dl=$(cat $speedtest_outfile|awk -F'>' '{ print $2;}'|awk '{print $1;}')
 }
 
 # ------ main -------------
@@ -61,6 +82,12 @@ while getopts "$options_list" opt; do
       ;;
     s)
       low_speed=$OPTARG
+      ;;
+    r)
+      retry_count=$OPTARG
+      ;;
+    w)
+      retry_wait=$OPTARG
       ;;
     h)
       usage
@@ -84,20 +111,19 @@ if [ ! -x $speedtest_bin ]; then
   echo "[ERROR] required tool $speedtest_bin is missing!" | /usr/bin/tee -a $run_logfile
 fi
 
-echo "[INFO] running $speedtest_bin ... " |/usr/bin/tee -a $run_logfile
-# run the test
-$speedtest_bin  > $speedtest_outfile 2>&1
-if [ $? -ne 0 ] ; then
-  echo "[ERROR] non-zero exit running '$speedtest_bin', bailing out..." |/usr/bin/tee -a $run_logfile
-  exit 1
-fi
+# attempt $retry_count times
+for (( attempt=0; attempt<$retry_count; attempt++)) {
+  echo "[INFO] speed test attempt #$attempt ..." | /usr/bin/tee -a $run_logfile
+  do_speedtest
+  if [ -z $dl ]; then
+    echo "[INFO] sleeping $retry_wait seconds ..." | /usr/bin/tee -a $run_logfile
+    sleep $retry_wait
+  else
+    break
+  fi
+}
 
-echo "[INFO] parsing results ..." | /usr/bin/tee -a $run_logfile
-# fast (go implementation by ddooo) writes a ticker with spinning graphic on console
-# we capture that to a file and use awk to get the last line which is the total download speed
-dl=$(cat $speedtest_outfile|awk -F'>' '{ print $2;}'|awk '{print $1;}')
 echo "[INFO] parsed download measure: '$dl' Mbps" | /usr/bin/tee -a $run_logfile
-
 speedtest_output="[$ts] measured bandwidth: $dl Mbps (download) ; N/A Mbps (upload) ; N/A ms (ping)"
 if [ -z $dl ] ; then
   echo "[$ts] Unexpected output 0 " >> $log_file 
