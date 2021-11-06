@@ -115,7 +115,7 @@ fi
 for (( attempt=0; attempt<$retry_count; attempt++)) {
   echo "[INFO] speed test attempt #$attempt ..." | /usr/bin/tee -a $run_logfile
   do_speedtest
-  if [ -z $dl ]; then
+  if [[ -z $dl || "$dl" = "0" ]] ; then
     echo "[INFO] sleeping $retry_wait seconds ..." | /usr/bin/tee -a $run_logfile
     sleep $retry_wait
   else
