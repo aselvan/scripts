@@ -24,13 +24,16 @@ log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 key_home="${HOME}/data/personal/keys"
 keyservers="keys.gnupg.net keyserver.ubuntu.com keys.openpgp.org"
 keys="0x451A1B6C 0xF81609CB 0x6675D56A 0x0E2A2DE0 0x72A50CEF"
+key_kavitha="0xD022A025"
+key_deepak="0x091CB3D0"
+
 public_template="${key_home}/Arul_Selvan_GPG_public_"
 private_template="${key_home}/Arul_Selvan_GPG_private_"
 
 referesh() {
   echo "[INFO] Refreshing key servers..." | tee -a $log_file
   for ksrv in $keyservers; do
-    gpg --keyserver $ksrv --send-keys $keys 2>&1 | tee -a $log_file
+    gpg --keyserver $ksrv --send-keys $keys $key_kavitha $key_deepak 2>&1 | tee -a $log_file
   done
 }
 
@@ -44,12 +47,19 @@ backup() {
   #all
   #gpg -a --export > ${public_template}all.asc
   #gpg -a --export-secret-keys > ${private_template}all.asc
-
+  
+  # Backup Arul's keys
   for key in $keys; do
     echo "[INFO] exporting $key to file ${public_template}${key}.asc and ${private_template}${key}.asc" | tee -a $log_file
     gpg -a --export $key > ${public_template}${key}.asc
     gpg -a --export-secret-keys $key > ${private_template}${key}.asc
   done
+
+  # backup Deepak & Kavitha's
+  gpg -a --export $key_kavitha > ${key_home}/Kavitha_Selvan_GPG_public_${key_kavitha}.asc
+  gpg -a --export-secret-keys $key_kavitha > ${key_home}/Kavitha_Selvan_GPG_private_${key_kavitha}.asc
+  
+  gpg -a --export $key_deepak > ${key_home}/Deepak_Selvan_GPG_public_${key_deepak}.asc
 }
 
 usage() {
