@@ -127,8 +127,8 @@ check_mac() {
   for (( i = 0; i<$ip_wait; i++ )) do
     sleep 1
     /bin/echo -n . | /usr/bin/tee -a $log_file
-    #ip=`ipconfig getifaddr $iface`
-    ip=`ip addr show $iface | grep 'inet ' | awk '{print $2}' |cut -f1 -d'/'`
+    ip=`ipconfig getifaddr $iface`
+    #ip=`ip addr show $iface | grep 'inet ' | awk '{print $2}' |cut -f1 -d'/'`
     if [ ! -z "$ip" ] ; then
       break
     fi
@@ -149,8 +149,8 @@ check_mac() {
 search_free_wifi() {
   # do a nmap to collect macaddress in arp cache
   echo "[INFO] collecting arp cache ..."
-  #my_net=`ipconfig getifaddr $iface|awk -F. '{print $1"."$2"."$3".0/24"; }'`
-  my_net=`ip addr show $iface | grep 'inet ' | awk '{print $2}' |cut -f1 -d'/'|awk -F. '{print $1"."$2"."$3".0/24";}'`
+  my_net=`ipconfig getifaddr $iface|awk -F. '{print $1"."$2"."$3".0/24"; }'`
+  #my_net=`ip addr show $iface | grep 'inet ' | awk '{print $2}' |cut -f1 -d'/'|awk -F. '{print $1"."$2"."$3".0/24";}'`
 
   # ensure we are not on link-local i.e. not connected to anywhere
   if [[ *"$my_net"* = *"$link_local"* ]] ; then
@@ -217,7 +217,8 @@ echo "[INFO] Using access point: $ap_ssid " | /usr/bin/tee -a $log_file
 # allows this script to be added to recurring cronjob
 ping_check
 if [ $? -eq 0 ] ; then
-  ip=`ip addr show $iface | grep 'inet ' | awk '{print $2}' |cut -f1 -d'/'`
+  #ip=`ip addr show $iface | grep 'inet ' | awk '{print $2}' |cut -f1 -d'/'`
+  ip=`ipconfig getifaddr $iface`
   echo "[INFO] the interface '$iface' already has network connectivity with IP address '$ip'"
   echo "[INFO] nothing to do, so exiting..."
   exit
