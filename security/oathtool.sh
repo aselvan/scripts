@@ -29,6 +29,8 @@ secret_file_dir="$HOME/.oathtool"
 os_name=`uname -s`
 name=`basename $0`
 base32_error="base32 decoding failed"
+# how long to copy continually
+ttl=30
 
 # encyption type/tool (default is gpg w/ default key)
 enc_type=gpg
@@ -120,8 +122,8 @@ get() {
     exit
   fi
 
-  # go in a loop and continue to copy the key to paste buffer until 120 sec  
-  echo "[INFO] OTP is continually copied to paste buffer for 2 minutes, Ctrl+c to quit"
+  # go in a loop and continue to copy the key to paste buffer until $ttl sec  
+  echo "[INFO] OTP is continually copied to paste buffer for $ttl seconds, Ctrl+c to quit"
 
   # check once to determine if the key is hex or base32
   # Note: Symentac VIPAccess key is hex and google & others are base32 encoded
@@ -131,8 +133,8 @@ get() {
     oathtool_opt="--totp"
   fi
 
-  # loop for 2 min and generate code and copy to paste buffer.
-  for (( i=0; i<120; i++)) do
+  # loop for $ttl min and generate code and copy to paste buffer.
+  for (( i=0; i<$ttl; i++)) do
     echo -n "."
     oathtool $oathtool_opt $decrypted_key | tr -d '\n' | $pbc
     sleep 1
