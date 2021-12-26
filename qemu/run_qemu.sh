@@ -5,6 +5,8 @@
 # Author:  Arul Selvan
 # Version: Sep 4, 2020
 #
+my_name=`basename $0`
+log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 qemu_bin="qemu-system-x86_64"
 memory=4096
 cores=2
@@ -15,21 +17,22 @@ machine=pc-q35-2.10
 net="user"
 image_path="$HOME/VirtualBoxVMs/qemu"
 boot_image="$image_path/winblows.qcow2"
+host_dir_arg=""
+host_dir_path=""
 cpu="IvyBridge"
 vga=std
 additional_args=""
-options_list="m:c:i:a:wh"
-my_name=`basename $0`
-log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
+options_list="m:c:i:a:d:wh"
 
 
 usage() {
-  echo "Usage: $my_name [-m <memory> -c <count> -i <image> -a <args>-w -h]"
+  echo "Usage: $my_name [-m <memory> -c <count> -i <image> -a '<args>' -d <hostdir> -w -h]"
   echo "  -m <memory> size in MB to reserve for qemu. default is 4096"
   echo "  -c <count> count of cpu core to reserve for qemu. default is 2"
   echo "  -i <image> image name from $image_path ex: -i linux"
   echo "  -a <args> any additional qemu args to pass directly to $qemu_bin" 
   echo "  -w enable writing to base image. default is snapshot mode"
+  echo "  -d <hostdir> the host dir will be shared as a readonly disk in windows guest or /dev/sdb1 in linux guest"
   echo "  -h usage/help"
   exit
 }
@@ -54,6 +57,10 @@ while getopts "$options_list" opt; do
     w)
       snapshot=""
       ;;
+    d)
+      host_dir_path=${OPTARG}
+      host_dir_arg="-drive file=fat:ro:${host_dir_path}/,format=raw,media=disk"
+      ;;
     h)
       usage
       ;;
@@ -72,6 +79,10 @@ fi
 echo "[INFO] options: memory=$memory; cpu=$cores; snapshot=$snapshot additional_args=$additional_args ..."|tee -a $log_file
 echo "[INFO] options: image=$boot_image ..." | tee -a $log_file
 
+if [ ! -z $host_dir_path ] ; then
+  echo "[INFO] host directory ($host_dir_path) is shared as readonly drive to guest VM" | tee -a $log_file
+fi
+
 $qemu_bin \
   -usb -device usb-tablet \
   -device intel-hda -device hda-output \
@@ -82,7 +93,7 @@ $qemu_bin \
   -machine $machine \
   -accel hvf \
   -nic $net \
-  -hda $boot_image $snapshot $additional_args >> $log_file 2>&1
+  -hda $boot_image $snapshot $additional_args $host_dir_arg >> $log_file 2>&1
 
 if [ $? -ne 0 ] ; then
   echo "[ERROR] $qemu_bin failed... see log below" | tee -a $log_file
