@@ -20,7 +20,7 @@ options_list="u:d:e:h"
 # works with user login or elevated
 user=`who -m | awk '{print $1;}'`
 # note: case sensitive!
-domain_prefix="RRI"
+domain_prefix="ahs.int"
 
 # e-mail when e-mail address is provided
 email_addr=""
