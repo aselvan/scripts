@@ -24,7 +24,7 @@ exclude_files=".qcow2|.swf|.ova|.vmdk|.mp3|.mp4|.jpg|.jpeg|.JPG|.MTS|.jar|.pst|.
 pua_args="--detect-pua=yes --exclude-pua=PwTool --exclude-pua=NetTool --exclude-pua=P2P --exclude-pua=Tool"
 
 # other variables don't need to be changed
-options_list="uhvcp:m:f:l:d:"
+options_list="uhvcp:m:f:l:d:e:x:"
 my_name=`basename $0`
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 virus_report=/tmp/virus_report.log
@@ -55,7 +55,7 @@ subject="ClamAv virus scan report [Host: $my_host]"
 mail_to=""
 exit_code=0
 verbose_opt="--quiet"
-clamscan_opts="-r -i -o --max-filesize=$max_file_size $pua_args --log=$virus_report --exclude-dir=\"$exclude_dirs\" --exclude=\"$exclude_files\" $macos_false_positive --bytecode-unsigned --bytecode-timeout=120000"
+clamscan_opts="-r -i -o --max-filesize=$max_file_size $pua_args --log=$virus_report $macos_false_positive --bytecode-unsigned --bytecode-timeout=120000"
 
 usage() {
   echo "Usage: $my_name [options]"
@@ -66,6 +66,8 @@ usage() {
   echo "    -m <email_address> enable email and send scan results"
   echo "    -l <log_file_path> log file path, default=$log_file"
   echo "    -u update signature only (i.e. freshclam, urlhouse filter, pua setup etc) don't scan"
+  echo "    -e <file_list> pipe delimited list of files, extensions to exclude from scane example: \".mp3|.mp4|myfile\""
+  echo "    -x <dir_list> pipe delimited list of directories to exclude from scane example: \"Trash|.ssh\""
   echo "    -v enable verbose mode"
   exit
 }
@@ -231,6 +233,12 @@ while getopts "$options_list" opt ; do
     d)
       days_since=$OPTARG
       ;;
+    e)
+      exclude_files="$exclude_files|$OPTARG"
+      ;;
+    x)
+      exclude_dirs="$exclude_dirs|$OPTARG"
+      ;;
     u)
       echo "[INFO] updating virus definitions ..." > $log_file
       update_all
@@ -242,6 +250,9 @@ while getopts "$options_list" opt ; do
   esac
 done
 
+# add excludes (file/dir) default plus additional commandline passed to options
+clamscan_opts="$verbose_opt $clamscan_opts --exclude-dir=\"$exclude_dirs\" --exclude=\"$exclude_files\""
+
 echo "[INFO] -------------------- VIRUS SCAN log starting --------------------" > $log_file
 echo "" >> $log_file
 echo "[INFO] Scan start:   `date`" >> $log_file
@@ -252,7 +263,8 @@ fi
 echo "[INFO] Scan path:    $scan_path " >> $log_file
 echo "[INFO] Scan bin:     $clamscan_bin " >> $log_file
 echo "[INFO] Scan lib:     $clamav_lib_path " >> $log_file
-echo "[INFO] Scan options: $verbose_opt $clamscan_opts " >> $log_file
+echo "[INFO] Scan options: $clamscan_opts " >> $log_file
+
 
 # special case: single file scan; need to scan fast, so not updating signature
 if [ ! -z "$single_file" ] ; then
