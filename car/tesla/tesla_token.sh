@@ -3,6 +3,19 @@
 # tesla_token.sh --- wrapper script to get/refresh a bearer token for your car to 
 #    to use with other API calls. 
 #
+##################################################################################
+# OBSOLETE:
+# --------
+# This script is obsolete. Use one of the methods referenced in the link below to 
+# obtain your bearer token. Tesla recently changed the way i.e. made it more secure 
+# to get the bearer token which is a good thing.
+#
+# Manual way: https://tesla-api.timdorr.com/api-basics/authentication
+# Automated way: https://github.com/bntan/tesla-tokens
+#
+##################################################################################
+#
+#
 # DISCLAIMER:
 # -----------
 #
@@ -91,6 +104,20 @@ refresh() {
 
 # ----------  main --------------
 echo "[INFO] `date`: Starting $my_name ..." > $log_file
+cat << EOF
+##################################################################################
+# OBSOLETE:
+# --------
+# This script is obsolete. Use one of the methods referenced in the link below to 
+# obtain your bearer token. Tesla recently changed the way i.e. made it more secure 
+# to get the bearer token which is a good thing.
+#
+# Manual way: https://tesla-api.timdorr.com/api-basics/authentication
+# Automated way: https://github.com/bntan/tesla-tokens
+#
+##################################################################################
+EOF
+exit
 
 case $1 in
   create|refresh) "$@"

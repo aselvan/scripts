@@ -17,8 +17,12 @@
 #
 # Prereq:
 # ------
-# use tesla_token.sh to obtain your bearer token and use this script
-# to obtain the vehicle id (use id command).
+# Use one of the following method to obtain the API token. Tesla recently made it
+# harder to obtain the token for security reasons, which is a good thing.
+# My script (tesla_token.sh) in this directory is obsolete and will not work.
+#
+# Manual way: https://tesla-api.timdorr.com/api-basics/authentication
+# Automated way: https://github.com/bntan/tesla-tokens
 #
 # Optional:
 # --------
@@ -35,13 +39,16 @@
 # i.e. convenience over security :),  the script will look for them in 
 # the following location (may be encrypt it openssl?). Anyway, you need get 
 # these onetime and store it the files below for all subsequent usage. 
-# The bearer token does expires after 45.
+# The bearer token does expires after sometime; used to be 45 days but not 
+# sure how long with the recent changes made by Tesla.
 #
 # $HOME/.mytesla.bearer.token
+# $HOME/.mytesla.refresh.token
 # $HOME/.mytesla.vehicle.id
 #
 # Author:  Arul Selvan
 # Version: Jun 6, 2020
+# Version: Feb 6, 2022
 #
 # API reference: https://tesla-api.timdorr.com/
 # Client ID & Secret: https://pastebin.com/pS7Z6yyP
@@ -51,8 +58,6 @@ my_name=`basename $0`
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 jq_bin=/usr/local/bin/jq
 tesla_api_ep="https://owner-api.teslamotors.com/api/1"
-client_id="81527cff06843c8634fdc09e8ac0abefb46ac849f38fe1e431c2ef2106796384"
-client_secret="c7257eb71a564034f9419ee651c7d0e5f7aa6bfbd18bafb5c5c033b093bb2fa3"
 bearer_token_file="$HOME/.mytesla.bearer.token"
 tesla_id_file="$HOME/.mytesla.id"
 bearer_token=""
@@ -90,6 +95,9 @@ check_http_status() {
     401)
       echo "[ERROR] unauthorized, expired token or bad user/password?" | tee -a $log_file
       ;;
+    *)
+      echo "[ERROR] http error code: $http_code" | tee -a $log_file
+      ;;
   esac
   exit
 }
@@ -122,7 +130,7 @@ wakeup() {
       -w "%{http_code}" \
       -o /tmp/${my_name}_curl_response.txt \
       $tesla_api_ep/vehicles/$tesla_id/wake_up 2>&1`
-  
+
     check_http_status $http_status
     response=`cat /tmp/${my_name}_curl_response.txt`
     if [[ $response == *state*:*online* ]] ; then
@@ -154,13 +162,14 @@ execute() {
     additional_arg=$3
   fi
 
-  # need to ensure tesla id is present for all commands except "vehicles" to get it
+  # need to ensure tesla id is present for all commands except "vehicles" which actually
+  # fetches the list of your vehicle Ids. The "id" field from the response of this
+  # should be stored in $tesla_id_file (see above for the value of the variable)
+  # Note: no need to wakeup the car if we are just trying to get ID.
   if [ $command_route != "vehicles" ]; then
     check_vehicle_id
+    wakeup
   fi
-
-  # make sure tesla is awake
-  wakeup
 
   log "[INFO]" "executing '$curl_request' on route: $tesla_api_ep/$command_route ..."
   if [ -z $additional_arg ] ; then
