@@ -7,7 +7,7 @@
 # Version: Oct 24, 2018
 #
 
-options_list="hle:"
+options_list="hle:d:"
 my_name=`basename $0`
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 
@@ -17,12 +17,13 @@ log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 my_email=""
 certbot_args="--agree-tos --manual-public-ip-logging-ok --preferred-challenges=dns"
 certbot_bin="/usr/bin/certbot"
-domain_list="selvans.net mypassword.us"
+domain_list="selvans.net selvansoft.com mypassword.us"
 
 usage() {
   echo "Usage: $my_name [options]"
   echo "  -l list existing certs on the server this script is run and exit"
-  echo "  -e <email> email address required for renew"
+  echo "  -e <email> email address [note: required argument]"
+  echo "  -d <domain(s)> do a single domain or space separated domains. Default: \"$domain_list\""
   echo "  -h usage"
   exit
 }
@@ -44,6 +45,9 @@ while getopts "$options_list" opt ; do
       ;;
     e)
       my_email=$OPTARG
+      ;;
+    d)
+      domain_list="$OPTARG"
       ;;
     h)
       usage
