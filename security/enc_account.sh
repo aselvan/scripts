@@ -27,10 +27,11 @@ encFileNameGpg=kanakku.txt.gpg
 encFileNameYubi=kanakku.txt.yubi
 plainFile=$1
 
-# receipient keys for PGP (arul,deepak...)
+# receipient keys for PGP (arul,deepak, yubikey usb 5C)
 arul_keyid=451A1B6C
 arul_work_keyid=F81609CB
 deepak_keyid=091CB3D0
+usbc_key=72A50CEF
 
 # gpg keys to encrypt with gpg.
 gpg_opt="-qe -r $arul_keyid -r $arul_work_keyid -r $deepak_keyid -o $encFileNameGpg"
@@ -74,10 +75,9 @@ cp $encFileNameGpg $encFileNameGpg.backup
 echo "[INFO] encrypting w/ openssl ..." | tee -a $log_file
 openssl aes-256-cbc -a -salt -in $plainFile -out $encFileName
 
-# encrypt w/ yubi key
-echo "[INFO] encrypting w/ Yubi Key ..." | tee -a $log_file
-#cat $plainFile |gpg -ae -r 0E2A2DE0 > $encFileNameYubi
-cat $plainFile |gpg -ae -r 0x72A50CEF > $encFileNameYubi
+# encrypt w/ yubi key ($usbc_key)
+echo "[INFO] encrypting w/ Yubi Key USBC ($usbc_key) ..." | tee -a $log_file
+cat $plainFile |gpg -ae -r $usbc_key > $encFileNameYubi
 
 # finally enrypt w/ gpg
 echo "[INFO] encrypting w/ gpg ..." | tee -a $log_file
