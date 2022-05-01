@@ -23,7 +23,7 @@ my_name=`basename $0`
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 key_home="${HOME}/data/personal/keys"
 keyservers="keys.gnupg.net keyserver.ubuntu.com keys.openpgp.org"
-keys="0x451A1B6C 0xF81609CB 0x6675D56A 0x0E2A2DE0 0x72A50CEF"
+keys="0x451A1B6C 0xF81609CB 0x6675D56A 0x0E2A2DE0 0x2D511E41"
 key_kavitha="0xD022A025"
 key_deepak="0x091CB3D0"
 

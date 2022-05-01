@@ -31,7 +31,7 @@ plainFile=$1
 arul_keyid=451A1B6C
 arul_work_keyid=F81609CB
 deepak_keyid=091CB3D0
-usbc_key=72A50CEF
+usbc_key=2D511E41
 
 # gpg keys to encrypt with gpg.
 gpg_opt="-qe -r $arul_keyid -r $arul_work_keyid -r $deepak_keyid -o $encFileNameGpg"
