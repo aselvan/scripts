@@ -81,7 +81,7 @@ do_view() {
     gpg $gpg_opt $encFileBaseName.gpg | $vi_bin -
   else
     log "[INFO] decrypting $encFileBaseName.enc for view ..."
-    openssl $openssl_opt | $vi_bin -
+    openssl $openssl_opt $encFileBaseName.enc | $vi_bin -
   fi
   exit
 }
