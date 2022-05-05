@@ -24,4 +24,6 @@ alias battery='cat /sys/class/power_supply/battery/capacity'
 
 # note: vi stdin does not work on busybox so manually do vi after decrypting
 # supply the encrypted filename arg to dec alias ofcourse
-alias dec='openssl enc -d -aes-256-cbc -a -in'
+# note: remove -md md5 if you are not using macOS native openssl which uses LibreSSL
+# that is defaulting to md5 so other platform version of openssl will fail decrypting
+alias dec='openssl enc -d -aes-256-cbc -a -md md5 -in'
