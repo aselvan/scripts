@@ -1,0 +1,29 @@
+#
+# busybox_setup.sh --- notes to setup busy box on android adb shell
+#
+# Author:  Arul Selvan
+# Version: Sep 2017
+#
+# Note: As of May 2022 (android 12) the /data/local/tmp is still is 
+# writable for adb shell, so you can set executable bit to anything there. 
+#
+# For busybox, download the binary from the link below and copy 
+# to /data/local/tmp and install it as shown below to get all 
+# unix commandline tools softlinked to busybox.
+#
+# How to setup busybox binary:
+# ----------------------------
+# download: https://github.com/xerta555/Busybox-Binaries/raw/master/busybox-arm64
+# adb push busybox-arm64 /data/local/tmp/.
+# adb push alias.sh /data/local/tmp/.
+# adb shell
+# cd /data/local/tmp
+# chmod +x busybox-arm64
+# ./busybox-arm64 --install -s /data/local/tmp
+#
+# How to use busybox in adb shell:
+# --------------------------------
+# Once you connect to adb shell, you can source this script to set
+# path to all busybox applets and few handy aliases. 
+#
+# . /data/local/tmp/alias.sh'
