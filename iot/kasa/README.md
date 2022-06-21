@@ -9,14 +9,13 @@
 This kasa scripts uses TPlink/Kasa's unofficial/undocumented APIs and comes without warranty of any kind what so ever. You are free to use it at your own risk. I assume no liability for the accuracy, correctness, completeness, or usefulness of any information provided by this scripts nor for any sort of damages using these scripts may cause.
 
 # Credits
-https://docs.joshuatz.com/random/tp-link-kasa/
+https://docs.joshuatz.com/random/tp-link-kasa/ <br>
 https://github.com/michalmoczynski/homeassistant-tplink-integration
 
 # Setup
-Create a directory called 'kasa' in your $HOME and create a file named '.kasarc' in the directory as shown below
-with your kasa cloud account username and password.
+Create a directory called 'kasa' in your $HOME directory and create a file named '.kasarc' in that directory and include your kasa cloud account username and password as shown below. 
 
-mkdir $HOME/kasa
+mkdir $HOME/kasa <br>
 echo -e "user=\"your kasa username\"\npassword=\"your kasa password\"" > $HOME/kasa/.kasarc
 
 # Usage
