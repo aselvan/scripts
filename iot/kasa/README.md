@@ -33,7 +33,7 @@ example: kasa.sh -a mybulb1 -e 1
 
 # Sample run
 ```
-## turn on your bulb named 'l1'
+# The example below turns on the bulb named 'l1'
 
 arul@lion$ ./kasa.sh -a l1 -e 1
 [INFO] retrieve device list ...
@@ -45,5 +45,21 @@ arul@lion$ ./kasa.sh -a l1 -e 1
   }
 }
 [INFO] successfully set the state to 1 on device 'l1'!
+
+```
+```
+# The example below shows all Kasa IoT devices in the network/cloud account (note: DeviceId is masked ofcourse)
+
+arul@lion$ ./kasa.sh -l
+[INFO] retrieve device list ...
+[INFO] List of Kasa IoT devices found listed below:
+	alias: p1; Model: KL110(US); Id: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+	alias: l1; Model: LB100(US); Id: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+	alias: bsl; Model: LB100(US); Id: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+	alias: p2; Model: KL110(US); Id: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+	alias: b2; Model: LB100(US); Id: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+	alias: doorbell; Model: KD110(US); Id: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  ...
+  ...
 
 ```
