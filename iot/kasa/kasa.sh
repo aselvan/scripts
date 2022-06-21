@@ -38,7 +38,7 @@ os_name=`uname -s`
 # token expiration secs i.e. 24hrs, although the token seem to work more than a day
 token_expiry=86400
 device_list_expiry=864000 # 10 days
-options="a:e:sh"
+options="a:e:lsh"
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 jq_bin=/usr/local/bin/jq
 stat_cmd="stat -f %m"
@@ -62,9 +62,10 @@ device_status=0
 usage() {
   echo ""
   echo "Usage: $my_name [options]"
-  echo "  -a <device_alias> ---> the alias name of the device [ex: mybulb1]"
-  echo "  -s                ---> status"
+  echo "  -a <device_alias> ---> alias name of the device to enable [ex: mybulb1]"
   echo "  -e <1|0>          ---> enable 1=on, 0=off"
+  echo "  -s                ---> status"
+  echo "  -l                ---> list all the Kasa IoT device alias names in your account"
   echo ""
   echo "example: $my_name -a "mybulb1" -e 1"
   echo ""
@@ -265,12 +266,35 @@ get_token() {
   fi
 }
 
+get_device_list() {
+  echo "[INFO] List of Kasa IoT devices found listed below:"
+  cat $kasa_devices_file | $jq_bin -r '.result.deviceList[] | .alias, .deviceId, .deviceModel' | while 
+    read -r a; read -r i; read -r m; do 
+      echo -e "\talias: $a; Model: $m; Id: $i"
+    done
+  exit
+}
+
+init() {
+  # check for kasarc file and read user/password
+  check_parms
+
+  # read or get new token
+  get_token
+
+  # get device list
+  get_devicelist
+}
+
 # ----------  main --------------
 echo "[INFO] `date`: Starting $my_name ..." > $log_file
 if [ $os_name != "Darwin" ]; then
   jq_bin=/usr/bin/jq
   stat_cmd="stat -c %Y"
 fi
+
+# initialize
+init
 
 # commandline parse
 while getopts $options opt; do
@@ -280,6 +304,9 @@ while getopts $options opt; do
       ;;
     s)
       device_status=1
+      ;;
+    l)
+      get_device_list
       ;;
     e)
       state=$OPTARG
@@ -302,15 +329,6 @@ if [ -z $device_alias ] ; then
   log "[ERROR}" "missing device alias name!"
   usage
 fi
-
-# check for kasarc file and read user/password
-check_parms
-
-# read or get new token
-get_token
-
-# get device list
-get_devicelist
 
 if [ $device_status -ne 0 ] ; then
   # get status and exit
