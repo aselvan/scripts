@@ -21,12 +21,14 @@ echo -e "user=\"your kasa username\"\npassword=\"your kasa password\"" > $HOME/k
 # Usage
 
 ```
-arul@lion$ kasa.sh -h
+arul@lion$ ./kasa.sh -h
+[INFO] retrieve device list ...
 
 Usage: kasa.sh [options]
-  -a <device_alias> ---> the alias name of the device [ex: mybulb1]
-  -s                ---> status
+  -a <device_alias> ---> alias name of the device to enable [ex: mybulb1]
   -e <1|0>          ---> enable 1=on, 0=off
+  -s                ---> status
+  -l                ---> list all the Kasa IoT device alias names in your account
 
 example: kasa.sh -a mybulb1 -e 1
 ```
