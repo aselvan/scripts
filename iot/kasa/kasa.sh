@@ -72,7 +72,7 @@ usage() {
   echo "  -l                     ---> list all the Kasa IoT device alias names in your account"
   echo "  -d                     ---> enable debugging output"
   echo ""
-  echo "example: $my_name -a "bulb1, bulb2" -e 1"
+  echo "example: $my_name -a \"bulb1, bulb2\" -e 1"
   echo ""
   exit 0
 }
