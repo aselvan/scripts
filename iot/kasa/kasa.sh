@@ -26,7 +26,8 @@
 #
 # $KASA_HOME/.kasarc
 # $KASA_HOME/.kasa.token
-# $KASA_HOME/kasa_devices.json <<< List of devices found
+# $KASA_HOME/kasa_devices.json    <<< list of devices found will be written to this file
+# $KASA_HOME/<device_alias>.json  <<< status of the device as returned by status API
 #
 # Note: KASA_HOME env variable is not set, it will default to $HOME/kasa
 #
@@ -38,7 +39,7 @@ os_name=`uname -s`
 # token expiration secs i.e. 24hrs, although the token seem to work more than a day
 token_expiry=86400
 device_list_expiry=864000 # 10 days
-options="a:e:lsh"
+options="a:e:lsdh"
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 jq_bin=/usr/local/bin/jq
 stat_cmd="stat -f %m"
@@ -58,23 +59,33 @@ http_status=0
 error_code=0
 state=""
 device_status=0
+device_alias=""
+device_alias_list=""
+debug=0
 
 usage() {
   echo ""
   echo "Usage: $my_name [options]"
-  echo "  -a <device_alias> ---> alias name of the device to enable [ex: mybulb1]"
-  echo "  -e <1|0>          ---> enable 1=on, 0=off"
-  echo "  -s                ---> status"
-  echo "  -l                ---> list all the Kasa IoT device alias names in your account"
+  echo "  -a <device_alias_list> ---> one or more comma separated alias name of the device(s) to enable [ex: bulb1,bulb2]"
+  echo "  -e <1|0>               ---> enable 1=on, 0=off"
+  echo "  -s                     ---> status"
+  echo "  -l                     ---> list all the Kasa IoT device alias names in your account"
+  echo "  -d                     ---> enable debugging output"
   echo ""
-  echo "example: $my_name -a "mybulb1" -e 1"
+  echo "example: $my_name -a "bulb1, bulb2" -e 1"
   echo ""
   exit 0
 }
 
 log() {
-  message_type=$1
-  message=$2
+  local message_type=$1
+  local message=$2
+
+  # log info type only when debug flag is set
+  if [ "$message_type" == "[INFO]" ] && [ $debug -eq 0 ] ; then
+    return
+  fi
+
   echo "$message_type $message" | tee -a $log_file
 }
 
@@ -99,7 +110,7 @@ check_http_status() {
       log "[ERROR]" "http $http_code unknown error!"
       ;;
   esac
-  exit
+  exit 1
 }
 
 check_parms() {
@@ -190,16 +201,24 @@ get_status() {
     "$kasa_api_ep"`
 
   check_http_status $http_status
-  cat $curl_resp_file | $jq_bin
-  log "[INFO]" "successfully retrieved the status for device '$device_alias'"  
+
+  cat $curl_resp_file | $jq_bin '.result.responseData | fromjson' >  ${KASA_HOME}/$device_alias.json
+  echo "Device '$device_alias' status is written to the file '${KASA_HOME}/$device_alias.json'"
 }
 
 set_state() {
   # find the deviceId
   query=".result.deviceList[] | select(.alias == \"$device_alias\").deviceId"
   device_id=`cat $kasa_devices_file | $jq_bin "$query"`
-  query=".result.deviceList[] | select(.alias == \"$device_alias\").appServerUrl"
-  device_api_ep=`cat $kasa_devices_file | $jq_bin "$query"`
+  if [ -z $device_id ] ; then
+    log "[ERROR]" "device alias '$device_alias' is invalid or non-existent!"
+    exit 3
+  fi
+
+  # note: the generic API $kasa_api_ep seem to work just, not sure why a specicic 
+  # API EP for now we simply use single EP for all
+  #query=".result.deviceList[] | select(.alias == \"$device_alias\").appServerUrl"
+  #device_api_ep=`cat $kasa_devices_file | $jq_bin "$query"`
 
   log "[INFO]" "seting device ($device_alias) to state: $state ..."
   
@@ -210,7 +229,9 @@ set_state() {
     "$kasa_api_ep"`
 
   check_http_status $http_status
-  cat $curl_resp_file | $jq_bin
+  if [ $debug -eq 1 ] ; then
+    cat $curl_resp_file | $jq_bin '.result.responseData | fromjson'
+  fi
   log "[INFO]" "successfully set the state to $state on device '$device_alias'!"
 }
 
@@ -272,7 +293,7 @@ get_device_list() {
     read -r a; read -r i; read -r m; do 
       echo -e "\talias: $a; Model: $m; Id: $i"
     done
-  exit
+  exit 0
 }
 
 init() {
@@ -285,6 +306,7 @@ init() {
   # get device list
   get_devicelist
 }
+
 
 # ----------  main --------------
 echo "[INFO] `date`: Starting $my_name ..." > $log_file
@@ -300,7 +322,7 @@ init
 while getopts $options opt; do
   case $opt in
     a)
-      device_alias=$OPTARG
+      device_alias_list=$OPTARG
       ;;
     s)
       device_status=1
@@ -315,6 +337,9 @@ while getopts $options opt; do
         usage
       fi
       ;;
+    d)
+      debug=1
+      ;;
     ?)
       usage
       ;;
@@ -325,21 +350,32 @@ while getopts $options opt; do
 done
 
 
-if [ -z $device_alias ] ; then
+if [ -z $device_alias_list ] ; then
   log "[ERROR}" "missing device alias name!"
   usage
 fi
 
+# just status?
 if [ $device_status -ne 0 ] ; then
   # get status and exit
-  get_status
-  exit
+  for a in $(echo $device_alias_list|sed 's/,/ /g') ; do
+    device_alias=$a
+    get_status
+  done
+  exit 0 
 fi
 
-# set state
+# set state?
 if [ -z $state ] ; then
   log "[ERROR]" "required argument for enable missing!"
   usage
-else
-  set_state
 fi
+
+# go through a single or list of devices provided and turn on/off
+for a in $(echo $device_alias_list|sed 's/,/ /g') ; do
+  device_alias=$a
+  set_state
+done
+
+exit 0
+
