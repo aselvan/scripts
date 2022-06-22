@@ -1,6 +1,6 @@
 # Kasa IoT bulb
 
-### Commandline tool to turn on/off your Kasa (TPlink) IoT bulb
+### Simple shell script to turn on/off Kasa (TPlink) IoT devices using REST API
 
 - #### /kasa.sh  
   Main script to turn on/off your Kasa bulb. This script is tested on macOS and Linux.
