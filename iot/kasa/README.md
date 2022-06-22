@@ -22,33 +22,39 @@ echo -e "user=\"your kasa username\"\npassword=\"your kasa password\"" > $HOME/k
 
 ```
 arul@lion$ ./kasa.sh -h
-[INFO] retrieve device list ...
 
 Usage: kasa.sh [options]
-  -a <device_alias> ---> alias name of the device to enable [ex: mybulb1]
-  -e <1|0>          ---> enable 1=on, 0=off
-  -s                ---> status
-  -l                ---> list all the Kasa IoT device alias names in your account
+  -a <device_alias_list> ---> one or more comma separated alias name of the device(s) to enable [ex: bulb1,bulb2]
+  -e <1|0>               ---> enable 1=on, 0=off
+  -s                     ---> status
+  -l                     ---> list all the Kasa IoT device alias names in your account
+  -d                     ---> enable debugging output
 
-example: kasa.sh -a mybulb1 -e 1
+example: kasa.sh -a "bulb1, bulb2" -e 1
 ```
 
 # Sample run
 ```
-# The example below turns on the bulb named 'l1'
+# The example below turns the bulb named 'l1' to ON
 
-arul@lion$ ./kasa.sh -a l1 -e 1
-[INFO] retrieve device list ...
+arul@lion$  ./kasa.sh -a l1 -e 1 -d
 [INFO] seting device (l1) to state: 1 ...
 {
-  "error_code": 0,
-  "result": {
-    "responseData": "{\"smartlife.iot.smartbulb.lightingservice\":{\"transition_light_state\":{\"on_off\":1,\"mode\":\"normal\",\"hue\":0,\"saturation\":0,\"color_temp\":2700,\"brightness\":100,\"err_code\":0}}}"
+  "smartlife.iot.smartbulb.lightingservice": {
+    "transition_light_state": {
+      "on_off": 1,
+      "mode": "normal",
+      "hue": 0,
+      "saturation": 0,
+      "color_temp": 2700,
+      "brightness": 100,
+      "err_code": 0
+    }
   }
 }
 [INFO] successfully set the state to 1 on device 'l1'!
-
 ```
+
 ```
 # The example below shows all Kasa IoT devices in the network/cloud account (note: DeviceId is masked ofcourse)
 
@@ -64,4 +70,10 @@ arul@lion$ ./kasa.sh -l
   ...
   ...
 
+```
+```
+# The example below gets the status of device 'l1'
+
+arul@lion$  ./kasa.sh -a l1 -s
+Device 'l1' status is written to the file '/Users/arul/kasa/l1.json'
 ```
