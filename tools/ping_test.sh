@@ -21,10 +21,11 @@ verbose=0
 ping_host="google.com"
 ping_count=30
 ping_avg_threshold=2
-duration=0
 sleep_seconds=60
 start_time=`date +%s`
 current_time=0
+duration=0
+elappsed=0
 check_wifi_channel=0
 airport_bin="/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport"
 iw_bin="/sbin/iw"
@@ -109,7 +110,6 @@ do_ping() {
 if [ -f $log_file ] ; then
   rm $log_file
 fi
-log "[INFO]" "`date`: Starting $my_name ..."
 
 # parse commandline options
 while getopts $options opt; do
@@ -145,11 +145,12 @@ while getopts $options opt; do
 done
 
 # start
+log "[INFO]" "`date`: Starting $my_name ..."
 log "[INFO]" "pinging host $ping_host $ping_count times ..."
 get_channel
 
 # loop until we are done (should run just once if duration is not set i.e. 0)
-while [ $duration -ge 0 ] ; do
+while [ $elappsed -le $duration ] ; do
   # ping 
   do_ping
   
@@ -158,16 +159,13 @@ while [ $duration -ge 0 ] ; do
     break
   fi
 
-  # calculate how much time left 
+  # now sleep
+  sleep $sleep_seconds
+
+  # after run/sleep, calculate how much time left 
   current_time=`date +%s`
   elappsed=$(echo "$current_time - $start_time"|bc)
-  duration=$(echo "$duration - $elappsed"|bc)
-  #echo "current/start/duration/elappsed: $current_time/$start_time/$duration/$elappsed"
-
-  # sleep if we need to 
-  if [ $duration -gt 0 ] ; then
-    sleep $sleep_seconds
-  fi
+  #echo -e "\telappsed/duration:\t $elappsed/$duration"
 done
 
-log "[INFO]" "$my_name completed"
+log "[INFO]" "`date`: $my_name completed"
