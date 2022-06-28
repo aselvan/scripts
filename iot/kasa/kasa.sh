@@ -101,7 +101,7 @@ check_http_status() {
         return
       fi
       error_msg=`cat $curl_resp_file | $jq_bin -r '.msg'`      
-      log "[ERROR]" "Kasa API returned error_code='$error_code'; error_message='$error_msg'"
+      log "[ERROR]" "Kasa API returned error_code='$error_code' for device='$device_alias'; error_message='$error_msg'"
       ;;
     401)
       log "[ERROR]" "http 401 unauthorized, expired token or bad user/password?"
