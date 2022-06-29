@@ -18,8 +18,8 @@ os_name=`uname -s`
 options="h:c:a:d:s:vw?"
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 verbose=0
-ping_host="google.com"
-ping_count=30
+ping_host="192.168.1.1"
+ping_count=60
 ping_avg_threshold=2
 sleep_seconds=60
 start_time=`date +%s`
@@ -27,6 +27,8 @@ current_time=0
 duration=0
 elappsed=0
 check_wifi_channel=0
+under_threshold=0
+over_threshold=0
 airport_bin="/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport"
 iw_bin="/sbin/iw"
 
@@ -58,6 +60,15 @@ log() {
   echo "$msg_type $msg" | tee -a $log_file
 }
 
+check_host() {
+  ping -t10 -c1 -nq $ping_host >/dev/null 2>&1
+  if [ $? -ne 0 ] ; then
+    log "[ERROR]" "$ping_host is a non-existant or invalid or unresponsive host!, check name and try again."
+    exit 1
+  fi
+}
+
+
 # get channel we are using if we are on wifi node 
 get_channel() {
   local channel="N/A"
@@ -78,7 +89,7 @@ get_channel() {
       channel=`$iw_bin $iface info | awk '/channel/ {print $0}'`
     fi
   fi
-  log "[WARN]" "wifi channel in use is: \"$channel\""
+  log "[STAT]" "wifi channel in use is: \"$channel\""
 }
 
 do_ping() {
@@ -96,14 +107,18 @@ do_ping() {
 
   if (( $(echo "$avg > $ping_avg_threshold" | bc -l) )); then
     log "[WARN]" "ping average of $avg ms exceeded threshold of $ping_avg_threshold ms"
+    ((over_threshold=over_threshold+1))
   else
     log "[INFO]" "ping average of $avg ms is within the expected threshold of $ping_avg_threshold ms"
+    ((under_threshold=under_threshold+1))    
   fi
 
   if [ -z "$received_packets" -o "$received_packets" != $ping_count ]; then
     log "[WARN]" "ping packet loss,  $ping_count transmitted, $received_packets received"
   fi
 }
+
+
 
 
 # ----------  main --------------
@@ -121,7 +136,7 @@ while getopts $options opt; do
       ping_count=$OPTARG
       ;;
     a)
-      ping_avg_threshold=$OPTARG
+      =$OPTARG
       ;;
     d)
       duration=$(echo "($OPTARG * 60 * 60)" | bc)
@@ -145,7 +160,8 @@ while getopts $options opt; do
 done
 
 # start
-log "[INFO]" "`date`: Starting $my_name ..."
+check_host
+log "[STAT]" "`date`: Starting $my_name ..."
 log "[INFO]" "pinging host $ping_host $ping_count times ..."
 get_channel
 
@@ -168,4 +184,7 @@ while [ $elappsed -le $duration ] ; do
   #echo -e "\telappsed/duration:\t $elappsed/$duration"
 done
 
-log "[INFO]" "`date`: $my_name completed"
+total_runs=$(echo "$under_threshold + $over_threshold" | bc -l)
+log "[STAT]" "Total Runs: $total_runs"
+log "[STAT]" "Percent under $ping_avg_threshold ms: $(echo "scale=3; ($under_threshold/$total_runs)*100" | bc -l)%"
+log "[STAT]" "`date`: $my_name completed"
