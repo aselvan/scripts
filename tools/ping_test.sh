@@ -15,6 +15,7 @@
 #
 my_name=`basename $0`
 os_name=`uname -s`
+host_name=`hostname`
 options="h:c:a:d:s:vw?"
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 verbose=0
@@ -163,9 +164,9 @@ check_host
 log "[STAT]" "Starting $my_name ..."
 log "[STAT]" "Start time: `date`"
 if [ $duration -ne 0 ] ; then
-  log "[STAT]" "Pinging host $ping_host $ping_count counts for each iteration for a period of $duration seconds ..."
+  log "[STAT]" "Ping '$ping_host' from '$host_name' with $ping_count counts for each run for a period of $duration seconds ..."
 else
-  log "[STAT]" "Pinging host $ping_host $ping_count times ..."
+  log "[STAT]" "Ping '$ping_host' from '$host_name' with $ping_count times ..."
 fi
 get_channel
 
