@@ -68,7 +68,6 @@ check_host() {
   fi
 }
 
-
 # get channel we are using if we are on wifi node 
 get_channel() {
   local channel="N/A"
@@ -86,7 +85,9 @@ get_channel() {
   else
     if [ -e $iw_bin ] ; then
       iface=`$iw_bin dev | awk '$1=="Interface"{print $2}'`
-      channel=`$iw_bin $iface info | awk '/channel/ {print $0}'`
+      if [ ! -z $iface ] ; then
+        channel=`$iw_bin $iface info | awk '/channel/ {print $0}'`
+      fi
     fi
   fi
   log "[STAT]" "wifi channel in use is: \"$channel\""
