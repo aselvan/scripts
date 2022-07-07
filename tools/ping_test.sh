@@ -189,5 +189,7 @@ done
 
 total_runs=$(echo "$under_threshold + $over_threshold" | bc -l)
 log "[STAT]" "Total Runs: $total_runs"
+log "[STAT]" "Under $ping_avg_threshold ms:  $under_threshold"
+log "[STAT]" "Over  $ping_avg_threshold ms:  $over_threshold"
 log "[STAT]" "Percent under $ping_avg_threshold ms: $(echo "scale=3; ($under_threshold/$total_runs)*100" | bc -l)%"
 log "[STAT]" "End time: `date`"
