@@ -16,7 +16,7 @@
 my_name=`basename $0`
 os_name=`uname -s`
 host_name=`hostname`
-options="h:c:a:d:s:vw?"
+options="h:c:a:d:s:l:vw?"
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 verbose=0
 ping_host="192.168.1.1"
@@ -38,9 +38,10 @@ usage() {
   echo "Usage: $my_name [options]"
   echo "  -h <host>    ---> ping host [default is '$ping_host']"
   echo "  -c <count>   ---> ping count [default is '$ping_count']"
-  echo "  -a <value>   ---> ping average threshold to check [default is '$ping_avg_threshold']"
+  echo "  -a <value>   ---> ping average millisecond threshold to check [default is '$ping_avg_threshold' ms]"
   echo "  -d <hours>   ---> how long (hours) to continually run? [default is just once and exit]"
   echo "  -s <seconds> ---> if duration set, how long to sleep between runs [default is '$sleep_seconds sec']"
+  echo "  -l <logfile> ---> optional log file name to write output [default is '$log_file']"
   echo "  -w           ---> enable printing wifi channel to print [default is unset]"
   echo "  -v           ---> verbose mode prints info messages, otherwise just errors are printed"
   echo ""
@@ -122,10 +123,6 @@ do_ping() {
 
 
 # ----------  main --------------
-if [ -f $log_file ] ; then
-  rm $log_file
-fi
-
 # parse commandline options
 while getopts $options opt; do
   case $opt in
@@ -136,13 +133,16 @@ while getopts $options opt; do
       ping_count=$OPTARG
       ;;
     a)
-      =$OPTARG
+      ping_avg_threshold=$OPTARG
       ;;
     d)
       duration=$(echo "($OPTARG * 60 * 60)" | bc)
       ;;
     s)
       sleep_seconds=$OPTARG
+      ;;
+    l)
+      log_file=$OPTARG
       ;;
     v)
       verbose=1
@@ -156,19 +156,27 @@ while getopts $options opt; do
     *)
       usage
       ;;
-     esac
+  esac
 done
+
+if [ -f $log_file ] ; then
+  rm $log_file
+fi
 
 # start
 check_host
 log "[STAT]" "Starting $my_name ..."
 log "[STAT]" "Start time: `date`"
+log "[STAT]" "Ping count:     $ping_count"
+log "[STAT]" "Sleep seconds:  $sleep_seconds seconds"
+log "[STAT]" "Ping threshold: $ping_avg_threshold ms"
 if [ $duration -ne 0 ] ; then
-  log "[STAT]" "Ping '$ping_host' from '$host_name' with $ping_count counts for each run for a period of $duration seconds ..."
+  log "[STAT]" "Duration: continually run for $duration seconds"
 else
-  log "[STAT]" "Ping '$ping_host' from '$host_name' with $ping_count times ..."
+  log "[STAT]" "Duration: run once and exit"
 fi
 get_channel
+log "[STAT]" "Pinging '$ping_host' from '$host_name' ..."
 
 # loop until we are done (should run just once if duration is not set i.e. 0)
 while [ $elappsed -le $duration ] ; do
@@ -195,3 +203,4 @@ log "[STAT]" "Under $ping_avg_threshold ms:  $under_threshold"
 log "[STAT]" "Over  $ping_avg_threshold ms:  $over_threshold"
 log "[STAT]" "Percent under $ping_avg_threshold ms: $(echo "scale=3; ($under_threshold/$total_runs)*100" | bc -l)%"
 log "[STAT]" "End time: `date`"
+log "[STAT]" "$my_name output is written to file at $log_file"
