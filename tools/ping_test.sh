@@ -106,7 +106,7 @@ do_ping() {
   IFS='/' read -r min avg max std <<< "${result[1]}"
 
   if (( $(echo "$avg > $ping_avg_threshold" | bc -l) )); then
-    log "[WARN]" "ping average of $avg ms exceeded threshold of $ping_avg_threshold ms"
+    log "[WARN]" "ping average of $avg ms exceeded threshold of $ping_avg_threshold ms at `date +%r`"
     ((over_threshold=over_threshold+1))
   else
     log "[INFO]" "ping average of $avg ms is within the expected threshold of $ping_avg_threshold ms"
@@ -117,8 +117,6 @@ do_ping() {
     log "[WARN]" "ping packet loss,  $ping_count transmitted, $received_packets received"
   fi
 }
-
-
 
 
 # ----------  main --------------
@@ -161,8 +159,13 @@ done
 
 # start
 check_host
-log "[STAT]" "`date`: Starting $my_name ..."
-log "[INFO]" "pinging host $ping_host $ping_count times ..."
+log "[STAT]" "Starting $my_name ..."
+log "[STAT]" "Start time: `date`"
+if [ $duration -ne 0 ] ; then
+  log "[STAT]" "Pinging host $ping_host $ping_count counts for each iteration for a period of $duration seconds ..."
+else
+  log "[STAT]" "Pinging host $ping_host $ping_count times ..."
+fi
 get_channel
 
 # loop until we are done (should run just once if duration is not set i.e. 0)
@@ -187,4 +190,4 @@ done
 total_runs=$(echo "$under_threshold + $over_threshold" | bc -l)
 log "[STAT]" "Total Runs: $total_runs"
 log "[STAT]" "Percent under $ping_avg_threshold ms: $(echo "scale=3; ($under_threshold/$total_runs)*100" | bc -l)%"
-log "[STAT]" "`date`: $my_name completed"
+log "[STAT]" "End time: `date`"
