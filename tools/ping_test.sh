@@ -32,6 +32,8 @@ under_threshold=0
 over_threshold=0
 airport_bin="/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport"
 iw_bin="/sbin/iw"
+# ensure path for cron runs
+export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
 
 usage() {
   echo ""
@@ -63,9 +65,11 @@ log() {
 }
 
 check_host() {
+  local rc=0
   ping -t10 -c1 -nq $ping_host >/dev/null 2>&1
-  if [ $? -ne 0 ] ; then
-    log "[ERROR]" "$ping_host is a non-existant or invalid or unresponsive host!, check name and try again."
+  rc=$?
+  if [ $rc -ne 0 ] ; then
+    log "[ERROR]" "$ping_host is a non-existant or invalid or unresponsive host!, check name and try again. error=$rc"
     exit 1
   fi
 }
