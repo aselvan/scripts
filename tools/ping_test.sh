@@ -168,8 +168,9 @@ if [ -f $log_file ] ; then
 fi
 
 # start
+cmdline_args=`printf "%s " $@`
 check_host
-log "[STAT]" "Starting $my_name ..."
+log "[STAT]" "$my_name $cmdline_args"
 log "[STAT]" "Start time: `date`"
 log "[STAT]" "Ping count:     $ping_count"
 log "[STAT]" "Sleep seconds:  $sleep_seconds seconds"
