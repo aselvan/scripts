@@ -39,7 +39,7 @@ iw_bin="/sbin/iw"
 email_from=$PINGTEST_EMAIL_FROM
 email_to=$PINGTEST_EMAIL_TO
 email_subject="Low network latency seen"
-percent_limit=95
+percent_limit=75
 
 # ensure path for cron runs
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
