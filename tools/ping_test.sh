@@ -137,7 +137,8 @@ do_ping() {
 do_email() {
   local msg=$1
   if [ $os_name = "Darwin" ]; then
-    echo $msg | mail -s "$email_subject" $email_to -- -f $email_from
+    sub_and_from=$(echo -e "$email_subject\nFrom: $email_from\n")
+    echo $msg | mail -s "$sub_and_from"  $email_to
   else
     echo $msg | mail -s "$email_subject" --append "From: $email_from" $email_to
   fi
