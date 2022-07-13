@@ -9,6 +9,9 @@
 # you have to repeat to choose a better channel or set your router to auto which in my
 # experince does not work well, at least for me.
 #
+# note: if PINGTEST_EMAIL_FROM, PINGTEST_EMAIL_TO env variable set, script will e-mai;
+# if the latency average is poor during the runs i.e. less than $percent_limit setting
+#
 # Author:  Arul Selvan
 # Version: Sep 5, 2014 (initial version)
 # Version: Jun 27, 2022 (updated to have options, check for latency average, wifi channel check etc)
@@ -32,6 +35,12 @@ under_threshold=0
 over_threshold=0
 airport_bin="/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport"
 iw_bin="/sbin/iw"
+# we will grab this from environment PINGTEST_EMAIL_FROM, PINGTEST_EMAIL_TO
+email_from=$PINGTEST_EMAIL_FROM
+email_to=$PINGTEST_EMAIL_TO
+email_subject="Low network latency seen"
+percent_limit=95
+
 # ensure path for cron runs
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
 
@@ -125,6 +134,14 @@ do_ping() {
   fi
 }
 
+do_email() {
+  local msg=$1
+  if [ $os_name = "Darwin" ]; then
+    echo $msg | mail -s "$email_subject" $email_to -- -f $email_from
+  else
+    echo $msg | mail -s "$email_subject" --append "From: $email_from" $email_to
+  fi
+}
 
 # ----------  main --------------
 # parse commandline options
@@ -203,9 +220,19 @@ while [ $elappsed -le $duration ] ; do
 done
 
 total_runs=$(echo "$under_threshold + $over_threshold" | bc -l)
+percent_under=`printf %.f $(echo "($under_threshold/$total_runs)*100" | bc -l)`
 log "[STAT]" "Total Runs: $total_runs"
 log "[STAT]" "Under $ping_avg_threshold ms:  $under_threshold"
 log "[STAT]" "Over  $ping_avg_threshold ms:  $over_threshold"
-log "[STAT]" "Percent under $ping_avg_threshold ms: $(echo "scale=3; ($under_threshold/$total_runs)*100" | bc -l)%"
+log "[STAT]" "Percent under $ping_avg_threshold ms: $percent_under %"
+
+if [ $percent_under -le $percent_limit ] ; then 
+  log "[WARN]" "observed latency percent of ${percent_under}% is less than ${percent_limit}%"
+  # email if env variables are set
+  if [ ! -z $email_from ] && [ ! -z $email_to ]  ; then
+    do_email "observed latency percent of ${percent_under}% is less than ${percent_limit}%"
+  fi
+fi
+
 log "[STAT]" "End time: `date`"
 log "[STAT]" "$my_name output is written to file at $log_file"
