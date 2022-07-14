@@ -19,7 +19,7 @@
 my_name=`basename $0`
 os_name=`uname -s`
 host_name=`hostname`
-options="h:c:a:d:s:l:vw?"
+options="h:c:a:d:s:l:p:vw?"
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 verbose=0
 ping_host="192.168.1.1"
@@ -38,8 +38,9 @@ iw_bin="/sbin/iw"
 # we will grab this from environment PINGTEST_EMAIL_FROM, PINGTEST_EMAIL_TO (default to IFTTT trigger mail)
 email_from=$PINGTEST_EMAIL_FROM
 email_to="${PINGTEST_EMAIL_TO:-trigger@applet.ifttt.com}"
-email_subject="Low network latency seen"
+email_subject="Low network latency"
 percent_limit=75
+channel_name="N/A"
 
 # ensure path for cron runs
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
@@ -49,11 +50,12 @@ usage() {
   echo "Usage: $my_name [options]"
   echo "  -h <host>    ---> ping host [default is '$ping_host']"
   echo "  -c <count>   ---> ping count [default is '$ping_count']"
-  echo "  -a <value>   ---> ping average millisecond threshold to check [default is '$ping_avg_threshold' ms]"
-  echo "  -d <hours>   ---> how long (hours) to continually run? [default is just once and exit]"
-  echo "  -s <seconds> ---> if duration set, how long to sleep between runs [default is '$sleep_seconds sec']"
-  echo "  -l <logfile> ---> optional log file name to write output [default is '$log_file']"
-  echo "  -w           ---> enable printing wifi channel to print [default is unset]"
+  echo "  -a <value>   ---> ping average millisecond threshold to check [default: '$ping_avg_threshold' ms]"
+  echo "  -d <hours>   ---> how long (hours) to continually run? [default: just once and exit]"
+  echo "  -s <seconds> ---> if duration set, how long to sleep between runs [default: '$sleep_seconds sec']"
+  echo "  -l <logfile> ---> optional log file name to write output [default: $log_file']"
+  echo "  -p <percent> ---> acceptable latency percent. Sends email if observed is less [default: '$percent_limit']"
+  echo "  -w           ---> enable printing wifi channel to print [default: $percent_limit]"
   echo "  -v           ---> verbose mode prints info messages, otherwise just errors are printed"
   echo ""
   echo "example: $my_name -d $ping_host"
@@ -85,7 +87,6 @@ check_host() {
 
 # get channel we are using if we are on wifi node 
 get_channel() {
-  local channel="N/A"
 
   # check if option set to check for wifi channel instead of blindly checking 
   # since we may be on wired network
@@ -95,17 +96,17 @@ get_channel() {
 
   if [ $os_name = "Darwin" ]; then
     if [ -e $airport_bin ] ; then
-      channel=`$airport_bin -I |grep channel|sed -r 's/^.*c/C/g'`
+      channel_name=`$airport_bin -I |grep channel|sed -r 's/^.*c/C/g'`
     fi
   else
     if [ -e $iw_bin ] ; then
       iface=`$iw_bin dev | awk '$1=="Interface"{print $2}'`
       if [ ! -z $iface ] ; then
-        channel=`$iw_bin $iface info | awk '/channel/ {print $0}'`
+        channel_name=`$iw_bin $iface info | awk '/channel/ {print $0}'`
       fi
     fi
   fi
-  log "[STAT]" "wifi channel in use is: \"$channel\""
+  log "[STAT]" "wifi channel in use is: \"$channel_name\""
 }
 
 do_ping() {
@@ -166,6 +167,9 @@ while getopts $options opt; do
     l)
       log_file=$OPTARG
       ;;
+    p)
+      percent_limit=$OPTARG
+      ;;
     v)
       verbose=1
       ;;
@@ -225,13 +229,13 @@ percent_under=`printf %.f $(echo "($under_threshold/$total_runs)*100" | bc -l)`
 log "[STAT]" "Total Runs: $total_runs"
 log "[STAT]" "Under $ping_avg_threshold ms:  $under_threshold"
 log "[STAT]" "Over  $ping_avg_threshold ms:  $over_threshold"
-log "[STAT]" "Percent under $ping_avg_threshold ms: $percent_under %"
+log "[STAT]" "Percent under $ping_avg_threshold ms: ${percent_under}%"
 
-if [ $percent_under -le $percent_limit ] ; then 
-  log "[WARN]" "observed latency percent of ${percent_under}% is less than ${percent_limit}%"
+if [ $percent_under -le $percent_limit ] ; then
+  log "[WARN]" "Latency average ${percent_under}% is less than desired ${percent_limit}%, consider changing current channel '${channel_name}'"
   # email if env variables are set
   if [ ! -z $email_from ] && [ ! -z $email_to ]  ; then
-    do_email "observed latency percent of ${percent_under}% is less than ${percent_limit}%"
+    do_email "${my_name}: Poor latency observed @${host_name}. Latency average ${percent_under}% is less than desired ${percent_limit}%. WiFi airspace is crowded so consider changing current channel '${channel_name}'"
   fi
 fi
 
