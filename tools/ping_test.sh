@@ -144,9 +144,6 @@ do_email() {
   fi
 }
 
-echo "email_to= $email_to"
-exit
-
 # ----------  main --------------
 # parse commandline options
 while getopts $options opt; do
