@@ -35,9 +35,9 @@ under_threshold=0
 over_threshold=0
 airport_bin="/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport"
 iw_bin="/sbin/iw"
-# we will grab this from environment PINGTEST_EMAIL_FROM, PINGTEST_EMAIL_TO
+# we will grab this from environment PINGTEST_EMAIL_FROM, PINGTEST_EMAIL_TO (default to IFTTT trigger mail)
 email_from=$PINGTEST_EMAIL_FROM
-email_to=$PINGTEST_EMAIL_TO
+email_to="${PINGTEST_EMAIL_TO:-trigger@applet.ifttt.com}"
 email_subject="Low network latency seen"
 percent_limit=75
 
@@ -143,6 +143,9 @@ do_email() {
     echo $msg | mail -s "$email_subject" --append "From: $email_from" $email_to
   fi
 }
+
+echo "email_to= $email_to"
+exit
 
 # ----------  main --------------
 # parse commandline options
