@@ -33,7 +33,8 @@ publish_ip() {
 
   echo "[INFO] publish our IP using $publish_ip_url" >> $log_file
 
-  my_ip=`dig -p443 +short myip.opendns.com @resolver1.opendns.com`
+  #my_ip=`dig -p443 +short myip.opendns.com @resolver1.opendns.com`
+  my_ip=`curl ifconfig.me/ip`
   url="$publish_ip_url?host=$pi_hostname&ip=$my_ip"
   echo "[INFO] Publishing to: $url" >> $log_file
   curl -w "\n" -s $url >> $log_file 2>&1
@@ -85,7 +86,8 @@ if [ -z "${IFTTT_KEY}" ] ; then
 fi
 
 # find pi's egress IP
-my_ip=`dig -p443 +short myip.opendns.com @resolver1.opendns.com`
+#my_ip=`dig -p443 +short myip.opendns.com @resolver1.opendns.com`
+my_ip=`curl ifconfig.me/ip`
 pi_hostname=`hostname`
 timestamp=`date`
 
