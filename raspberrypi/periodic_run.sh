@@ -9,7 +9,7 @@
 # Note: copy this script to /root/scripts or other place refered in crontab path
 #
 # Author:  Arul Selvan
-# Version: Jul 4, 202
+# Version: Jul 4, 2020
 #
 
 # google dns for validating connectivity
@@ -54,6 +54,7 @@ fi
 
 # find pi's egress IP
 my_ip=`dig +short myip.opendns.com @resolver1.opendns.com`
+my_ip=`curl -s ifconfig.me/ip`
 echo "[INFO] `hostname` public IP is: $my_ip" >> $log_file
 
 if [ ${home_public_ip} = ${my_ip} ] ; then
@@ -66,6 +67,4 @@ fi
 echo "[INFO] nothing more for now, exiting" >> $log_file
 
 # TODO: more stuff later ...
-
-
 
