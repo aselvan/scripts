@@ -6,7 +6,21 @@
 # should be booting. This script make use of this to do anthying we want
 # to do when PI is powered on
 #
-# Note: copy this script to /root/scripts or other place refered in crontab path
+# Note: copy this script to /root/scripts or other place refered in crontab path with following 
+#
+# The following is an example crontab for running this script on PI booting
+#########################################################################
+#
+# PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+# IFTTT_KEY=<your_IFTTT_KEY>
+# HOME_PUBLIC_IP=<your_HOME_PUBLIC_IP>
+# EXTERNAL_SSH_PORT=<port you opened for ssh into pi>
+# EXTERNAL_IP_LIST=<list of any external IP to allow ssh into pi>
+# #Note: need to send to background to let PI continue to boot
+# 
+# @reboot /root/scripts/raspberrypi/poweron_run.sh >/dev/null 2>&1 &
+#
+#########################################################################
 #
 # Author:  Arul Selvan
 # Version: Jul 4, 2020
@@ -15,7 +29,6 @@
 gdns=8.8.8.8
 my_name=`basename $0`
 log_file="/var/log/$(echo $my_name|cut -d. -f1).log"
-home_public_ip=`dig +short selvans.net @$gdns`
 # should take this also as env option later.
 ifttt_event_name="pizero"
 ifttt_api="https://maker.ifttt.com/trigger/$ifttt_event_name/with/key"
@@ -89,7 +102,17 @@ fi
 #my_ip=`dig -p443 +short myip.opendns.com @resolver1.opendns.com`
 my_ip=`curl -s ifconfig.me/ip`
 pi_hostname=`hostname`
-timestamp=`date`
+
+# note: raspberrypi does not have RT clock so not sure the fakehw clock is initialized at this point
+# in boot sequence, so just query and see if it makes sense to even attempt to get the timestamp
+sleep 2 # just sleep 
+# query for presense of time server
+time_server=`timedatectl show-timesync -p ServerName --value`
+if [ -z $time_server ] ; then
+  timestamp="N/A"
+else
+  timestamp=`date`
+fi
 
 # find location
 my_latlon="https://www.google.com/maps?q=`curl -s ipinfo.io/loc`"
