@@ -96,7 +96,7 @@ get_channel() {
 
   if [ $os_name = "Darwin" ]; then
     if [ -e $airport_bin ] ; then
-      channel_name=`$airport_bin -I |grep channel|sed -r 's/^.*c/C/g'`
+      channel_name=$(echo `$airport_bin -I |grep channel|awk -F':|,' '{print $2}'`)
     fi
   else
     if [ -e $iw_bin ] ; then
