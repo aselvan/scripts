@@ -41,6 +41,8 @@ ping_interval=10
 ping_attempt=3
 my_ip="N/A"
 pi_hostname=`hostname`
+wifi_event_script="/root/scripts/raspberrypi/wifi_event_run.sh"
+wifi_interface="wlan0"
 
 ping_check() {
   for (( attempt=0; attempt<$ping_attempt; attempt++ )) {
@@ -148,6 +150,12 @@ curl -w "\n" -s -X POST \
 
 # publish our public IP
 publish_ip
+
+# register handler for WIFI CONNECTED or DISCONNECTED events
+if [ -e $wifi_event_script ] ; then
+  echo "[INFO] registering for WIFI events on device $wifi_interface using $wifi_event_script ..." >> $log_file
+  wpa_cli -i $wifi_interface -B -a $wifi_event_script >> $log_file 2>&1
+fi
 
 echo "[INFO] nothing more for now, exiting" >> $log_file
 
