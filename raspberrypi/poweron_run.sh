@@ -148,9 +148,6 @@ curl -w "\n" -s -X POST \
   -d "{\"value1\":\"${my_name}: $pi_hostname public IP is: $my_ip\", \"value2\":\"$pi_hostname is/was powered on at $timestamp\",\"value3\":\"$my_latlon\"}" \
   $ifttt_endpoint >> $log_file 2>&1
 
-# publish our public IP
-publish_ip
-
 # register handler for WIFI CONNECTED or DISCONNECTED events
 if [ -e $wifi_event_script ] ; then
   echo "[INFO] registering for WIFI events on device $wifi_interface using $wifi_event_script ..." >> $log_file
@@ -160,4 +157,3 @@ fi
 echo "[INFO] nothing more for now, exiting" >> $log_file
 
 # TODO: more stuff later ...
-
