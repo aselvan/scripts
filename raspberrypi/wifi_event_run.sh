@@ -12,14 +12,17 @@
 #
 #
 # Author:  Arul Selvan
-# Version: Jul 11, 202
+# Created: Jul 11, 2020
 #
+
+# current version: YY.MM.DD
+version=22.07.17
 
 # google dns for validating connectivity
 gdns=8.8.8.8
 pi_hostname=`hostname`
+my_name="`basename $0` v$version"
 my_ip=""
-my_name=`basename $0`
 log_file="/var/log/$(echo $my_name|cut -d. -f1).log"
 ping_interval=10
 ping_attempt=3
@@ -67,7 +70,7 @@ publish_ip() {
     publish_ip_url=`cat $publish_ip_url_file`
   fi
 
-  my_ip=`dig -p443 +short myip.opendns.com @resolver1.opendns.com`
+  my_ip=`curl -s ifconfig.me/ip`
   url="$publish_ip_url?host=$pi_hostname&ip=$my_ip"
   echo "[INFO] Publishing to: $url" >> $log_file
   curl -w "\n" -s $url >> $log_file 2>&1

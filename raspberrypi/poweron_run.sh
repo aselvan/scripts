@@ -23,17 +23,42 @@
 #########################################################################
 #
 # Author:  Arul Selvan
-# Version: Jul 4, 2020
+# Created: Jul 4, 2020
+
+# current version: YY.MM.DD
+version=22.07.17
 
 # google dns for validating connectivity
 gdns=8.8.8.8
-my_name=`basename $0`
+my_name="`basename $0` v$version"
 log_file="/var/log/$(echo $my_name|cut -d. -f1).log"
 # should take this also as env option later.
 ifttt_event_name="pizero"
 ifttt_api="https://maker.ifttt.com/trigger/$ifttt_event_name/with/key"
 ssh_port=22
 publish_ip_url_file="/root/.publish_ip_url"
+ping_interval=10
+ping_attempt=3
+my_ip="N/A"
+pi_hostname=`hostname`
+
+ping_check() {
+  for (( attempt=0; attempt<$ping_attempt; attempt++ )) {
+    echo "[INFO] checking for connectivity, attempt #$attempt ..." >> $log_file
+    ping -t30 -c3 -q $gdns >/dev/null 2>&1
+    if [ $? -eq 0 ] ; then
+      echo "[INFO] we got connectvity!" >> $log_file
+      return
+    fi
+    echo "[INFO] sleeping for $ping_interval sec for another attempt" >> $log_file
+    sleep $ping_interval
+  }
+
+  echo "[WARN] We dont have connectivity. force dhcpd? or force wpa_supplicant to try again?" >> $log_file
+  # for now, exit; will figureout how to force wlan to reconnect.
+  exit
+}
+
 
 publish_ip() {
   # get publish_ip_url; NOTE: URL should take host & ip as query parameter
@@ -46,7 +71,7 @@ publish_ip() {
 
   echo "[INFO] publish our IP using $publish_ip_url" >> $log_file
 
-  #my_ip=`dig -p443 +short myip.opendns.com @resolver1.opendns.com`
+  # find pi's egress IP
   my_ip=`curl -s ifconfig.me/ip`
   url="$publish_ip_url?host=$pi_hostname&ip=$my_ip"
   echo "[INFO] Publishing to: $url" >> $log_file
@@ -84,13 +109,6 @@ else
   echo "[WARN] no EXTERNAL_IP_LIST env variable set, skiping firewall access setup." >> $log_file
 fi
 
-# first check if we got connectivity.
-/bin/ping -t30 -c3 -q $gdns >/dev/null 2>&1
-if [ $? -ne 0 ] ; then
-  echo "[WARN] We dont have connectivity. force dhcpd? or force wpa_supplicant to try again?" >> $log_file
-  # for now, exit; will figureout how to force wlan to reconnect.
-  exit
-fi
 
 # check if we have IFTTT creds are provided via env variable
 if [ -z "${IFTTT_KEY}" ] ; then
@@ -98,14 +116,15 @@ if [ -z "${IFTTT_KEY}" ] ; then
   exit
 fi
 
-# find pi's egress IP
-#my_ip=`dig -p443 +short myip.opendns.com @resolver1.opendns.com`
-my_ip=`curl -s ifconfig.me/ip`
-pi_hostname=`hostname`
+# ensure we have connectivity before proceeding fruther.
+ping_check
 
-# note: raspberrypi does not have RT clock so not sure the fakehw clock is initialized at this point
-# in boot sequence, so just query and see if it makes sense to even attempt to get the timestamp
-sleep 2 # just sleep 
+# since we got internet, phone home?
+publish_ip
+
+# note: raspberrypi does not have RT clock. Not sure the fakehw clock is initialized at 
+# this stage in boot sequence, so just query and see if it makes sense to even attempt 
+# to get the timestamp
 # query for presense of time server
 time_server=`timedatectl show-timesync -p ServerName --value`
 if [ -z $time_server ] ; then
@@ -124,7 +143,7 @@ ifttt_endpoint="$ifttt_api/$IFTTT_KEY"
 
 curl -w "\n" -s -X POST \
   -H "Content-Type: application/json" \
-  -d "{\"value1\":\"$pi_hostname public IP is: $my_ip\", \"value2\":\"$pi_hostname is/was powered on at $timestamp\",\"value3\":\"$my_latlon\"}" \
+  -d "{\"value1\":\"${my_name}: $pi_hostname public IP is: $my_ip\", \"value2\":\"$pi_hostname is/was powered on at $timestamp\",\"value3\":\"$my_latlon\"}" \
   $ifttt_endpoint >> $log_file 2>&1
 
 # publish our public IP
