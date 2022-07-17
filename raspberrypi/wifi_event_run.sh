@@ -91,7 +91,7 @@ do_ifttt() {
   
   curl -w "\n" -s -X POST \
     -H "Content-Type: application/json" \
-    -d "{\"value1\":\"${my_name}: $pi_hostname received wpa CONNECTED event at $timestamp\", \"value2\":\" public IP is $my_ip  \",\"value3\":\" connected to AP $WPA_ID_STR \"}" \
+    -d "{\"value1\":\"${my_name}: $pi_hostname received wpa CONNECTED event at $timestamp\", \"value2\":\" public IP is $my_ip  \",\"value3\":\" $WPA_ID_STR \"}" \
     $ifttt_endpoint >> $log_file 2>&1
 }
 
