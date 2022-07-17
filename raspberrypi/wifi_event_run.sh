@@ -78,21 +78,20 @@ publish_ip() {
 
 do_ifttt() {
   # if we have ifttt key, send a message
-  if [ ! -f $ifttt_key_file ] ; then
-    echo "[WARN] no ifttt key provided, skiping." >> $log_file
-    return
-  else
-    ifttt_key=`cat $ifttt_key_file`
+  # check if we have IFTTT creds are provided via env variable
+  if [ -z "${IFTTT_KEY}" ] ; then
+    echo "[ERROR] no IFTTT_KEY no message is sent via IFTTT!" >> $log_file
+    return 
   fi
 
   # post a message to the IFTTT
   timestamp=`date`
   echo "[INFO] sending message via IFTTT!" >> $log_file
-  ifttt_endpoint="$ifttt_api/$ifttt_key"
+  ifttt_endpoint="$ifttt_api/$IFTTT_KEY"
+  
   curl -w "\n" -s -X POST \
-    -F "value1=$pi_hostname got internet connectivity at $timestamp" \
-    -F "value2=$pi_hostname's public IP is '$my_ip'" \
-    -F "value3=$pi_hostname's wifi access point ID: '$WPA_ID_STR'" \
+    -H "Content-Type: application/json" \
+    -d "{\"value1\":\"${my_name}: $pi_hostname received wpa CONNECTED event at $timestamp\", \"value2\":\" public IP is $my_ip  \",\"value3\":\" connected to AP $WPA_ID_STR \"}" \
     $ifttt_endpoint >> $log_file 2>&1
 }
 
