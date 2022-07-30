@@ -22,7 +22,10 @@ encFileBaseName="kanakku.txt"
 search_string=""
 gpg_opt="-qd"
 openssl_opt="enc -d -aes-256-cbc -a -in"
-vi_bin="/usr/bin/view"
+
+# ensure paths so we don't need to deal with location of tools
+export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/opt/homebrew/bin:$PATH"
+
 
 usage() {
   cat <<EOF
@@ -68,20 +71,16 @@ do_check() {
     log "[ERROR] missing encrypted file(s) [$encFileBaseName.enc or $encFileBaseName.gpg]"
     usage
   fi
-  # reset vi_bin path on macOS
-  if [ $os_name = "Darwin" ]; then
-    vi_bin="/usr/local/bin/view"
-  fi
 }
 
 do_view() {
   # prefere GPG if exists
   if [ -f $encFileBaseName.gpg ] ; then
     log "[INFO] decrypting $encFileBaseName.gpg for view ..."
-    gpg $gpg_opt $encFileBaseName.gpg | $vi_bin -
+    gpg $gpg_opt $encFileBaseName.gpg | view -
   else
     log "[INFO] decrypting $encFileBaseName.enc for view ..."
-    openssl $openssl_opt $encFileBaseName.enc | $vi_bin -
+    openssl $openssl_opt $encFileBaseName.enc | view -
   fi
   exit
 }
