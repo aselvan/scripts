@@ -14,6 +14,9 @@
 #       excludes_dir, excluded_files, and others to fit your needs.
 #
 
+# ensure paths so we don't need to deal with location of tools
+export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/opt/homebrew/bin:$PATH"
+
 # TODO: modify these to fit your needs, the rest should be fine
 # variables that need to be customized
 exclude_dirs="Trash|views|com.apple.mail|creditexpert|javanetexamples|ice|work|VirtualBoxVMs|android|sleepyhead|react-tutorial|.svn"
@@ -42,11 +45,11 @@ os_name=`uname -s`
 my_host=`hostname`
 urlhaus_sig_file="urlhaus.ndb"
 urlhaus_sig_url="https://urlhaus.abuse.ch/downloads"
-clamscan_path_mac="/usr/local/bin"
-clamscan_path_linux="/usr/bin"
-clamscan_bin="$clamscan_path_mac/clamscan"
-freshclam_bin="$clamscan_path_mac/freshclam"
-sha256sum_bin="/usr/local/bin/sha256sum"
+
+clamscan_bin=`which clamscan`
+freshclam_bin=`which freshclam`
+sha256sum_bin=`which sha256sum`
+
 single_file=""
 clamav_lib_path=""
 update_signature_only=0
@@ -81,24 +84,6 @@ scan_single_file() {
     cat $virus_report
   else
     echo "[ERROR] file '$single_file' does not exist!" | tee -a $log_file
-  fi
-}
-
-# determine the clamav lib path (located at different place on MacOS and Linux)
-get_clamav_path() {
-  #clamav_home="$(dirname `which clamscan`)/$(readlink `which clamscan`|xargs -0 dirname|xargs -0 dirname)"
-  #the above doesn't work under cron, so hardcoding clamscan path but still dynamically determine exact path.
-
-  if [ $os_name = "Darwin" ]; then
-    scan_path=$default_macos_scanpath
-    clamscan_bin="$clamscan_path_mac/clamscan"
-    clamav_lib_path="$(dirname $clamscan_bin)/$(readlink $clamscan_bin|xargs -0 dirname|xargs -0 dirname)/share/clamav/"
-    sha256sum_bin="/usr/local/bin/sha256sum"
-  else
-    clamscan_bin="$clamscan_path_linux/clamscan"
-    freshclam_bin="$clamscan_path_linux/freshclam"
-    clamav_lib_path=/var/lib/clamav
-    sha256sum_bin="/usr/bin/sha256sum"
   fi
 }
 
@@ -201,11 +186,15 @@ update_all() {
 }
 
 # ---------------------------- main --------------------------------
-
-# first, clamav path for target OS, write log header etc.
-get_clamav_path
 if [ -f  $virus_report ]; then
   rm -f $virus_report
+fi
+
+# clamav lib path for PUA overide, urlhaus.ndb database etc
+if [ $os_name = "Darwin" ]; then
+  clamav_lib_path="$(dirname $clamscan_bin)/$(readlink $clamscan_bin|xargs -0 dirname|xargs -0 dirname)/share/clamav/"
+else
+  clamav_lib_path="/var/lib/clamav"
 fi
 
 # now, parse commandline
