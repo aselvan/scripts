@@ -26,9 +26,13 @@
 #
 # Instructions for installing encfs
 #
-#   Mac: run the following 2 commands on mac terminal (assumed you have brew installed)
+#   MacOS (before Catalina): 
 #     brew cask install osxfuse
 #     brew install encfs
+#
+#   MacOS (after Catalina):
+#     brew install macfuse
+#     brew install gromgit/fuse/encfs-mac
 #   
 #   Linux:
 #     Ubuntu/Debian: apt-get install encfs
