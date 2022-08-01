@@ -41,8 +41,11 @@ log_level="off"
 # annoying log spews. note: the category is a comma separated list after the ':'.
 subsystem_list="\
   com.apple.bluetooth \
+  com.apple.CoreDisplay \
+  com.apple.amp.mediaremote:MediaRemote \
   com.apple.symptomsd:analytics,attribution,metrics,flow \
   com.apple.defaults \
+  com.apple.iconservices:default,trace \
   com.apple.CarbonCore:checkfix,coreservicesdaemon \
   com.apple.CFBundle:resources \
   com.apple.locationd.Core:Notifier \
@@ -68,11 +71,14 @@ subsystem_list="\
   com.apple.WiFiManager \
   com.apple.CoreUtils:CUBonjourBrowser,BonjourBrowser \
   com.apple.mDNSResponder:D2D \
-  com.apple.opendirectoryd:session,object-lifetime \
+  com.apple.opendirectoryd:session,object-lifetime,pipeline \
   com.apple.spotlightindex:Access \
   com.apple.launchservices:record \
   com.apple.FileURL:resolve com.apple.launchservices:record \
   com.apple.icloud.searchpartyd:beaconStore \
+  com.apple.SkyLight:default \
+  com.apple.iohid:ups,service,default,activity \
+  com.apple.quicklook:cloudthumbnails.cache.sqlite,cloudthumbnails.cache.thread,cloudthumbnails.cache.memory,cloudthumbnails.cache.index,cloudthumbnails.cache.db.cleanup \
 "
 
 # ensure path for cron runs
