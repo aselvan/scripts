@@ -7,12 +7,24 @@
 # messages in memory & persisted totally useless messages like "application x" is 
 # reading "propery y" who cares? Just run 'log stats --overview' and check how many 
 # million messages are logged. For example, in my brandnew macbook air running just 3 
-# days showed 14 million messages logged.
+# days showed 14 million messages logged. The settings this script alters will be 
+# found under "/Library/Preferences/Logging/Subsystems"
 #
 # I know some people may disagree w/ me saying logs should not be turned off and is 
 # not going to make a difference etc, I would challenge them to show me when was the 
 # last time they ever looked at logs on a macOS. Bottomeline is, I am a power user but 
-# I still don't care about useless logs apple decided to do by default!
+# I dont give rats ass about useless logs apple decided to do by default especially,  
+# debug level messages!
+#
+# Here is how I collected the list of subsystems spewing logs, I am sure there are better
+# ways to do this, but this will do for now. I could filter only "Debug" messages but 
+# like I said above, I dont' care :)
+# 
+# # collect log lines by streaming log for few hours like so below...
+# timeout 3h log stream --debug |grep "\[com.*\]" >~/log.txt'
+# # now filter all the com.* subsystems involved, sort it, get uniq counts and get the 
+# # top 30 (ignore rest unless they are too much)
+# cat ~/log.txt | awk '{if ( $8 ~ /com\./ ) {print $8} else if ( $9 ~ /com\./ ) {print $9} }'|sort|uniq -c|sort -nr|head -n30>subsystems.txt
 #
 # <Disclaimer> 
 # This comes without warranty of any kind what so ever. You are free to use it at your own 
@@ -24,7 +36,7 @@
 #
 
 # version format YY.MM.DD
-version=22.08.01
+version=22.08.02
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 host_name=`hostname`
@@ -50,6 +62,10 @@ subsystem_list="\
   com.apple.CFBundle:resources \
   com.apple.locationd.Core:Notifier \
   com.apple.locationd.Motion:AOP \
+  com.apple.locationd.Position:GeneralCLX \
+  com.apple.locationd.Position:Position \
+  com.apple.locationd.Utility:Database \
+  com.apple.locationd.Legacy:Generic_deprecated \
   com.apple.CoreAnalytics \
   com.apple.powerlog \
   com.apple.CoreBrightness \
@@ -79,6 +95,17 @@ subsystem_list="\
   com.apple.SkyLight:default \
   com.apple.iohid:ups,service,default,activity \
   com.apple.quicklook:cloudthumbnails.cache.sqlite,cloudthumbnails.cache.thread,cloudthumbnails.cache.memory,cloudthumbnails.cache.index,cloudthumbnails.cache.db.cleanup \
+  com.apple.VDCAssistant:device.frameaccumulator \
+  com.apple.appkit.xpc.openAndSavePanelService \
+  com.apple.VDCAssistant:device.usbclient,device.clientstream \
+  com.apple.TCC:access \
+  com.apple.DiskArbitration.diskarbitrationd:default \
+  com.apple.distnoted:diagnostic \
+  com.apple.amp.core:powermanagement \
+  com.apple.controlcenter:battery \
+  com.apple.SystemConfiguration:SCDynamicStore \
+  com.apple.WirelessRadioManager.Coex:Trace,Public \
+  com.apple.loginwindow.logging:Standard \
 "
 
 # ensure path for cron runs
@@ -110,14 +137,14 @@ write_log() {
 
 init_log() {
   if [ -f $log_file ] ; then
-    rm $log_file
+    rm -f $log_file
   fi
   write_log "[STAT]" "$my_version: starting at `date +'%m/%d/%y %r'` ..."
 }
 
 check_root() {
   if [ `id -u` -ne 0 ] ; then
-    write_log "[ERROR]" "you must be 'root' to run this script... exiting."
+    write_log "[ERROR]" "root access needed to run this script, run with 'sudo $my_name' ... exiting."
     exit
   fi
 }
