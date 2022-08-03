@@ -159,8 +159,10 @@ reset_logging() {
     cat_list=$(echo $ss|awk -F: '{print $2}'|sed "s/,/ /g");
     write_log "[INFO]" "subsystem: $ss_name, loglevel=$log_level"
     # if we are turninng off, just remove the file, no need to call log
-    if [ $log_level = "info" ] && [ -f $subsystem_settings_dir/$ss_name.plist ] ; then
-      rm $subsystem_settings_dir/$ss_name.plist
+    if [ $log_level = "info" ] ; then
+      if [ -f $subsystem_settings_dir/$ss_name.plist ] ; then
+        rm $subsystem_settings_dir/$ss_name.plist
+      fi
       continue
     fi
     /usr/bin/log config --mode "level: $log_level" --subsystem $ss_name >> $log_file 2>&1
