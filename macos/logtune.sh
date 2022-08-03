@@ -48,6 +48,7 @@ options="evh?"
 verbose=0
 enable_log=0
 log_level="off"
+subsystem_settings_dir="/Library/Preferences/Logging/Subsystems"
 
 # list of subsystems to turn off. This is by no means the full list but this should cover most 
 # annoying log spews. note: the category is a comma separated list after the ':'.
@@ -62,8 +63,7 @@ subsystem_list="\
   com.apple.CFBundle:resources \
   com.apple.locationd.Core:Notifier \
   com.apple.locationd.Motion:AOP \
-  com.apple.locationd.Position:GeneralCLX \
-  com.apple.locationd.Position:Position \
+  com.apple.locationd.Position:GeneralCLX,Position \
   com.apple.locationd.Utility:Database \
   com.apple.locationd.Legacy:Generic_deprecated \
   com.apple.CoreAnalytics \
@@ -95,9 +95,8 @@ subsystem_list="\
   com.apple.SkyLight:default \
   com.apple.iohid:ups,service,default,activity \
   com.apple.quicklook:cloudthumbnails.cache.sqlite,cloudthumbnails.cache.thread,cloudthumbnails.cache.memory,cloudthumbnails.cache.index,cloudthumbnails.cache.db.cleanup \
-  com.apple.VDCAssistant:device.frameaccumulator \
-  com.apple.appkit.xpc.openAndSavePanelService \
-  com.apple.VDCAssistant:device.usbclient,device.clientstream \
+  com.apple.appkit.xpc.openAndSavePanelService:default \
+  com.apple.VDCAssistant:device.usbclient,device.clientstream,device.frameaccumulator \
   com.apple.TCC:access \
   com.apple.DiskArbitration.diskarbitrationd:default \
   com.apple.distnoted:diagnostic \
@@ -106,6 +105,10 @@ subsystem_list="\
   com.apple.SystemConfiguration:SCDynamicStore \
   com.apple.WirelessRadioManager.Coex:Trace,Public \
   com.apple.loginwindow.logging:Standard \
+  com.apple.launchservices:cas \
+  com.apple.HIToolbox:MBarView,MBDaisyFrame \
+  com.apple.duetactivityscheduler:default,scoring,lifecycle(activityGroup) \
+  com.apple.analyticsd:xpc,event \
 "
 
 # ensure path for cron runs
@@ -155,6 +158,11 @@ reset_logging() {
     ss_name=$(echo $ss |awk -F: '{print $1}');
     cat_list=$(echo $ss|awk -F: '{print $2}'|sed "s/,/ /g");
     write_log "[INFO]" "subsystem: $ss_name, loglevel=$log_level"
+    # if we are turninng off, just remove the file, no need to call log
+    if [ $log_level = "info" ] && [ -f $subsystem_settings_dir/$ss_name.plist ] ; then
+      rm $subsystem_settings_dir/$ss_name.plist
+      continue
+    fi
     /usr/bin/log config --mode "level: $log_level" --subsystem $ss_name >> $log_file 2>&1
     for cat in $cat_list ; do
       write_log "[INFO]" "    subsystem/category: $ss_name:$cat, loglevel=$log_level"
