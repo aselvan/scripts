@@ -34,7 +34,7 @@ usage() {
   exit 0
 }
 
-log() {
+write_log() {
   local msg_type=$1
   local msg=$2
 
@@ -47,9 +47,16 @@ log() {
 }
 init_log() {
   if [ -f $log_file ] ; then
-    rm $log_file
+    rm -f $log_file
   fi
-  log "[STAT]" "$my_version: starting at `date +'%m/%d/%y %r'` ..."
+  write_log "[STAT]" "$my_version: starting at `date +'%m/%d/%y %r'` ..."
+}
+
+check_root() {
+  if [ `id -u` -ne 0 ] ; then
+    write_log "[ERROR]" "root access needed to run this script, run with 'sudo $my_name' ... exiting."
+    exit
+  fi
 }
 
 check_connectivity() {
@@ -59,12 +66,12 @@ check_connectivity() {
   local ping_attempt=3
 
   for (( attempt=0; attempt<$ping_attempt; attempt++ )) {
-    log "[INFO]" "checking for connectivity, attempt #$attempt ..."
+    write_log "[INFO]" "checking for connectivity, attempt #$attempt ..."
     ping -t30 -c3 -q $gdns >/dev/null 2>&1
     if [ $? -eq 0 ] ; then
       return 0
     fi
-    log "[INFO]" "sleeping for $ping_interval sec for another attempt"
+    write_log "[INFO]" "sleeping for $ping_interval sec for another attempt"
     sleep $ping_interval
   }
   return 1
@@ -89,7 +96,7 @@ done
 
 check_connectivity
 if [ $? -eq 0 ] ; then
-  log "[INFO]" "we have connectivity!"
+  write_log "[INFO]" "we have connectivity!"
 else
-  log "[WARN]" "We don't have network connectivity!"
+  write_log "[WARN]" "We don't have network connectivity!"
 fi
