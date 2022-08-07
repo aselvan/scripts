@@ -59,6 +59,19 @@ check_root() {
   fi
 }
 
+confirm_action() {
+  local msg=$1
+  echo $msg
+  read -p "Are you sure? (y/n) " -n 1 -r
+  echo 
+  if [[ $REPLY =~ ^[Yy]$ ]] ; then
+    return
+  else
+    write_log "[STAT]" "Cancelled executing $my_name!"
+    exit 1
+  fi
+}
+
 check_connectivity() {
   # google dns for validating connectivity
   local gdns=8.8.8.8
@@ -94,9 +107,11 @@ while getopts $options opt; do
   esac
 done
 
+confirm_action "About to make a change..."
 check_connectivity
 if [ $? -eq 0 ] ; then
   write_log "[INFO]" "we have connectivity!"
 else
   write_log "[WARN]" "We don't have network connectivity!"
 fi
+
