@@ -1,15 +1,14 @@
-#!/bin/sh
+#!/bin/bash
 #
 # enc_account.sh --- encrypts the account password plain file and makes a backup 
 # to remote ssh path.
 #
-# Note: this encypts the plain file w/ both openssl (symetric) and gpg (PKI) 
-# createing 2 files.
+# Note: this encypts the plain file w/ openssl (symetric), gpg (PKI) and Yubi 
+# hardware key creating 3 files.
 #
 # Author:  Arul Selvan
 # Version: Dec 26, 2018
 #
-
 my_name=`basename $0`
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 
@@ -22,6 +21,10 @@ remote_host=trex
 remote_user=root
 remote_path="/root/kanakku"
 remote_scp_path="$remote_user@$remote_host:$remote_path"
+remote_host2=eagle
+remote_user2=arul
+remote_path2="/Users/arul/data/personal/keys"
+remote_scp_path2="$remote_user2@$remote_host2:$remote_path2"
 encFileName=kanakku.txt.enc
 encFileNameGpg=kanakku.txt.gpg
 encFileNameYubi=kanakku.txt.yubi
@@ -32,7 +35,6 @@ arul_keyid=451A1B6C
 arul_work_keyid=F81609CB
 deepak_keyid=091CB3D0
 usbc_key=2D511E41
-
 # gpg keys to encrypt with gpg.
 gpg_opt="-qe -r $arul_keyid -r $arul_work_keyid -r $deepak_keyid -o $encFileNameGpg"
 
@@ -66,11 +68,6 @@ cp $encFileName $encFileName.backup
 cp $encFileNameYubi $encFileNameYubi.backup
 cp $encFileNameGpg $encFileNameGpg.backup
 
-# NOTE: disabled copying to gDrive as google already proved making mistake by 
-# sending gdrive data to other people.
-#rclone copyto $encFileName.backup root:/home/personal/$encFileName.backup
-#rclone copyto $encFileNameYubi.backup root:/home/personal/$encFileNameYubi.backup
-
 # encrypt w/ openssl
 echo "[INFO] encrypting w/ openssl ..." | tee -a $log_file
 openssl aes-256-cbc -a -salt -in $plainFile -out $encFileName
@@ -83,22 +80,25 @@ cat $plainFile |gpg -ae -r $usbc_key > $encFileNameYubi
 echo "[INFO] encrypting w/ gpg ..." | tee -a $log_file
 gpg $gpg_opt $plainFile 2>&1 | tee -a $log_file
 
-# backup
-#echo "[INFO] Copying to gdrive"
-# NOTE: disable copying to gDrive as google already proved making mistake by 
-# sending people data to others.
-#rclone copyto $encFileName root:/home/personal/$encFileName
-#rclone copyto $encFileNameYubi root:/home/personal/$encFileNameYubi
-
 # backup to remote scp path (first check if server is available)
 echo "[INFO] checking remote server '$remote_host' is available to backup ..." | tee -a $log_file
 /sbin/ping -t30 -c1 -qo $remote_host >/dev/null 2>&1
-if [ $? -ne 0 ]; then
-   echo "[ERROR] $remote_host not available, exiting..." | tee -a $log_file
-   exit
+if [ $? -eq 0 ]; then
+  echo "[INFO] backing up to remote host at '$remote_scp_path'" | tee -a $log_file
+  scp $encFileName $encFileName.backup $encFileNameYubi $encFileNameYubi.backup $encFileNameGpg $encFileNameGpg.backup $remote_scp_path/.
+else
+   echo "[ERROR] $remote_host not available, skipping ..." | tee -a $log_file
 fi
-echo "[INFO] backing up to remote host at '$remote_scp_path'" | tee -a $log_file
-scp $encFileName $encFileName.backup $encFileNameYubi $encFileNameYubi.backup $encFileNameGpg $encFileNameGpg.backup $remote_scp_path/.
+
+# if second remote host available, backup there as well.
+echo "[INFO] checking remote server '$remote_host2' is available to backup ..." | tee -a $log_file
+/sbin/ping -t30 -c1 -qo $remote_host2 >/dev/null 2>&1
+if [ $? -eq 0 ]; then
+  echo "[INFO] backing up to remote host at '$remote_scp_path2'" | tee -a $log_file
+  scp $encFileName $encFileName.backup $encFileNameYubi $encFileNameYubi.backup $encFileNameGpg $encFileNameGpg.backup $remote_scp_path2/.
+else
+   echo "[ERROR] $remote_host2 not available, skipping ..." | tee -a $log_file
+fi
 
 # secure erase the plain file
 echo "[INFO] Secure erasing plainfile '$plainFile'" | tee -a $log_file
