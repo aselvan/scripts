@@ -19,7 +19,7 @@ export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/opt/homebrew/bin:$PAT
 
 # TODO: modify these to fit your needs, the rest should be fine
 # variables that need to be customized
-exclude_dirs=".Trash|.Trashes|.Spotlight-V100|var|dev|private|xarts|CloudStorage|CrashReporter|views|com.apple.mail|creditexpert|javanetexamples|ice|work|VirtualBoxVMs|android|sleepyhead|react-tutorial|.svn"
+exclude_dirs=".Trash|.Trashes|.Spotlight-V100|index.spotlightV3|var|dev|private|xarts|CloudStorage|CrashReporter|views|com.apple.mail|creditexpert|javanetexamples|ice|work|VirtualBoxVMs|android|sleepyhead|react-tutorial|.svn"
 macos_unreadable="com.apple.homed.notbackedup.plist|com.apple.homed.plist|com.apple.mail-shared.plist|com.apple.AddressBook.plist"
 chrom_plugin_excludes="urlhaus-filter-online.txt"
 macos_false_positive="--exclude=EPSON.*FAX.*.gz"
