@@ -33,4 +33,7 @@
 
 - #### /symantec_vipaccess_key.sh
   extract the secret key from Symantec VIPAccess app.
+
+- #### /vpnsecure
+  Configuration file to run openvpn for the VPN service from VPNsecure.me
   
