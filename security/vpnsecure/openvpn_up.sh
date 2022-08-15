@@ -13,9 +13,10 @@ my_name="`basename $0`"
 my_version="`basename $0` v$version"
 host_name=`hostname`
 os_name=`uname -s`
+verbose=0
 cmdline_args=`printf "%s " $@`
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
-dns_servers="9.9.9.9 1.1.1.1"
+dns_servers="1.1.1.1 9.9.9.9 8.8.8.8"
 dns_save_file="/tmp/openvpn_dns_save.log"
 domain_save_file="/tmp/openvpn_domain_save.log"
 primary_svc=""
@@ -32,7 +33,7 @@ write_log() {
     return
   fi
 
-  echo "$msg_type $msg" | tee -a $log_file
+  echo "$msg_type $msg" >> $log_file
 }
 init_log() {
   if [ -f $log_file ] ; then
