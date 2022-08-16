@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# openvpn_up.sh --- called by openvpn when vpn is up and is referenced in .ovpn file
+# openvpn_up.sh --- called by openvpn when VPN is up. This script is referenced in .ovpn file
 #
 #
 # Author:  Arul Selvan
@@ -8,15 +8,17 @@
 #
 
 # version format YY.MM.DD
-version=22.08.15
+version=22.08.16
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 host_name=`hostname`
 os_name=`uname -s`
+options="d:"
 verbose=0
 cmdline_args=`printf "%s " $@`
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
-dns_servers="9.9.9.9 1.1.1.1 8.8.8.8"
+default_dns_servers="1.1.1.1 9.9.9.9 8.8.8.8"
+dns_servers=""
 dns_save_file="/tmp/openvpn_dns_save.log"
 domain_save_file="/tmp/openvpn_domain_save.log"
 primary_svc=""
@@ -94,6 +96,24 @@ if [ $os_name != "Darwin" ] ; then
   write_log "[WARN] this os '$os_name' is currently not supported!"
   exit 1
 fi
+
+# parse commandline options
+while getopts $options opt; do
+  case $opt in
+    d)
+      dns_servers+=$OPTARG
+      dns_servers+=' '
+      ;;
+    v)
+      verbose=1
+      ;;
+  esac
+done
+
+if [ -z "$dns_servers" ] ; then
+  dns_servers=$default_dns_servers
+fi
+
 
 # find the primiary svc
 primary_svc=$( (scutil | grep PrimaryService | sed -e 's/.*PrimaryService : //')<< EOF
