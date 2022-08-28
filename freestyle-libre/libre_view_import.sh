@@ -59,7 +59,9 @@ echo "Exporting to: $libre_export_file" >> $log_file
 $libre_app --export $libre_export_file >>$log_file 2>&1
 
 # make a backup of the $import_file and replace it w/ downloaded file
-cp $libre_import_file $libre_import_file.backup
-mv $download_file $libre_import_file
+if [ -f $libre_import_file ] ; then
+  cp $libre_import_file $libre_import_file.backup
+  mv $download_file $libre_import_file
+fi
 
 echo "$0 completed successfully." >>$log_file 2>&1
