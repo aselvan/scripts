@@ -13,7 +13,7 @@
 # The extracted secret key can be added to Google Authenticator app by typeing in 
 # the key or create a QR code as shown below to scan it in Google Authenticator
 #
-# qrencode -o key.png "otpauth://totp/mywebsite:mykey?secret=<outputofthisscript>issuer=SymentacVIP"
+# qrencode -o key.png "otpauth://totp/fidelity:loginusername?secret=<outputofthisscript>&issuer=SymentacVIP"
 #
 # Also, you can use this extracted key with oathtool.sh found in this directory
 # to generate your TOTP on MacOS, or Linux (see oathtool.sh)
