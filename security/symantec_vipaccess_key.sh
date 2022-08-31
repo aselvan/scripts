@@ -6,17 +6,36 @@
 # -----------
 # This script extracts the secret keys (and ID) from Symantec VIPAccess application 
 # on MacOS so it can be used in Google Authenticator, or oathtool or any 2F TOTP 
-# generators, no need for multiple apps for 2F needs on your phone or desktop.
+# generators. No need for yet another app (i.e. VIPaccess app) for 2F needs on your 
+# phone or desktop.
+#
+# PreReq: qrencode [ install w/ 'brew install qrencode']
 #
 # How to use:
 # ----------
-# The extracted secret key can be added to Google Authenticator app by typeing in 
-# the key or create a QR code as shown below to scan it in Google Authenticator
+# Run this script on a mac (where you instsalled the VIPaccess app) on a terminal 
+# and follow the prompt. At the end of the run, the script will print the VIPAccess ID 
+# and secret which you can add to your Google Authenticator either manually or create 
+# a QRcode image (shown at end).
+# 
+# Your run output should look like this below...
 #
-# qrencode -o key.png "otpauth://totp/fidelity:loginusername?secret=<outputofthisscript>&issuer=SymentacVIP"
+# $ ./symantec_vipaccess_key.sh 
+# [INFO] You may get multiple prompts for keychain password ...
+# [INFO] if so, copy and paste below password each time when asked.
+# [INFO] Password:  xxxxxxxxxxxxxxxxxxxxxxxx
+# [INFO] --- Press any key to continue ---
 #
-# Also, you can use this extracted key with oathtool.sh found in this directory
-# to generate your TOTP on MacOS, or Linux (see oathtool.sh)
+# [INFO] Symantec VIPAccess ID     : xxxxxxxxxxxxxxxxxxxxx
+# [INFO] Symantec VIPAccess serect : xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+#
+# Grab the secret from about to create a QR code image as shown below to scan 
+# it in Google Authenticator
+#
+# qrencode -o key.png "otpauth://totp/fidelity:loginusername?secret=xxxxxxxxxxxxxxxxxxxx&issuer=SymentacVIP"
+#
+# Also, you can use this extracted secret with oathtool.sh script found in this directory 
+# to generate your TOTP on MacOS, or Linux on commandline i.e. no app/tool is needed.
 #
 # Ref: https://github.com/ykhemani/vipaccess
 # Ref: https://github.com/p120ph37
