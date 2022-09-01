@@ -10,6 +10,14 @@
 ##############################################################################################
 #
 
+SD Card:
+=======
+Buy a SD card at least 4GB to flash this image. note: any size SD card higher then 4G size 
+should work. pi on first boot, will expand the partition of your storage if your card is larger
+than 4GB automagically.
+
+Steps to flash:
+==============
 1. Download the desired PI image
 
   http://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2020-05-28/2020-05-27-raspios-buster-lite-armhf.zip
@@ -18,11 +26,12 @@
 
 echo "f5786604be4b41e292c5b3c711e2efa64b25a5b51869ea8313d58da0b46afc64 2020-05-27-raspios-buster-lite-armhf.zip | sha256sum -c
 
-3. unzip and mount the disk image in your macOS or Linux
+3. unzip and mount the disk image in your macOS or Linux. The follwing comman will mount the boot volume of the
+   pi image under /Volumes/boot on your mac so you can modify that as needed. Ensure presense of /Volumes/boot
 
   hdiutil mount 2020-05-27-raspios-buster-lite-armhf.img
 
-4. Enable ssh, avahi (it should mount on /Volumes/boot, check and make sure)
+4. Enable ssh, avahi
 
   touch /Volumes/boot/ssh
   touch /Volumes/boot/avahi
@@ -31,11 +40,12 @@ echo "f5786604be4b41e292c5b3c711e2efa64b25a5b51869ea8313d58da0b46afc64 2020-05-2
 
 6. Edit /Volumes/boot/cmdline.txt and insert modules-load=dwc2,g_ether after the rootwait entry
 
-7. Run wpa_passphrase for your wifi and save the encrypted hash psk=xxxx
+7. Run wpa_passphrase with your wifi's SSID and password. Note down the encrypted hash i.e. psk=xxxx
+   note: wpa_passphrase is a utility in Linux so you need to go to a linux box to run this command.
 
   wpa_passphrase "your_wifi_ssid"
 
-8. Replace the template with right values and copy to /boot
+8. Replace the template with right values and copy to /Volumes/boot
 
   sed -i ".bak" 's/MY_HOME_MAIN_SSID/your_wifi_ssid/g' wpa_supplicant.conf
   sed -i ".bak" 's/MY_HOME_MAIN_PSK/<psk from above>/g' wpa_supplicant.conf
@@ -45,22 +55,27 @@ echo "f5786604be4b41e292c5b3c711e2efa64b25a5b51869ea8313d58da0b46afc64 2020-05-2
   # copy to boot volume
   cp wpa_supplicant.conf /Volumes/boot/.
 
+9. umount the image (just check with 'diskutil list' first to ensure you are using correct 
+   device i.e. /dev/disk2 you could be doing serious damage to your mac
 
-9. umount the image 
+   hdiutil detach /dev/disk2 
 
-   umount /Volumes/boot
+10. Finally, flash the SD card. Plug-in your SD card in your mac.
 
-10. Flash the SD card
+  sudo dd bs=1m if=/path/to/2020-05-27-raspios-buster-lite-armhf.img of=/dev/rdisk2
 
-sudo dd bs=1m if=/path/to/2020-05-27-raspios-buster-lite-armhf.img of=/dev/rdisk2
+WARNING: check and ensure your SD card is at /dev/rdisk2 with 'diskutil list' before 
+  you do execute the above command, otherwise you'd be doing serious damage to your mac
 
-WARNING: Make sure the of= contains the right SD card disk device, wrong one will trash your mac
+10.1 umount the sdcard
 
+   hdiutil detach /dev/disk2
 
-11. Insert the SD card in PI and let it boot, resize partition etc. Should take a minute or two
+11. Remove SD card from mac, and insert the SD card slot in PI and let it boot, resize 
+  partition etc. Should take a minute or two.
 
 If all goes well, PI should be connecting to your wifi if password, SSID are all correct.
-Find out the IP from your DHCP server and ssh as shown below
+Find out the IP from your DHCP server and ssh into your pi
 
 ssh pi@raspberrypi.local # password is raspberry
 
@@ -89,3 +104,9 @@ dpkg-reconfigure tzdata
   * enable ufw firewall
   * tighten sshd
 
+[OPTIONAL] setup for Wired network with static IP
+
+14. If the PI needs to be on a wired network, copy dhcpcd.conf to /etc. The file is hardcoded 
+  with static IP 192.168.1.13 so if that IP on your network is free just copy the file, otherwise 
+  edit and change to IP you want to use. Once the file is copied, connect the ethernet cable 
+  to the PI and reboot.
