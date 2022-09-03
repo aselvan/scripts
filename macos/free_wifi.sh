@@ -21,7 +21,10 @@
 # See also: spoof_mac.sh
 #
 
+# version format YY.MM.DD
+version=22.09.03
 my_name=`basename $0`
+my_version="`basename $0` v$version"
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 
 # google dns for validating connectivity
@@ -39,6 +42,9 @@ my_name=`basename $0`
 airport_bin="/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport"
 link_local="169.254"
 ap_ssid="AA-Inflight"
+
+# ensure path for cron runs
+export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
 
 usage() {
   echo "Usage: $my_name [-e <interface>] [-h] [-a <AP ssid>]"
@@ -58,6 +64,16 @@ check_root() {
 ping_check() {
   ping -t30 -c3 -q $gdns >/dev/null 2>&1
   return $?
+}
+
+get_my_ip() {
+  local my_ip=""
+  if [ $os_name = "Darwin" ]; then
+    my_ip=`ipconfig getifaddr $iface`
+  else
+    my_ip=`ip addr show $iface | grep 'inet ' | awk '{print $2}' |cut -f1 -d'/'`    
+  fi
+  echo $my_ip
 }
 
 restore_mac() {
@@ -127,8 +143,7 @@ check_mac() {
   for (( i = 0; i<$ip_wait; i++ )) do
     sleep 1
     /bin/echo -n . | /usr/bin/tee -a $log_file
-    ip=`ipconfig getifaddr $iface`
-    #ip=`ip addr show $iface | grep 'inet ' | awk '{print $2}' |cut -f1 -d'/'`
+    ip=$(get_my_ip)
     if [ ! -z "$ip" ] ; then
       break
     fi
@@ -149,8 +164,7 @@ check_mac() {
 search_free_wifi() {
   # do a nmap to collect macaddress in arp cache
   echo "[INFO] collecting arp cache ..."
-  my_net=`ipconfig getifaddr $iface|awk -F. '{print $1"."$2"."$3".0/24"; }'`
-  #my_net=`ip addr show $iface | grep 'inet ' | awk '{print $2}' |cut -f1 -d'/'|awk -F. '{print $1"."$2"."$3".0/24";}'`
+  my_net=`get_my_ip |awk -F. '{print $1"."$2"."$3".0/24"; }'`
 
   # ensure we are not on link-local i.e. not connected to anywhere
   if [[ *"$my_net"* = *"$link_local"* ]] ; then
@@ -209,18 +223,20 @@ while getopts "$options_list" opt; do
 done
 
 check_root
-echo "[INFO] $my_name starting ..." > $log_file
-echo "[INFO] Interface: $iface " | /usr/bin/tee -a $log_file
+if [ -f $log_file ] ; then
+    rm -f $log_file
+fi
+echo "[INFO] $my_version starting at `date +'%m/%d/%y %r'`  ..." | tee -a $log_file
+echo "[INFO] Interface: $iface " | tee -a $log_file
 echo "[INFO] Using access point: $ap_ssid " | /usr/bin/tee -a $log_file
 
-# before we do anything check if we have connectivity, if so exit. This 
+# Before we do anything check if we have connectivity, if so exit. This 
 # allows this script to be added to recurring cronjob
 ping_check
 if [ $? -eq 0 ] ; then
-  #ip=`ip addr show $iface | grep 'inet ' | awk '{print $2}' |cut -f1 -d'/'`
-  ip=`ipconfig getifaddr $iface`
-  echo "[INFO] the interface '$iface' already has network connectivity with IP address '$ip'"
-  echo "[INFO] nothing to do, so exiting..."
+  ip=$(get_my_ip)
+  echo "[INFO] the interface '$iface' already has network connectivity with IP address '$ip'" | tee -a $log_file
+  echo "[INFO] nothing to do, so exiting..." | tee -a $log_file
   exit
 fi
 
