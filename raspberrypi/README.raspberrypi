@@ -38,8 +38,15 @@ echo "f5786604be4b41e292c5b3c711e2efa64b25a5b51869ea8313d58da0b46afc64 2020-05-2
 
 5. Edit /Volumes/boot/config.txt and append dtoverlay=dwc2 
   Note: There is a sample cmdline.txt here but its for reference, use it as root partiton should be different for you.
+  5.1 (optional) for using a gps we need to add these below (not tested)
+    dtparam=spi=on
+    dtoverlay=pi3-disable-bt
+    core_freq=250
+    enable_uart=1
+    force_turbo=1
 
 6. Edit /Volumes/boot/cmdline.txt and insert modules-load=dwc2,g_ether after the rootwait entry
+  6.1 (optional) for using a gps we need to remove any console=[ttyAMA0|serial],115200 entries 
 
 7. Run wpa_passphrase with your wifi's SSID and password. Note down the encrypted hash i.e. psk=xxxx
    note: wpa_passphrase is a utility in Linux so you need to go to a linux box to run this command.
