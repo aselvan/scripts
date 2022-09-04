@@ -42,7 +42,9 @@ ping_attempt=3
 my_ip="N/A"
 pi_hostname=`hostname`
 wifi_event_script="/root/scripts/raspberrypi/wifi_event_run.sh"
+gps_echo_script="/root/scripts/tools/gps_echo.py"
 wifi_interface="wlan0"
+
 
 ping_check() {
   for (( attempt=0; attempt<$ping_attempt; attempt++ )) {
@@ -136,8 +138,13 @@ else
 fi
 
 # find location
-my_latlon="https://www.google.com/maps?q=`curl -s ipinfo.io/loc`"
-echo "[INFO] current $pi_hostname location: $my_latlon" >> $log_file
+if [ -e $gps_echo_script ] ; then
+  my_latlon="https://www.google.com/maps?q=`$gps_echo_script`"
+  echo "[INFO] current $pi_hostname location (GPS device based): $my_latlon" >> $log_file
+else
+  my_latlon="https://www.google.com/maps?q=`curl -s ipinfo.io/loc`"
+  echo "[INFO] current $pi_hostname location (IP based): $my_latlon" >> $log_file
+fi
 
 # post a message to the IFTTT
 echo "[INFO] sending message via IFTTT!" >> $log_file
