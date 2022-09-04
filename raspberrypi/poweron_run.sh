@@ -140,7 +140,12 @@ fi
 # find location
 if [ -e $gps_echo_script ] ; then
   my_latlon="https://www.google.com/maps?q=`$gps_echo_script`"
-  echo "[INFO] current $pi_hostname location (GPS device based): $my_latlon" >> $log_file
+  if [ $my_latlon = "0.0,0.0" ] ; then
+    my_latlon="https://www.google.com/maps?q=`curl -s ipinfo.io/loc`"
+    echo "[INFO] current $pi_hostname location (GPS device failed, IP based): $my_latlon" >> $log_file
+  else
+    echo "[INFO] current $pi_hostname location (GPS device based): $my_latlon" >> $log_file
+  fi
 else
   my_latlon="https://www.google.com/maps?q=`curl -s ipinfo.io/loc`"
   echo "[INFO] current $pi_hostname location (IP based): $my_latlon" >> $log_file
