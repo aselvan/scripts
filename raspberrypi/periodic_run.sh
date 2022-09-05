@@ -71,6 +71,7 @@ fi
 # save the last location info
 if [ -f $HOME/last_location.txt ] && [ -f $publish_ip_url_file ] ; then
   latlon_url="https://www.google.com/maps?q=`cat $HOME/last_location.txt`"
+  publish_ip_url=`cat $publish_ip_url_file`
   url="$publish_ip_url?host=tesla&ip=$latlon_url"
   echo "[INFO] Publishing to: $url" >> $log_file
   curl -w "\n" -s $url >> $log_file 2>&1
