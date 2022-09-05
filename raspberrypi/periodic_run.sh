@@ -12,11 +12,16 @@
 # Version: Jul 4, 2020
 #
 
+# current version: YY.MM.DD
+version=22.07.17
+
 # google dns for validating connectivity
 gdns=8.8.8.8
-my_name=`basename $0`
+my_name="`basename $0` v$version"
 log_file="/var/log/$(echo $my_name|cut -d. -f1).log"
 home_public_ip=`dig +short selvans.net @$gdns`
+publish_ip_url_file="/root/.publish_ip_url"
+
 
 pi_is_home() {
   echo "[INFO] PI is home!" >> $log_file
@@ -35,7 +40,7 @@ pi_is_not_home() {
 }
 
 #  ---------- main ---------------
-echo "[INFO] `date`: $my_name starting..." >> $log_file
+echo "[INFO] $my_name starting at `date`..." >> $log_file
 
 # first check if we got connectivity.
 /bin/ping -t30 -c3 -q $gdns >/dev/null 2>&1
@@ -63,6 +68,13 @@ else
   pi_is_not_home
 fi
 
+# save the last location info
+if [ -f $HOME/last_location.txt ] && [ -f $publish_ip_url_file ] ; then
+  latlon_url="https://www.google.com/maps?q=`cat $HOME/last_location.txt`"
+  url="$publish_ip_url?host=tesla&ip=$latlon_url"
+  echo "[INFO] Publishing to: $url" >> $log_file
+  curl -w "\n" -s $url >> $log_file 2>&1
+fi
 
 echo "[INFO] nothing more for now, exiting" >> $log_file
 
