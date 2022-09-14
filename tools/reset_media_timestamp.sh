@@ -45,7 +45,7 @@ usage() {
 # check if file is a media file that could support metadata
 is_media() {
   local f=$1
-  local mtype=`file --mime-type $f | cut -d ':' -f 2 | cut -d '/' -f 1 | tr -d ' '`
+  local mtype=`file -b --mime-type $f | cut -d '/' -f 1`
   if [ "$mtype" = "image" ] || [ "$mtype" = "video" ] ; then
     return 0
   else
