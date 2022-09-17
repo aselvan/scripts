@@ -9,23 +9,26 @@
 # Steps:
 #  * First connect your phone w/ USB cable
 #  * Run 'adb_wifi.sh -l' to get a list of device IDs
-#  * Now, run 'adb_wifi.sh -s <deviceID>', once it is succcesful, you can unplug phone
-#  * From now on you, should be able to run adb_wifi.sh -c <device> adb_command
+#  * Now, run 'adb_wifi.sh -s <deviceID> -i <ip> -p <port>', once it is succcesful, you can unplug phone
+#  * From now on you, should be able to run adb_wifi.sh -e ip:port <any_adb_command>
 #
 # Author: Arul Selvan
 # Version: Oct 3, 2020
 #
-options_list="s:c:rlh"
+options_list="s:e:i:p:rlh"
 my_name=`basename $0`
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 device=""
-adb_default_tcp_port=5555
+port="5555"
+setup=0
 
 usage() {
-  echo "Usage: $my_name [-s <device] | -l | [-c <device>] <adb_args>"
-  echo "  -s <device> setup the specified deviceID for tcp connection"
-  echo "  -c <device> execute the <adb_args> on the specifed/already setup device"
-  echo "     NOTE: if there is just one device the -c option is not needed"
+  echo "Usage: $my_name [-s <device] | -l | [-e <device>] <adb_args>"
+  echo "  -s <device> device: is andrioid device id of your phone as reported by -l command"
+  echo "  -i <ip> is your phones IP in your network"
+  echo "  -p <port> port: any port of your choice [default is $port, if multiple phones need to be setup use unique port for each"
+  echo "  -e <ip:port> will execute the <adb_args> on the already setup device at ip:port pair with -s command"
+  echo "      NOTE: if there is just one device the -c option is not needed"
   echo "  -l show list of devices"
   echo "  -r restart adb service"
   echo "  -h help"
@@ -58,18 +61,29 @@ check_device() {
   exit
 }
 
-setup() {
-  check_device
+setup_device() {
+  # ensure we have host/ip provided.
+  if [ -z $ip ] ; then
+    echo "[ERROR] required 'ip' argument missing"
+    usage
+  fi
 
+  check_device
   # for some reason adb does not show the device, just restart it once
   restart_adb
 
   echo "[INFO] setting up device $device ..." | tee -a $log_file
-  adb -s $device tcpip $adb_default_tcp_port | tee -a $log_file
-
+  adb -s $device tcpip $port | tee -a $log_file
+  sleep 4
+  
+  # now connect
+  echo "[INFO] connecting $ip:$port ..."
+  adb connect "$ip:$port"
+  
   sleep 2
   # list to show the device
   list
+
   exit
 }
 
@@ -87,14 +101,20 @@ list() {
 echo "[INFO] `date`: $my_name starting ..." | tee $log_file
 while getopts "$options_list" opt ; do
   case $opt in 
-    c)
+    e)
       device=$OPTARG
       shift $((OPTIND-1))
       break
       ;;
     s)
       device=$OPTARG
-      setup
+      setup=1
+      ;;
+    i)
+      ip=$OPTARG
+      ;;
+    p)
+      port=$OPTARG
       ;;
     l)
       list $*
@@ -115,7 +135,10 @@ if [ $# -eq 0 ] ; then
   usage
 fi
 
-if [ -z $device ]; then
+# if setup call do setup, otherwise just assume we are running command on already setup device
+if [ $setup -eq 1 ] ; then
+  setup_device
+elif [ -z $device ]; then
   echo "[INFO] Executing ADB with out a device i.e. 'adb $*'" | tee -a $log_file
   exec adb $*
 else
