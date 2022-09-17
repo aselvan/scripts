@@ -26,7 +26,7 @@
 # Created: Jul 4, 2020
 
 # current version: YY.MM.DD
-version=22.07.17
+version=22.09.17
 
 # google dns for validating connectivity
 gdns=8.8.8.8
