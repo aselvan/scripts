@@ -44,6 +44,25 @@ pi_hostname=`hostname`
 wifi_event_script="/root/scripts/raspberrypi/wifi_event_run.sh"
 gps_echo_script="/root/scripts/tools/gps_echo.py"
 wifi_interface="wlan0"
+latlon=""
+latlon_url=""
+
+get_location() {
+  # find location
+  if [ -e $gps_echo_script ] ; then
+    latlon=`$gps_echo_script`
+    if [ $latlon = "0.0,0.0" ] ; then
+      latlon_url="https://www.google.com/maps?q=`curl -s ipinfo.io/loc`"
+      echo "[INFO] current $pi_hostname location (IP based): $latlon_url" >> $log_file
+    else
+      latlon_url="https://www.google.com/maps?q=$latlon"
+      echo "[INFO] current $pi_hostname location (GPS based): $latlon_url" >> $log_file
+    fi
+  else
+    latlon_url="https://www.google.com/maps?q=`curl -s ipinfo.io/loc`"
+    echo "[INFO] current $pi_hostname location (IP based): $latlon_url" >> $log_file
+  fi
+}
 
 
 ping_check() {
@@ -137,19 +156,8 @@ else
   timestamp=`date`
 fi
 
-# find location
-if [ -e $gps_echo_script ] ; then
-  my_latlon="https://www.google.com/maps?q=`$gps_echo_script`"
-  if [ $my_latlon = "0.0,0.0" ] ; then
-    my_latlon="https://www.google.com/maps?q=`curl -s ipinfo.io/loc`"
-    echo "[INFO] current $pi_hostname location (GPS device failed, IP based): $my_latlon" >> $log_file
-  else
-    echo "[INFO] current $pi_hostname location (GPS device based): $my_latlon" >> $log_file
-  fi
-else
-  my_latlon="https://www.google.com/maps?q=`curl -s ipinfo.io/loc`"
-  echo "[INFO] current $pi_hostname location (IP based): $my_latlon" >> $log_file
-fi
+# get gps if possible
+get_location
 
 # post a message to the IFTTT
 echo "[INFO] sending message via IFTTT!" >> $log_file
@@ -157,7 +165,7 @@ ifttt_endpoint="$ifttt_api/$IFTTT_KEY"
 
 curl -w "\n" -s -X POST \
   -H "Content-Type: application/json" \
-  -d "{\"value1\":\"${my_name}: $pi_hostname public IP is: $my_ip\", \"value2\":\"$pi_hostname is/was powered on at $timestamp\",\"value3\":\"$my_latlon\"}" \
+  -d "{\"value1\":\"${my_name}: $pi_hostname public IP is: $my_ip\", \"value2\":\"$pi_hostname is/was powered on at $timestamp\",\"value3\":\"$latlon_url\"}" \
   $ifttt_endpoint >> $log_file 2>&1
 
 # register handler for WIFI CONNECTED or DISCONNECTED events
