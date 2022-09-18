@@ -25,11 +25,12 @@ version=22.09.14
 my_name=`basename $0`
 my_version="$my_name v$version"
 os_name=`uname -s`
-options="p:t:h?"
+options="p:t:h"
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 source_path=""
 exiftool_bin="/usr/bin/exiftool"
 timestamp=`date +%Y%m%d%H%M`
+type_check=0
 
 usage() {
   echo ""
@@ -45,12 +46,16 @@ usage() {
 # check if file is a media file that could support metadata
 is_media() {
   local f=$1
-  local mtype=`file -b --mime-type $f | cut -d '/' -f 1`
-  if [ "$mtype" = "image" ] || [ "$mtype" = "video" ] ; then
-    return 0
-  else
-    return 1
-  fi
+  local mtype=`file -b --mime-type $f | cut -d '/' -f 2`
+
+  case $mtype in 
+    jpg|jpeg|JPEG|JPG|PDF|pdf|mpeg|MPEG|MP3|mp3|mp4|MP4)
+      return 0
+      ;;
+    *)
+      return 1 
+      ;;
+  esac
 }
 
 # ----------  main --------------
@@ -62,9 +67,6 @@ while getopts $options opt; do
       ;;
     t)
       timestamp="$OPTARG"
-      ;;
-    ?)
-      usage
       ;;
     h)
       usage
