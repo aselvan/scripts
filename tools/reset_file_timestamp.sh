@@ -12,15 +12,15 @@ my_name=`basename $0`
 os_name=`uname -s`
 options="p:h?"
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
-source_path="$HOME/*.jpg"
+source_path=""
 exiftool_bin="/usr/bin/exiftool"
 
 usage() {
   echo ""
   echo "Usage: $my_name [options]"
-  echo "  -p <name> ---> file/path for single file (or quoted for wildcard) to reset [Default: \"$source_path\"]"
+  echo "  -p <path> file/path for single file (or quoted for wildcard) to reset using metadata's timestamp"
   echo ""
-  echo "example: $my_name -f \"$source_path\""
+  echo "example: $my_name -p \"$HOME/*.jpg\""
   echo ""
   exit 0
 }
@@ -47,6 +47,11 @@ done
 if [ -f $log_file ] ; then
   rm $log_file
 fi
+
+if [ -z $source_path ] ; then
+  usage
+fi
+
 echo "[INFO] $my_name starting ..." > $log_file
 
 if [ $os_name = "Darwin" ]; then

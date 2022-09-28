@@ -38,7 +38,7 @@ usage() {
   echo "  -p <name>       ---> file/path for single file (or quoted for wildcard)"
   echo "  -t <timestamp>  ---> timestamp YYYYMMDDHHMM. If not provided, defaults to 'now' [$timestamp]"
   echo ""
-  echo "example: $my_name -f image.jpg -t 202209141800"
+  echo "example: $my_name -p image.jpg -t 202209141800"
   echo ""
   exit 0
 }
