@@ -106,6 +106,6 @@ for fname in ${file_list} ;  do
     continue
   fi
   echo "[INFO] change/add metadata & OS timestamp ($timestamp) to '$fname' ..." | tee -a $log_file
-  $exiftool_bin -d "%Y%m%d%H%M" -AllDates="$timestamp" -overwrite_original $fname
+  $exiftool_bin -d "%Y%m%d%H%M" -AllDates="$timestamp" -overwrite_original $fname 2>&1 >> $log_file
   touch -t $timestamp $fname
 done
