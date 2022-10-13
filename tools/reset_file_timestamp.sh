@@ -48,7 +48,7 @@ if [ -f $log_file ] ; then
   rm $log_file
 fi
 
-if [ -z $source_path ] ; then
+if [ -z "$source_path" ] ; then
   usage
 fi
 

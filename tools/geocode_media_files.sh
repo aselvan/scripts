@@ -54,7 +54,7 @@ usage() {
   echo "  -L <lat>     ---> use this longitude [note: -a arg will be ignored]"
   echo ""
   echo "example: $my_name -p photo.jpg -a \"1600 Amphitheatre Parkway Mountain View, CA 94043\""
-  echo "example: $my_name -p /data/photos/ -l 37.422288 -L -122.085652" 
+  echo "example: $my_name -p \"/data/photos/*.jpg\" -l 37.422288 -L -122.085652" 
   echo ""
   exit 0
 }
@@ -156,7 +156,7 @@ if [ ! -e $exiftool_bin ] ; then
   exit 1
 fi
 
-if [ -z $source_path ] ; then
+if [ -z "$source_path" ] ; then
   echo "[ERROR] required arguments missing i.e. path/name" | tee -a $log_file
   usage
 fi
