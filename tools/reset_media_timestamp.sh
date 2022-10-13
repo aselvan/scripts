@@ -39,6 +39,7 @@ usage() {
   echo "  -t <timestamp>  ---> timestamp YYYYMMDDHHMM. If not provided, defaults to 'now' [$timestamp]"
   echo ""
   echo "example: $my_name -p image.jpg -t 202209141800"
+  echo "example: $my_name -p \"/home/images/*.jpg\" -t 202209141800"
   echo ""
   exit 0
 }
@@ -92,7 +93,7 @@ if [ ! -e $exiftool_bin ] ; then
   exit 1
 fi
 
-if [ -z $source_path ] ; then
+if [ -z "$source_path" ] ; then
   echo "[ERROR] required argument i.e. path/name is missing!"
   usage
 fi
