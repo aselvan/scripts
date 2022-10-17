@@ -14,6 +14,7 @@ my_name=`basename $0`
 my_version="$my_name v$version"
 os_name=`uname -s`
 my_hostname=`hostname`
+today=`date +'%D %r'`
 options="e:u:h"
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 saveip_url=""
@@ -59,7 +60,7 @@ done
 if [ -f $log_file ] ; then
   rm $log_file
 fi
-echo "[INFO] $my_version" > $log_file
+echo "[INFO] $my_version starting $today" > $log_file
 
 if [ -z $saveip_url ] ; then
   echo "[ERROR] required argument missing!" 
@@ -85,7 +86,7 @@ elif [ "$old_ip" = "$new_ip" ] ; then
 fi
 
 # record external and internal ip on all interfaces to file to be e-mailed.
-echo "Date: `date`" > $ip_info_file
+echo "Date: $today" > $ip_info_file
 echo "IP changed: new external IP is \"$new_ip\" and the old one was $old_ip" >> $ip_info_file
 
 # get all the internal interface list and find the internal IP
