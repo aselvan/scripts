@@ -30,7 +30,7 @@ version=22.10.11
 my_name=`basename $0`
 my_version="$my_name v$version"
 os_name=`uname -s`
-options="p:a:k:l:L:h"
+options="p:a:k:l:h"
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 source_path=""
 exiftool_bin="/usr/bin/exiftool"
@@ -41,6 +41,7 @@ api_url="http://api.positionstack.com/v1/forward"
 api_key_file="$HOME/.positionstack.key"
 api_response="/tmp/${my_name}_api_response.txt"
 api_key=""
+latlon=""
 lat=
 lon=
 
@@ -50,11 +51,10 @@ usage() {
   echo "  -p <name>    ---> file/path for single file (or quoted for wildcard)"
   echo "  -a <address> ---> Address (in quotes) to get lat/lon info to be added as metadata"
   echo "  -k <api_key> ---> API key from positionstack.com for geocoding. If not provided, attempt to read from $api_key_file"
-  echo "  -l <lat>     ---> use this latitude [note: -a arg will be ignored]"
-  echo "  -L <lat>     ---> use this longitude [note: -a arg will be ignored]"
+  echo "  -l <lat,lon> ---> use this values in quotes separated by comma/space for lat/lon [note: -a arg will be ignored]"
   echo ""
   echo "example: $my_name -p photo.jpg -a \"1600 Amphitheatre Parkway Mountain View, CA 94043\""
-  echo "example: $my_name -p \"/data/photos/*.jpg\" -l 37.422288 -L -122.085652" 
+  echo "example: $my_name -p \"/data/photos/*.jpg\" -l \"37.422288,-122.085652\"" 
   echo ""
   exit 0
 }
@@ -103,13 +103,28 @@ check_http_status() {
 }
 
 get_latlon() {
-  local uri="$api_url?access_key=$api_key&query=$address"
+  if [ -z $api_key ] ; then
+    # attempt to get API key from $api_key_file
+    if [ -f $api_key_file ] ; then
+      api_key=`cat $api_key_file`
+    else
+      echo "[ERROR] no api-key provided for getting lat/lon from address!" | tee -a $log_file
+      usage
+    fi
+  fi
   
+  local uri="$api_url?access_key=$api_key&query=$address"
+  echo "[INFO] making API ($api_url) call to convert address to lat/lon ..." | tee -a $log_file  
   local http_status=`curl -s -w "%{http_code}" -o $api_response "$uri"`
   check_http_status $http_status
 
   lat=`cat $api_response | jq '.data[0].latitude'`
   lon=`cat $api_response | jq '.data[0].longitude'`
+
+  if [ -z $lat ] || [ -z $lon ] ; then
+    echo "[ERROR] address to lat/lon API failed to return geo cords!"
+    exit
+  fi
 }
 
 # ----------  main --------------
@@ -126,10 +141,14 @@ while getopts $options opt; do
       api_key="$OPTARG"
       ;;
     l)
-      lat="$OPTARG"
-      ;;
-    L)
-      lon="$OPTARG"
+      IFS=', '
+      latlon=($OPTARG)
+      lat=${latlon[0]}
+      lon=${latlon[1]}
+      if [ -z $lat ] || [ -z $lon ] ; then
+        echo "[ERROR] unable to parse lat/lon from '$latlon', see usage below"
+        usage
+      fi
       ;;
     h)
       usage
@@ -159,16 +178,6 @@ fi
 if [ -z "$source_path" ] ; then
   echo "[ERROR] required arguments missing i.e. path/name" | tee -a $log_file
   usage
-fi
-
-if [ -z $api_key ] ; then
-  # attempt to get API key from $api_key_file
-  if [ -f $api_key_file ] ; then
-    api_key=`cat $api_key_file`
-  else
-    echo "[ERROR] no api-key provided!" | tee -a $log_file
-    usage
-  fi
 fi
 
 # if lat/lon provided via cmdline, use it otherwise make API call using address
