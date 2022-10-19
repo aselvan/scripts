@@ -103,6 +103,12 @@ check_http_status() {
 }
 
 get_latlon() {
+  # ensure we have address to work w/
+  if [ -z $address ] ; then
+    echo "[ERROR] address needed to get lat/lon, see usage below ..." | tee -a $log_file
+    usage
+  fi
+  
   if [ -z $api_key ] ; then
     # attempt to get API key from $api_key_file
     if [ -f $api_key_file ] ; then
@@ -141,6 +147,7 @@ while getopts $options opt; do
       api_key="$OPTARG"
       ;;
     l)
+      prev_ifs="$IFS"
       IFS=', '
       latlon=($OPTARG)
       lat=${latlon[0]}
@@ -149,6 +156,7 @@ while getopts $options opt; do
         echo "[ERROR] unable to parse lat/lon from '$latlon', see usage below"
         usage
       fi
+      IFS="$prev_ifs"
       ;;
     h)
       usage
@@ -182,10 +190,19 @@ fi
 
 # if lat/lon provided via cmdline, use it otherwise make API call using address
 if [ -z $lat ] || [ -z $lon ] ; then
+  echo "[INFO] lat/lon ($lat/$lon) either empty or not provided, attempting to use address ..."| tee -a $log_file
   get_latlon
 fi
 
-file_list=`ls -1 $source_path`
+# check if source path is a single file
+if [ -f "$source_path" ] ; then
+  file_list="$source_path"
+else
+  dir_name=$(dirname "$source_path")
+  file_name=$(basename "$source_path")
+  file_list=`ls -1 $dir_name/$file_name`
+fi
+
 for fname in ${file_list} ;  do
   is_media $fname
   if [ $? -ne 0 ] ; then
