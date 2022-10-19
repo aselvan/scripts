@@ -97,7 +97,15 @@ if [ -z "$source_path" ] ; then
   echo "[ERROR] required argument i.e. path/name is missing!"
   usage
 fi
-file_list=`ls -1 $source_path`
+
+# check if source path is a single file
+if [ -f "$source_path" ] ; then
+  file_list="$source_path"
+else
+  dir_name=$(dirname "$source_path")
+  file_name=$(basename "$source_path")
+  file_list=`ls -1 $dir_name/$file_name`
+fi
 
 for fname in ${file_list} ;  do
   is_media $fname
