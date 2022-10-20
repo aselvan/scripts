@@ -64,7 +64,15 @@ if [ ! -e $exiftool_bin ] ; then
   exit 1
 fi
 
-file_list=`ls -1 $source_path`
+# check if source path is a single file
+if [ -f "$source_path" ] ; then
+  file_list="$source_path"
+else
+  dir_name=$(dirname "$source_path")
+  file_name=$(basename "$source_path")
+  file_list=`ls -1 $dir_name/$file_name`
+fi
+
 
 for fname in ${file_list} ;  do
   create_date=`$exiftool_bin -d "%Y%m%d%H%M.%S" -createdate $fname | awk -F: '{print $2;}'`
