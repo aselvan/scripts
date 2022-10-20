@@ -1,6 +1,17 @@
 #!/bin/bash
 #
-# openvpn_down.sh --- called by openvpn when vpn is teared down and is referenced in .ovpn file
+# openvpn_down.sh --- called by openVPN when VPN is teared down.
+#
+# Purpose: When you run openVPN (under the hood, many VPN vendor software run openVPN), you 
+#          may end up going to your original resolver leaking your DNS queries. This script
+#          works along with openvpn_up.sh to set/reset the DNS servers. It will be called 
+#          by openVPN after tear down of VPN tunnel to restore your original DNS. This 
+#          script is referenced in openVPN config file: vpnsecure.ovpn
+#
+# Note: As of now, this script only works on macOS, need to update to work on Linux later.
+#
+# See: vpnsecure.ovpn 
+# See: openvpn_up.sh 
 #
 #
 # Author:  Arul Selvan
@@ -8,7 +19,7 @@
 #
 
 # version format YY.MM.DD
-version=22.08.15
+version=22.10.20
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 host_name=`hostname`

@@ -1,14 +1,25 @@
 #!/bin/bash
 #
-# openvpn_up.sh --- called by openvpn when VPN is up. This script is referenced in .ovpn file
+# openvpn_up.sh --- called by openVPN when VPN tunnel is established.
 #
+# Purpose: When you run openVPN (under the hood, many VPN vendor software run openVPN), you 
+#          may end up going to your original resolver leaking your DNS queries. This script 
+#          called by openVPN after estblishing the tunnel to set DNS of your choice so you 
+#          have a gaurentted way your DNS querys go where you intended them to go. When VPN
+#          tunnel is teared down, openvpn_down.sh script will be called which will restore 
+#          your original DNS. This script is referenced in openVPN config file: vpnsecure.ovpn
+#
+# Note: As of now, this script only works on macOS, need to update to work on Linux later.
+#
+# See: vpnsecure.ovpn 
+# See: openvpn_down.sh 
 #
 # Author:  Arul Selvan
 # Created: Aug 15, 2022
 #
-
+#
 # version format YY.MM.DD
-version=22.08.16
+version=22.10.20
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 host_name=`hostname`
