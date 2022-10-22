@@ -65,7 +65,7 @@ is_media() {
   local mtype=`file -b --mime-type $f | cut -d '/' -f 2`
 
   case $mtype in 
-    jpg|jpeg|JPEG|JPG|PDF|pdf|mpeg|MPEG|MP3|mp3|mp4|MP4)
+    jpg|jpeg|JPEG|JPG|PDF|pdf|mpeg|MPEG|MP3|mp3|mp4|MP4|png|PNG)
       return 0
       ;;
     *)
