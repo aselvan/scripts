@@ -7,9 +7,12 @@
 # ref: https://github.com/astrada/google-drive-ocamlfuse
 #
 # Author:  Arul Selvan
-# Version: May 17, 2015
+# Version: May 17, 2015 - Original
+# Version: Oct 22, 2022 - Removed video backup to conserve space since we have videos in onedirve which is 1TB size
 #
+version=22.10.22
 my_name=`basename $0`
+my_version="$my_name v$version"
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 options_list="e:h"
 
@@ -113,7 +116,7 @@ while getopts "$options_list" opt; do
    esac
 done
 
-echo "[INFO] gDrive rsync" > $log_file
+echo "[INFO] $my_version " > $log_file
 echo "[INFO] Start timestamp: `date`" >> $log_file
 
 # check for gdrive availability
@@ -130,15 +133,20 @@ if [ $rc -ne 0 ]; then
 fi
 echo "[INFO] backup of $photos_src completed at: `date +%r`" >> $log_file
 
-echo "[INFO] Backup of $videos_src starting at: `date +%r`" >> $log_file
-/usr/bin/rsync $rsync_opts $videos_src $gdrive_dest >>$log_file 2>&1
-rc=$?
-if [ $rc -ne 0 ]; then
-  echo "[ERROR] while rsync; error = $rc ... terminating." >> $log_file
-  unmount_gdrive
-  mail_and_exit "$subject_failed"
-fi
-echo "[INFO] backup of $videos_src completed at: `date +%r`" >> $log_file
+#########################################################################
+# Removed video backup to conserve space since we have videos in onedirve 
+# which is much larger i.e. 1TB 
+# -Arul, Oct 22, 2022
+####################################################################
+#echo "[INFO] Backup of $videos_src starting at: `date +%r`" >> $log_file
+#/usr/bin/rsync $rsync_opts $videos_src $gdrive_dest >>$log_file 2>&1
+#rc=$?
+#if [ $rc -ne 0 ]; then
+#  echo "[ERROR] while rsync; error = $rc ... terminating." >> $log_file
+#  unmount_gdrive
+#  mail_and_exit "$subject_failed"
+#fi
+#echo "[INFO] backup of $videos_src completed at: `date +%r`" >> $log_file
 
 # unmount gdrive
 unmount_gdrive
