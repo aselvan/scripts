@@ -68,9 +68,10 @@ cp $encFileName $encFileName.backup
 cp $encFileNameYubi $encFileNameYubi.backup
 cp $encFileNameGpg $encFileNameGpg.backup
 
-# encrypt w/ openssl
+# encrypt w/ openssl (enforce digest to md5 since different openssl libs default differently
+# Note: make sure to add -md md5 on decription and not rely on defaults.
 echo "[INFO] encrypting w/ openssl ..." | tee -a $log_file
-openssl aes-256-cbc -a -salt -in $plainFile -out $encFileName
+openssl aes-256-cbc -a -salt -md md5 -in $plainFile -out $encFileName
 
 # encrypt w/ yubi key ($usbc_key)
 echo "[INFO] encrypting w/ Yubi Key USBC ($usbc_key) ..." | tee -a $log_file
