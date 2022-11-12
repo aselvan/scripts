@@ -26,6 +26,7 @@ version=22.09.03
 my_name=`basename $0`
 my_version="`basename $0` v$version"
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
+mac_list_file="/tmp/$(echo $my_name|cut -d. -f1)_maclist.log"
 
 # google dns for validating connectivity
 gdns=8.8.8.8
@@ -200,6 +201,7 @@ search_free_wifi() {
       continue
     fi
     echo "[INFO] checking: $mac ..." | /usr/bin/tee -a $log_file
+    echo $mac >> $mac_list_file
     check_mac $mac
   done
 }
@@ -225,6 +227,7 @@ done
 check_root
 if [ -f $log_file ] ; then
     rm -f $log_file
+    rm -f $mac_list_file
 fi
 echo "[INFO] $my_version starting at `date +'%m/%d/%y %r'`  ..." | tee -a $log_file
 echo "[INFO] Interface: $iface " | tee -a $log_file
