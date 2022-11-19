@@ -29,6 +29,7 @@ options="p:t:h"
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 source_path=""
 exiftool_bin="/usr/bin/exiftool"
+exiftool_opt="-m"
 timestamp=`date +%Y%m%d%H%M`
 type_check=0
 
@@ -114,6 +115,6 @@ for fname in ${file_list} ;  do
     continue
   fi
   echo "[INFO] change/add metadata & OS timestamp ($timestamp) to '$fname' ..." | tee -a $log_file
-  $exiftool_bin -d "%Y%m%d%H%M" -AllDates="$timestamp" -overwrite_original $fname 2>&1 >> $log_file
+  $exiftool_bin $exiftool_opt -d "%Y%m%d%H%M" -AllDates="$timestamp" -overwrite_original $fname 2>&1 >> $log_file
   touch -t $timestamp $fname
 done

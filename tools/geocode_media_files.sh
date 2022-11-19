@@ -34,6 +34,8 @@ options="p:a:k:l:h"
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 source_path=""
 exiftool_bin="/usr/bin/exiftool"
+# exiftool opt to ignore minor errors
+exiftool_opt="-m"
 timestamp=`date +%Y%m%d%H%M`
 type_check=0
 address=""
@@ -210,9 +212,9 @@ for fname in ${file_list} ;  do
   fi
   # save create date (if present) so we can reset OS timestamp since adding GPS
   # data and overwriting original will wipe file's OS timestamp.
-  create_date=`$exiftool_bin -d "%Y%m%d%H%M.%S" -createdate $fname | awk -F: '{print $2;}'`  
+  create_date=`$exiftool_bin $exiftool_opt -d "%Y%m%d%H%M.%S" -createdate $fname | awk -F: '{print $2;}'`  
   echo "[INFO] adding GPS ($lat, $lon) to '$fname' ..." | tee -a $log_file
-  $exiftool_bin -GPSLatitude*=$lat -GPSLongitude*=$lon -overwrite_original $fname 2>&1 >> $log_file
+  $exiftool_bin $exiftool_opt -GPSLatitude*=$lat -GPSLongitude*=$lon -overwrite_original $fname 2>&1 >> $log_file
   if [ ! -z $create_date ] ; then
     touch -t $create_date $fname
   fi
