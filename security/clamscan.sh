@@ -192,8 +192,17 @@ fi
 
 # clamav lib path for PUA overide, urlhaus.ndb database etc
 if [ $os_name = "Darwin" ]; then
-  clamav_lib_path="$(dirname $clamscan_bin)/$(readlink $clamscan_bin|xargs -0 dirname|xargs -0 dirname)/share/clamav/"
+  # this no longer works
+  #clamav_lib_path="$(dirname $clamscan_bin)/$(readlink $clamscan_bin|xargs -0 dirname|xargs -0 dirname)/share/clamav/"
+  if [ -d /opt/homebrew ] ; then 
+    # new brew location
+    clamav_lib_path="/opt/homebrew/var/lib/clamav/"
+  else
+    # old brew location
+    clamav_lib_path="/usr/local/var/lib/clamav/"
+  fi
 else
+  # linux location
   clamav_lib_path="/var/lib/clamav"
 fi
 
