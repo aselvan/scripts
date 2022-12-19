@@ -86,6 +86,12 @@ for fname in ${file_list} ;  do
     echo "[WARN] metadata for $fname does not contain create date, skipping ..." | tee -a $log_file
     continue
   fi
+  
+  # validate createdate since sometimes images contain create date but show "0000"
+  if [ "$create_date" = "0000" ] ; then
+    echo "[WARN] Invalid create date ($create_date) for $fname, skipping ..." | tee -a $log_file
+    continue
+  fi
 
   echo "[INFO] resetting date: touch -t $create_date $fname" | tee -a $log_file
   touch -t $create_date $fname
