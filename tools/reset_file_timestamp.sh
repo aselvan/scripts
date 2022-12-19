@@ -73,7 +73,6 @@ else
   file_list=`ls -1 $dir_name/$file_name`
 fi
 
-
 for fname in ${file_list} ;  do
   # if filename is directory, skip
   if [ -d $fname ] ; then
@@ -86,9 +85,9 @@ for fname in ${file_list} ;  do
     echo "[WARN] metadata for $fname does not contain create date, skipping ..." | tee -a $log_file
     continue
   fi
-  
-  # validate createdate since sometimes images contain create date but show "0000"
-  if [ "$create_date" = "0000" ] ; then
+ 
+  # validate createdate since sometimes images contain create date but show " 0000"
+  if [ "$create_date" = " 0000" ] ; then
     echo "[WARN] Invalid create date ($create_date) for $fname, skipping ..." | tee -a $log_file
     continue
   fi
