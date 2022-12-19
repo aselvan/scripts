@@ -75,8 +75,14 @@ fi
 
 
 for fname in ${file_list} ;  do
+  # if filename is directory, skip
+  if [ -d $fname ] ; then
+    echo "[WARN] $fname is a directory, skipping ..." | tee -a $log_file
+    continue
+  fi
+
   create_date=`$exiftool_bin -d "%Y%m%d%H%M.%S" -createdate $fname | awk -F: '{print $2;}'`
-  if [ -z $create_date ] ; then
+  if [ -z "$create_date" ] ; then
     echo "[WARN] metadata for $fname does not contain create date, skipping ..." | tee -a $log_file
     continue
   fi
