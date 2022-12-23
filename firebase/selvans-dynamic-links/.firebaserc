@@ -1,0 +1,8 @@
+{
+  "projects": {
+    "selvans-dynamic-links": "selvans-dynamic-links",
+    "default": "selvans-dynamic-links"
+  },
+  "targets": {},
+  "etags": {}
+}
