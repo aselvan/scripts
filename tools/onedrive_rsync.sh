@@ -47,7 +47,7 @@ subject_success="OneDrive rsync success"
 subject_failed="OneDrive rsync failed"
 email_address=
 onedrive_mounted=0
-onedrive_mount_wait=10
+onedrive_mount_wait=30
 
 usage() {
   echo "Usage: $my_name [options]"
