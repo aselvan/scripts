@@ -116,12 +116,12 @@ check_onedrive() {
 }
 
 unmount_onedrive() {
+  echo "[INFO] leaving ondrive mounted since buffered data is not making to remote storage (need more research).." >> $log_file
+  return
+
   echo "[INFO] unmounting OneDrive..." >> $log_file 
-  
   # just do a couple of syncs to flush buffers
   sync
-  sync
-
   # unmount only if we mounted it in the first place
   if [ $onedrive_mounted -eq 0 ]; then
     echo "[INFO] OneDrive was already mounted when we started, so leaving it mounted" >> $log_file
