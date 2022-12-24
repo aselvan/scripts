@@ -128,7 +128,7 @@ unmount_onedrive() {
     return
   fi
 
-  fusermount -u $mount_point
+  fusermount -zu $mount_point
   rc=$?
   if [ $rc -eq 0 ]; then
     echo "[INFO] onedrive unmount success" >> $log_file
