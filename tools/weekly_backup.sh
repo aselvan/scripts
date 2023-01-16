@@ -40,6 +40,7 @@ rsync_bin="/usr/bin/rsync"
 # when a device is 90% full, send a nag email
 space_limit_percent=90
 backup_failed=0
+IFS_old=$IFS
 
 # list of devices: descriptive name and mount points. NOTE: the /etc/fstab
 # entry should be setup to right device for each of the mount point specified.
@@ -150,13 +151,15 @@ while getopts "$options_list" opt; do
    esac
 done
 
-IFS=,
 for devpair in "${device_names[@]}" ; do
+  IFS=,
   keyval=($devpair)
+  usb_desc=${keyval[0]}
   usb_mount=${keyval[1]}
+  IFS=$IFS_old
   backup_dir=$usb_mount/backup
   echo "" >> $log_file
-  echo ">>>>>>> ${keyval[0]} backup target device/path: $backup_dir <<<<<<<<< " >> $log_file
+  echo ">>>>>>> $usb_desc backup target device/path: $backup_dir <<<<<<<<< " >> $log_file
   do_backup
   tb=$?
   if [ $tb -ne 0 ]; then
