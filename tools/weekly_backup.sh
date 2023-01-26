@@ -40,11 +40,12 @@ rsync_bin="/usr/bin/rsync"
 # when a device is 90% full, send a nag email
 space_limit_percent=90
 backup_failed=0
+offsite_device="/media/usb-ssd-250g"
 IFS_old=$IFS
 
 # list of devices: descriptive name and mount points. NOTE: the /etc/fstab
 # entry should be setup to right device for each of the mount point specified.
-device_names=("Primary,/media/usb-1tb-2" "Secondary,/media/usb-1tb-3" "eSATA RAID,/media/sata-3tb" "SSD offsite,/media/usb-ssd-250g" )
+device_names=("Primary,/media/usb-1tb-2" "Secondary,/media/usb-1tb-3" "Tertiary eSATA-RAID,/media/sata-3tb" "Offsite SSD,$offsite_device" )
 
 usage() {
   echo "Usage: $my_name [options]"
@@ -104,8 +105,12 @@ do_backup() {
   echo "    Backup of /var/www  ... `date`" >> $log_file
   nice -19 $rsync_bin $rsync_opts /var/www $backup_dir
 
-  echo "    Backup of /data/transfer ... `date`" >> $log_file
-  nice -19 $rsync_bin $rsync_opts /data/transfer $backup_dir
+  # skip this for offsite storage as we may have sensitive information
+  # TODO: need add a encrypted drive to include this but for now just skip
+  if [ "$usb_mount" != "$offsite_device" ] ; then
+    echo "    Backup of /data/transfer ... `date`" >> $log_file
+    nice -19 $rsync_bin $rsync_opts /data/transfer $backup_dir
+  fi
 
   echo "    Backup of UFW config (/lib/ufw) ... `date`" >> $log_file
   nice -19 $rsync_bin $rsync_opts /lib/ufw $backup_dir
