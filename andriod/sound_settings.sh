@@ -11,7 +11,7 @@
 # Version: Jan 6, 2018 --- original version
 # Version: Mar 1, 2023 --- updated with option and support for andrioid 10 or later.
 #
-options_list="s:r:m:a:h"
+options_list="s:r:m:a:lh"
 my_name=`basename $0`
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 device=""
@@ -26,6 +26,7 @@ usage() {
   echo "  -r <value>  ---> ringer volume level 0-7"
   echo "  -m <value>  ---> media volume level 0-25"
   echo "  -a <value>  ---> alaram volume level 0-7"
+  echo "  -l          ---> list available devices"
   echo "  -h help"
   exit
 }
@@ -49,6 +50,12 @@ check_device() {
   exit 1
 }
 
+list_devices() {
+  devices=$(adb devices|awk 'NR>1 {print $1}')
+  echo "[INFO] list of devices paired" | tee -a $log_file
+  echo "$devices" | tee -a $log_file
+}
+
 display_values() {
   vol=`adb $device shell cmd media_session volume --get --stream 5|awk '/volume is/ {print $4;}'`
   echo "[INFO] Ringer volume: $vol" | tee -a $log_file
@@ -65,15 +72,14 @@ echo "[INFO] `date`: $my_name starting ..." | tee $log_file
 
 # first get device count
 device_count=`adb devices|awk 'NR>1 {print $1}'|wc -w|tr -d ' '`
-# if device count is 0 just exit
-if [ $device_count -eq 0 ] ; then
-  echo "[ERROR] no devices are connected to adb, try pairing your phone." | tee -a $log_file
-  exit 1
-fi
 
 # parse commandline
 while getopts "$options_list" opt ; do
   case $opt in 
+    l)
+      list_devices
+      exit 0
+      ;;
     s)
       device=$OPTARG
       connect_device
@@ -82,7 +88,6 @@ while getopts "$options_list" opt ; do
       ;;
     r)
       ring_vol=$OPTARG
-
       ;;
     m)
       media_vol=$OPTARG
@@ -95,6 +100,12 @@ while getopts "$options_list" opt ; do
       ;;
   esac
 done
+
+# if device count is 0 just exit
+if [ $device_count -eq 0 ] ; then
+  echo "[ERROR] no devices are connected to adb, try pairing your phone." | tee -a $log_file
+  exit 1
+fi
 
 # check if adb connected to multiple devices but we don't have -s option
 if [ $device_count -gt 1 ] && [ -z "$device" ] ; then
