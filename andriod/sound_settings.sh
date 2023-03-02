@@ -70,8 +70,13 @@ display_values() {
 # --------------- main ----------------------
 echo "[INFO] `date`: $my_name starting ..." | tee $log_file
 
-# first get device count
+# first get device count and see if anything is parired
 device_count=`adb devices|awk 'NR>1 {print $1}'|wc -w|tr -d ' '`
+# if device count is 0 just exit
+if [ $device_count -eq 0 ] ; then
+  echo "[ERROR] no devices are connected to adb, try pairing your phone." | tee -a $log_file
+  exit 1
+fi
 
 # parse commandline
 while getopts "$options_list" opt ; do
@@ -101,11 +106,6 @@ while getopts "$options_list" opt ; do
   esac
 done
 
-# if device count is 0 just exit
-if [ $device_count -eq 0 ] ; then
-  echo "[ERROR] no devices are connected to adb, try pairing your phone." | tee -a $log_file
-  exit 1
-fi
 
 # check if adb connected to multiple devices but we don't have -s option
 if [ $device_count -gt 1 ] && [ -z "$device" ] ; then
