@@ -15,6 +15,21 @@ log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 device=""
 call_log_count=1
 
+# prepare a awk script code for parsing call log
+read -d '' parseLogScript << EOF
+{
+  for(i=1;i<=NF;i++) {
+    split(\$i,a,"="); 
+    if (a[1] ==" date") {
+      cmd=sprintf("date -r %d",a[2]/1000); 
+      system(cmd);
+    }
+    if (a[1]==" name") printf "\\\t%s\\\n",a[2]; 
+    if (a[1]==" normalized_number") printf "\\\t%s\\\n",a[2]; 
+  }
+}
+EOF
+
 usage() {
   echo "Usage: $my_name [-s <device] [-r <value>] [-m <value>] [-a <value>]"
   echo "  -s <device> ---> andrioid device id of your phone paired with adb"
@@ -63,7 +78,7 @@ call_state() {
 call_log() {
   echo "[INFO] log of last $call_log_count calls on the $device" | tee -a $log_file
   log_lines=$(adb $device shell content query --uri content://call_log/calls|tail -n$call_log_count | tee -a $log_file)
-  echo $log_lines|awk -F',' '{for(i=1;i<=NF;i++){split($i,a,"="); if (a[1] ==" date") {cmd=sprintf("date -r %d",a[2]/1000); system(cmd)}; if (a[1]==" name") printf "\t%s\n",a[2]; if (a[1]==" normalized_number") printf "\t%s\n",a[2]; }}'
+  echo $log_lines|awk -F',' "$parseLogScript"
 }
 
 # --------------- main ----------------------
