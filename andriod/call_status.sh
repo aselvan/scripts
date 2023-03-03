@@ -62,7 +62,8 @@ call_state() {
 
 call_log() {
   echo "[INFO] log of last $call_log_count calls on the $device" | tee -a $log_file
-  adb $device shell content query --uri content://call_log/calls|tail -n$call_log_count | tee -a $log_file
+  log_lines=$(adb $device shell content query --uri content://call_log/calls|tail -n$call_log_count | tee -a $log_file)
+  echo $log_lines|awk -F',' '{for(i=1;i<=NF;i++){split($i,a,"="); if (a[1] ==" date") {cmd=sprintf("date -r %d",a[2]/1000); system(cmd)}; if (a[1]==" name") printf "\t%s\n",a[2]; if (a[1]==" normalized_number") printf "\t%s\n",a[2]; }}'
 }
 
 # --------------- main ----------------------
