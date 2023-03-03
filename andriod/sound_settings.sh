@@ -122,7 +122,7 @@ fi
 
 # can't change any volume settings if DnD is on
 dnd_status=`adb -s $device shell settings get global zen_mode`
-if [ $dnd_status -ne 0 ] ; then
+if [ ! -z $dnd_status ] && [ $dnd_status -ne 0 ] ; then
   echo "[WARN] Do Not Distrub (DnD) is enabled, value=$dnd_status"| tee -a $log_file
   echo "[WARN] Can not adjust sound settings when DnD is on ... exiting."| tee -a $log_file
   exit 3
