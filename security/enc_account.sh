@@ -25,6 +25,11 @@ remote_host2=eagle
 remote_user2=arul
 remote_path2="/Users/arul/data/personal/keys"
 remote_scp_path2="$remote_user2@$remote_host2:$remote_path2"
+remote_host3=penguin
+remote_user3=arul
+remote_path3="/home/arul/data/personal/keys"
+remote_scp_path3="$remote_user3@$remote_host3:$remote_path3"
+
 encFileName=kanakku.txt.enc
 encFileNameGpg=kanakku.txt.gpg
 encFileNameYubi=kanakku.txt.yubi
@@ -100,6 +105,17 @@ if [ $? -eq 0 ]; then
 else
    echo "[ERROR] $remote_host2 not available, skipping ..." | tee -a $log_file
 fi
+
+# if third remote host available, backup there as well.
+echo "[INFO] checking remote server '$remote_host3' is available to backup ..." | tee -a $log_file
+/sbin/ping -t30 -c1 -qo $remote_host3 >/dev/null 2>&1
+if [ $? -eq 0 ]; then
+  echo "[INFO] backing up to remote host at '$remote_scp_path3'" | tee -a $log_file
+  scp -P55522 $encFileName $encFileName.backup $encFileNameYubi $encFileNameYubi.backup $encFileNameGpg $encFileNameGpg.backup $remote_scp_path3/.
+else
+   echo "[ERROR] $remote_host3 not available, skipping ..." | tee -a $log_file
+fi
+
 
 # secure erase the plain file
 echo "[INFO] Secure erasing plainfile '$plainFile'" | tee -a $log_file
