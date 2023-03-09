@@ -11,8 +11,14 @@
 # Version: Jan 6, 2018 --- original version
 # Version: Mar 1, 2023 --- updated with option and support for andrioid 10 or later.
 #
-options_list="s:r:m:a:lh"
+# ensure path for utilities
+export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
+
+# version format YY.MM.DD
+version=23.03.02
 my_name=`basename $0`
+my_version="$my_name v$version"
+options_list="s:r:m:a:lh"
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 device=""
 ring_vol=0
@@ -68,7 +74,7 @@ display_values() {
 }
 
 # --------------- main ----------------------
-echo "[INFO] `date`: $my_name starting ..." | tee $log_file
+echo "[INFO] $my_version starting ..." | tee $log_file
 
 # first get device count and see if anything is parired
 device_count=`adb devices|awk 'NR>1 {print $1}'|wc -w|tr -d ' '`

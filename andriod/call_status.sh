@@ -9,8 +9,14 @@
 # Author:  Arul Selvan
 # Version: Mar 2, 2023 --- initial version
 #
-options_list="s:l:epch"
+# ensure path for utilities
+export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
+
+# version format YY.MM.DD
+version=23.03.02
 my_name=`basename $0`
+my_version="$my_name v$version"
+options_list="s:l:epch"
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 device=""
 call_log_count=1
@@ -115,7 +121,7 @@ call_log() {
 }
 
 # --------------- main ----------------------
-echo "[INFO] `date`: $my_name starting ..." | tee $log_file
+echo "[INFO] $my_version starting ..." | tee $log_file
 
 # first get device count
 device_count=`adb devices|awk 'NR>1 {print $1}'|wc -w|tr -d ' '`
