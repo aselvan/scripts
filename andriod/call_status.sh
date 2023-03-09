@@ -15,17 +15,50 @@ log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 device=""
 call_log_count=1
 
-# prepare a awk script code for parsing call log
+#
+# prepare an awk script for parsing call log. The following are some headers 
+# we are interested other than the obvious data, name, number fields.
+# "type" where the values are ...
+#   1=incoming; 2=outgoing; 3=missed;4=voicemail; 5=rejeted; 6=blocked; 
+#   7=answered externally
 read -d '' parseLogScript << EOF
 {
+  duration=0;
   for(i=1;i<=NF;i++) {
     split(\$i,a,"="); 
     if (a[1] ==" date") {
       cmd=sprintf("date -r %d",a[2]/1000); 
       system(cmd);
     }
-    if (a[1]==" name") printf "\\\t%s\\\n",a[2]; 
-    if (a[1]==" normalized_number") printf "\\\t%s\\\n",a[2]; 
+    if (a[1]==" duration") {
+      duration=sprintf("%0.2f",a[2]/60);
+    }
+    if (a[1]==" name") printf "\\\tName: %s\\\n",a[2]; 
+    if (a[1]==" normalized_number") printf "\\\tNumber: %s\\\n",a[2];
+    if (a[1]==" type") {
+      if(a[2]== "1") {
+        printf "\\\tCall Type: Incoming\\\n";
+      }
+      else if (a[2]== "2") {
+        printf "\\\tCall Type: Outgoing\\\n";
+      }
+      else if (a[2]== "3") {
+        printf "\\\tCall Type: Missed\\\n";
+      }
+      else if (a[2]== "4") {
+        printf "\\\tCall Type: Rejected\\\n";
+      }
+      else if (a[2]== "5") {
+        printf "\\\tCall Type: Blocked\\\n";
+      }
+      else {
+        printf "\\\tCall Type: Unknown\\\n";
+      }
+      if (duration != 0) {
+        printf "\\\tDuration: %s\\\n",duration;
+        duration=0;
+      }
+    }
   }
 }
 EOF
