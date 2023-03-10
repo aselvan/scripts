@@ -13,7 +13,7 @@
 
 os_name=`uname -s`
 my_name=`basename $0`
-options="s:vlh"
+options="s:ivlh"
 
 do_log=0
 operation="view"
@@ -22,6 +22,7 @@ encFileBaseName="kanakku.txt"
 search_string=""
 gpg_opt="-qd"
 openssl_opt="enc -d -aes-256-cbc -a -in"
+egrep_opt=""
 
 # ensure paths so we don't need to deal with location of tools
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/opt/homebrew/bin:$PATH"
@@ -32,7 +33,8 @@ usage() {
   
 Usage: $my_name [options]
   
-  -s <string> ==> decrypt and regex search for 'string' in the content
+  -s <string> ==> decrypt and regex case-sensitive search for 'string'
+  -i          ==> search will be case-insensitive
   -v          ==> decrypt and open the file w/ vi (view) [default view]
   -l          ==> log [default: no logging].
 
@@ -86,7 +88,7 @@ do_view() {
 }
 
 do_search() {
-  if [ -z $search_string ] ; then
+  if [ -z "$search_string" ] ; then
     log "[ERROR] search string is missing!"
     usage
   fi
@@ -94,11 +96,11 @@ do_search() {
   if [ -f $encFileBaseName.gpg ] ; then
     log "[INFO] decrypting $encFileBaseName.gpg for search ..."
     echo
-    gpg $gpg_opt $encFileBaseName.gpg | egrep -i "$search_string"
+    gpg $gpg_opt $encFileBaseName.gpg | egrep $egrep_opt $search_string
   else
     echo
     log "[INFO] decrypting $encFileBaseName.enc for search ..."
-    openssl $openssl_opt $encFileBaseName.enc | egrep -i "$search_string"
+    openssl $openssl_opt $encFileBaseName.enc | egrep $egrep_opt $search_string
   fi
   exit
 }
@@ -111,6 +113,9 @@ while getopts $options opt; do
     s)
       search_string=$OPTARG
       operation="search"
+      ;;
+    i)
+      egrep_opt="-i"
       ;;
     v)
       operation="view"
