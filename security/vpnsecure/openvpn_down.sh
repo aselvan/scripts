@@ -19,7 +19,7 @@
 #
 
 # version format YY.MM.DD
-version=22.10.20
+version=23.03.10
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 host_name=`hostname`
@@ -27,8 +27,8 @@ os_name=`uname -s`
 verbose=0
 cmdline_args=`printf "%s " $@`
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
-dns_save_file="/tmp/openvpn_dns_save.log"
-domain_save_file="/tmp/openvpn_domain_save.log"
+dns_save_file="$HOME/openvpn_dns_save.log"
+domain_save_file="$HOME/openvpn_domain_save.log"
 primary_svc=""
 
 # ensure path for cron runs
