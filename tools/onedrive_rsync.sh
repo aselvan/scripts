@@ -38,7 +38,8 @@ rsync_opts="-azqt -O --no-links --no-D --delete --inplace --cvs-exclude --exclud
 # backup locations
 photos_src="/var/www/photos"
 videos_src="/var/www/video"
-src_dirs="$photos_src $videos_src"
+scrapbooks_src="/var/www/scrapbooks"
+src_dirs="$photos_src $videos_src $scrapbooks_src"
 
 onedrive_label="onedrive"
 mount_point="/mnt/onedrive"
