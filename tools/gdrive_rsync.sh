@@ -23,6 +23,7 @@ rsync_opts="-aq --no-links --no-D --delete --inplace --exclude=*.html --exclude=
 # TODO: backup locations (change as needed)
 photos_src="/var/www/photos"
 videos_src="/var/www/video"
+scrapbooks_src="/var/www/scrapbooks"
 gdrive_dest="/root/gdrive/home/media"
 subject_success="gDrive rsync success"
 subject_failed="gDrive rsync failed"
@@ -122,7 +123,7 @@ echo "[INFO] Start timestamp: `date`" >> $log_file
 # check for gdrive availability
 check_gdrive
 
-# start rsync
+# sync photos
 echo "[INFO] Backup of $photos_src starting at: `date +%r`" >> $log_file
 /usr/bin/rsync $rsync_opts $photos_src $gdrive_dest >>$log_file 2>&1
 rc=$?
@@ -133,11 +134,24 @@ if [ $rc -ne 0 ]; then
 fi
 echo "[INFO] backup of $photos_src completed at: `date +%r`" >> $log_file
 
+# sync scrapbooks
+echo "[INFO] Backup of $scrapbooks_src starting at: `date +%r`" >> $log_file
+/usr/bin/rsync $rsync_opts $scrapbooks_src $gdrive_dest >>$log_file 2>&1
+rc=$?
+if [ $rc -ne 0 ]; then
+  echo "[ERROR] while rsync; error = $rc ... terminating." >> $log_file
+  unmount_gdrive
+  mail_and_exit "$subject_failed"
+fi
+echo "[INFO] backup of $scrapbooks_src completed at: `date +%r`" >> $log_file
+
+
 #########################################################################
 # Removed video backup to conserve space since we have videos in onedirve 
 # which is much larger i.e. 1TB 
 # -Arul, Oct 22, 2022
 ####################################################################
+# sync videos
 #echo "[INFO] Backup of $videos_src starting at: `date +%r`" >> $log_file
 #/usr/bin/rsync $rsync_opts $videos_src $gdrive_dest >>$log_file 2>&1
 #rc=$?
