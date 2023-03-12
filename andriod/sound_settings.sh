@@ -25,6 +25,7 @@ ring_vol=0
 media_vol=0
 alarm_vol=0
 device_count=0
+dnd_status=0
 
 usage() {
   echo "Usage: $my_name [-s <device] [-r <value>] [-m <value>] [-a <value>]"
@@ -71,6 +72,12 @@ display_values() {
 
   vol=`adb $device shell cmd media_session volume --get --stream 4|awk '/volume is/ {print $4;}'`
   echo "[INFO] Alarm volume: $vol" | tee -a $log_file
+
+  if [ "$dnd_status" -eq 0 ] ; then
+    echo "[INFO] DnD is: OFF" | tee -a $log_file
+  else
+    echo "[INFO] DnD is: ON" | tee -a $log_file
+  fi
 }
 
 # --------------- main ----------------------
@@ -120,6 +127,7 @@ if [ $device_count -gt 1 ] && [ -z "$device" ] ; then
   exit 2
 fi
 
+dnd_status=`adb $device shell settings get global zen_mode`
 # if no options are specified, attempt to read the current values and display
 if [ $ring_vol -eq 0 ] && [ $media_vol -eq 0 ] && [ $alarm_vol -eq 0 ] ; then
   display_values
@@ -127,7 +135,6 @@ if [ $ring_vol -eq 0 ] && [ $media_vol -eq 0 ] && [ $alarm_vol -eq 0 ] ; then
 fi
 
 # can't change any volume settings if DnD is on
-dnd_status=`adb -s $device shell settings get global zen_mode`
 if [ ! -z $dnd_status ] && [ $dnd_status -ne 0 ] ; then
   echo "[WARN] Do Not Distrub (DnD) is enabled, value=$dnd_status"| tee -a $log_file
   echo "[WARN] Can not adjust sound settings when DnD is on ... exiting."| tee -a $log_file
