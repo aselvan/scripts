@@ -80,24 +80,35 @@ usage() {
   exit
 }
 
-connect_device() {
-  # attempt to connect
-  echo "[INFO] attempting to connect to the device ($device) ... "| tee -a $log_file
-  adb connect $device
-}
-
 check_device() {
   echo "[INFO] check if the device ($device) is connected  ... "| tee -a $log_file
   devices=$(adb devices|awk 'NR>1 {print $1}')
   for d in $devices ; do
-    if [[ $d == $device[:.]* ]]; then
-      return
-    fi
+    case $d in 
+      $device[:.]*)
+        # must be a tcp device, attempt to connect
+        echo "[INFO] this device ($device) is connected via TCP, attempting to connect ... "| tee -a $log_file
+        adb connect $device 2>&1 | tee -a $log_file
+        return
+        ;;
+      $device)
+        # matched the full string could be USB or TCP (in case argument contains port)
+        # if TCP make connection otherwise do nothing
+        if [[ $device == *":"* ]] ; then
+          echo "[INFO] this device ($device) is connected via TCP, attempting to connect ... "| tee -a $log_file
+          adb connect $device 2>&1 | tee -a $log_file
+        else
+          echo "[INFO] this device ($device) is connected via USB ... "| tee -a $log_file
+        fi
+        return
+        ;;
+    esac
   done
   
   echo "[ERROR] the specified device ($device) does not exist or connected!" | tee -a $log_file
   exit 1
 }
+
 
 call_pickup() {
   echo "[INFO] picking up call on device $device" | tee -a $log_file
@@ -136,7 +147,6 @@ while getopts "$options_list" opt ; do
   case $opt in 
     s)
       device=$OPTARG
-      connect_device
       check_device
       device="-s $device"
       ;;
