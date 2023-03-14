@@ -19,10 +19,10 @@
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
 
 # version format YY.MM.DD
-version=23.03.09
+version=23.03.14
 my_name=`basename $0`
 my_version="$my_name v$version"
-options_list="s:lau3h"
+options_list="s:p:lau3h"
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 all_packages_file="/tmp/$(echo $my_name|cut -d. -f1)_allpackages.txt"
 your_packages_file="/tmp/$(echo $my_name|cut -d. -f1)_yourpackages.txt"
@@ -36,14 +36,17 @@ com.samsung.slsi.telephony.oemril com.vzw.apnlib com.att.myWireless \
 com.att.tv com.verizon.obdm_permissions com.verizon.obdm com.att.callprotect"
 
 usage() {
-  echo "Usage: $my_name -s <device> <[-l] [-r] [-a] [-3]>"
-  echo "  -s <device> ---> device id of your phone paired with adb [must be first option]"
-  echo "  -l          ---> list all known bloatware"
-  echo "  -a          ---> list all packages in the phone"
-  echo "  -3          ---> list 3rd party packages only a.k.a apps you installed"
-  echo "  -u          ---> uninstall all bloatware"
-  echo "  -h help"
-  exit
+  cat << EOF
+  Usage: $my_name -s <device> <[-l] [-r] [-a] [-3]>
+    -s <device>  ---> device id of your phone paired with adb [must be first option]
+    -l           ---> list all known bloatware
+    -a           ---> list all packages in the phone
+    -p <package> ---> check if <package> is installed.
+    -3           ---> list all 3rd party packages only a.k.a apps you installed
+    -u           ---> uninstall all bloatware
+    -h help
+EOF
+  exit 0
 }
 
 connect_device() {
@@ -99,6 +102,21 @@ list_all() {
   exit 0
 }
 
+check_package() {
+  p=$1
+  check_multiple_device
+
+  echo "[INFO] checking presense of package '$p' ..." | tee -a $log_file
+  adb $device shell pm list packages $p | grep -q $p
+  if [ $? -eq 0 ] ; then
+    echo "[INFO] package '$p': Found" | tee -a $log_file
+  else
+    echo "[INFO] package '$p': Not Found" | tee -a $log_file
+  fi
+  exit 0
+}
+
+
 list_3rdparty() {
   echo "[INFO] creating a list of all packages you installed ..." | tee -a $log_file
   adb $device shell pm list packages -3 > $your_packages_file
@@ -128,7 +146,7 @@ uninstall_bloatware() {
 }
 
 # --------------- main ----------------------
-echo "[INFO] $my_version starting ..." | tee $log_file
+echo "[INFO] $my_version" | tee $log_file
 
 # first get device count
 device_count=`adb devices|awk 'NR>1 {print $1}'|wc -w|tr -d ' '`
@@ -149,6 +167,9 @@ while getopts "$options_list" opt ; do
       ;;
     l)
       list_bloatware
+      ;;
+    p)
+      check_package $OPTARG
       ;;
     a)
       list_all
