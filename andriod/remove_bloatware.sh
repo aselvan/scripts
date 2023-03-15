@@ -13,7 +13,8 @@
 # there are multiple devices paried, you need to specifiy device name using -s option.
 #
 # Author:  Arul Selvan
-# Version: Mar 9, 2023 --- initial version
+# Version: 23.03.09 --- initial version
+# Version: 23.03.14 --- check device on TCP or USB; check if bloatware is running
 #
 # ensure path for utilities
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
@@ -95,9 +96,15 @@ list_bloatware() {
     adb $device shell pm list packages |grep -q $bw
     if [ $? -eq 0 ] ; then
       path=$(adb $device shell pm path $bw)
-      printf "\t$bw : Yes ; $path\n" | tee -a $log_file
+      pid=$(adb $device shell pidof $bw)
+      if [ -z $pid ] ; then
+        running="No"
+      else
+        running="Yes"
+      fi
+      printf "   $bw: Yes; Running: $running; Pid: $pid; Path: $path\n" | tee -a $log_file
     else
-      printf "\t$bw : No\n" | tee -a $log_file
+      printf "   $bw : No\n" | tee -a $log_file
     fi
   done
   exit 0
