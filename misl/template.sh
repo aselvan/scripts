@@ -8,7 +8,7 @@
 #
 
 # version format YY.MM.DD
-version=22.07.19
+version=23.03.17
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 host_name=`hostname`
@@ -24,13 +24,15 @@ sample_env="${SAMPLE_ENV:-default_value}"
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
 
 usage() {
-  echo ""
-  echo "Usage: $my_name [options]"
-  echo "  -v     ---> verbose mode prints info messages, otherwise just errors are printed"
-  echo "  -h     ---> print usage/help"
-  echo ""
-  echo "example: $my_name -h"
-  echo ""
+  cat << EOF
+
+  Usage: $my_name [options]
+     -v     ---> verbose mode prints info messages, otherwise just errors are printed
+     -h     ---> print usage/help
+
+  example: $my_name -h
+  
+EOF
   exit 0
 }
 
@@ -49,7 +51,8 @@ init_log() {
   if [ -f $log_file ] ; then
     rm -f $log_file
   fi
-  write_log "[STAT]" "$my_version: starting at `date +'%m/%d/%y %r'` ..."
+  write_log "[STAT]" "$my_version"
+  write_log "[STAT]" "starting at `date +'%m/%d/%y %r'` ..."
 }
 
 check_root() {
