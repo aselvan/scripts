@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# sound_settings.sh --- simple wrapper to set volume on andrioid phone
+# phone_settings.sh --- simple wrapper to set volume on andrioid phone
 #
 # Setup desired sound volume on different andriod sound devices like ringtone, media etc.
 #

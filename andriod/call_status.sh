@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# call_status.sh --- simple wrapper over adb to check call status
+# phone_status.sh --- simple wrapper over adb to check call status
 #
 #
 # Note: in order for this script to work, you must have paired your phone w/ adb first. If 
