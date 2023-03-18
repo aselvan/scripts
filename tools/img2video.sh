@@ -36,7 +36,8 @@ output_file="output.mp4"
 title_image="_title.jpg"
 title_background="blue"
 title_foreground="white"
-title_font="Chalkboard-SE-Bold"
+#title_font="Chalkboard-SE-Bold" # ubunutu is missing this so using a common one
+title_font="Palatino-Bold"
 title_font_size=75
 title_size="1600x1200"
 
