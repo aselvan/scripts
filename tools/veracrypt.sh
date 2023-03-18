@@ -71,7 +71,7 @@ init_log() {
 check_root() {
   if [ `id -u` -ne 0 ] ; then
     write_log "[ERROR]" "root access needed to run this script, run with 'sudo $my_name' ... exiting."
-    exit
+    exit 1
   fi
 }
 
@@ -87,7 +87,13 @@ init_osenv() {
 umount_veracrypt() {
   write_log "[INFO]" "Unmounting $mount_point volume ..."
   $veracrypt_bin -t -d $mount_point
-  exit 0
+  if [ $? -eq 0 ] ; then
+    write_log "[INFO]" "Successfully umounted volume at $mount_point"
+    exit 0
+  else
+    write_log "[ERROR]" "Failed to mount container '$container_file'"
+    exit 1
+  fi
 }
 
 list_volumes() {
@@ -146,6 +152,8 @@ write_log "[INFO]" "Mounting $container_file at mount point $mount_point ..."
 $veracrypt_bin -t -k "" --pim=0 --protect-hidden=no --slot 1 --password "$password" --mount-options=timestamp --mount $container_file $mount_point
 if [ $? -eq 0 ] ; then
   write_log "[INFO]" "Successfully mounted volume at $mount_point"
+  exit 0
 else
   write_log "[ERROR]" "Failed to mount container '$container_file'"
+  exit 1
 fi
