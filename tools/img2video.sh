@@ -59,7 +59,7 @@ EOF
 # for now hardcoded values, can expand to take arguments for font/image size etc.
 create_title_image() {
   echo "[INFO] creating video title image `pwd`/$title_image ..." |tee -a $log_file
-  magick -size $title_size -gravity center -background $title_background -fill $title_foreground -font $title_font -pointsize $title_font_size label:"$title_text" $title_image
+  convert -size $title_size -gravity center -background $title_background -fill $title_foreground -font $title_font -pointsize $title_font_size label:"$title_text" $title_image
 }
 
 # ensure ffmpeg is available
