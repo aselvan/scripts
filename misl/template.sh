@@ -55,6 +55,14 @@ init_log() {
   write_log "[STAT]" "starting at `date +'%m/%d/%y %r'` ..."
 }
 
+init_osenv() {
+  if [ $os_name = "Darwin" ] ; then
+    write_log "[STAT]" "MacOS environment"
+  else
+    write_log "[STAT]" "Other environment (Linux)"
+  fi
+}
+
 check_root() {
   if [ `id -u` -ne 0 ] ; then
     write_log "[ERROR]" "root access needed to run this script, run with 'sudo $my_name' ... exiting."
@@ -95,6 +103,7 @@ check_connectivity() {
 
 # ----------  main --------------
 init_log
+init_osenv
 # parse commandline options
 while getopts $options opt; do
   case $opt in
