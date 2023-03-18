@@ -101,6 +101,17 @@ check_connectivity() {
   return 1
 }
 
+path_separate() {
+  local path=$1
+  local base_part=${path##*/}
+  local name_part=${base_part%.*}
+  local ext=${base_part##*.}
+
+  echo "Base: $base_part"
+  echo "Name: $name_part"
+  echo "Ext:  $ext"
+}
+
 # ----------  main --------------
 init_log
 init_osenv
@@ -126,4 +137,6 @@ if [ $? -eq 0 ] ; then
 else
   write_log "[WARN]" "We don't have network connectivity!"
 fi
+
+path_separate "/var/log/apache2/access.log"
 
