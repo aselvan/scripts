@@ -20,7 +20,7 @@ os_name=`uname -s`
 cmdline_args=`printf "%s " $@`
 
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
-options="c:p:lmuvh?"
+options="c:p:u:lmvh?"
 verbose=1
 password="${VERACRYPT_PASSWORD:-}"
 # volume will be mounted at $mount_point/$container_file 
