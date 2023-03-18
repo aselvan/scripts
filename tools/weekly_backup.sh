@@ -18,7 +18,7 @@ my_name=`basename $0`
 my_version="`basename $0` v$version"
 host_name=`hostname`
 os_name=`uname -s`
-options_list="e:h"
+options_list="e:o:h"
 
 title="selvans.net weekly backup"
 run_host=`hostname`
@@ -50,6 +50,7 @@ device_names=("Primary,/media/usb-1tb-2" "Secondary,/media/usb-1tb-3" "Tertiary 
 usage() {
   echo "Usage: $my_name [options]"
   echo "  -e <email_address> email address to send backup report"
+  echo "  -o <offsite_device> mark offsite device for special handling [default: $offsite_device]"
   echo "  -h help"
   exit 0
 }
@@ -105,11 +106,14 @@ do_backup() {
   echo "    Backup of /var/www  ... `date`" >> $log_file
   nice -19 $rsync_bin $rsync_opts /var/www $backup_dir
 
-  # skip this for offsite storage as we may have sensitive information
-  # TODO: need add a encrypted drive to include this but for now just skip
+  # Skip this for offsite storage as we may have sensitive information
+  # For off-site device copy just the encrypted container.
   if [ "$usb_mount" != "$offsite_device" ] ; then
     echo "    Backup of /data/transfer ... `date`" >> $log_file
     nice -19 $rsync_bin $rsync_opts /data/transfer $backup_dir
+  else
+    echo "    Off-site backup /data/transfer/arul-backup/data/encrypted"
+    nice -19 $rsync_bin $rsync_opts /data/transfer/arul-backup/data/encrypted $backup_dir
   fi
 
   echo "    Backup of UFW config (/lib/ufw) ... `date`" >> $log_file
@@ -144,6 +148,9 @@ while getopts "$options_list" opt; do
     e)
       email_address=$OPTARG
       ;;
+    o)
+      offsite_device="$OPTARG"
+      ;;
     h)
       usage
       ;;
@@ -155,6 +162,9 @@ while getopts "$options_list" opt; do
      ;;
    esac
 done
+
+# reset the list in case offsite_device is provided as cmdline option
+device_names=("Primary,/media/usb-1tb-2" "Secondary,/media/usb-1tb-3" "Tertiary eSATA-RAID,/media/sata-3tb" "Offsite SSD,$offsite_device" )
 
 for devpair in "${device_names[@]}" ; do
   IFS=,
