@@ -20,7 +20,7 @@ os_name=`uname -s`
 cmdline_args=`printf "%s " $@`
 
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
-options="c:p:muvh?"
+options="c:p:lmuvh?"
 verbose=1
 password="${VERACRYPT_PASSWORD:-}"
 # volume will be mounted at $mount_point/$container_file 
@@ -39,6 +39,7 @@ usage() {
      -c <container_file> ---> encrypted container file to mount as volume
      -p <password>       ---> mount password for the encrypted container
      -u <mountpoint>     ---> unmount the currently mounted volume
+     -l                  ---> list all veracrypt volumes
      -v                  ---> verbose mode prints info messages, otherwise just errors are printed
      -h                  ---> print usage/help
 
@@ -89,6 +90,12 @@ umount_veracrypt() {
   exit 0
 }
 
+list_volumes() {
+  write_log "[INFO]" "list of volumes mounted in this host below"
+  $veracrypt_bin -t -l
+  exit 0
+}
+
 # ----------  main --------------
 init_log
 init_osenv
@@ -101,6 +108,9 @@ while getopts $options opt; do
     u)
       mount_point="$OPTARG"      
       umount_veracrypt
+      ;;
+    l)
+      list_volumes 
       ;;
     p)
       password="$OPTARG"
@@ -133,7 +143,7 @@ fi
 
 # mount the volume
 write_log "[INFO]" "Mounting $container_file at mount point $mount_point ..."
-$veracrypt_bin -t -k "" --pim=0 --protect-hidden=no --slot 1 --password "$password" --mount $container_file $mount_point
+$veracrypt_bin -t -k "" --pim=0 --protect-hidden=no --slot 1 --password "$password" --mount-options=timestamp --mount $container_file $mount_point
 if [ $? -eq 0 ] ; then
   write_log "[INFO]" "Successfully mounted volume at $mount_point"
 else
