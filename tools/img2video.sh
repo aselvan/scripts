@@ -33,7 +33,7 @@ scale="2400:1600"
 video_codec="-vcodec libx264"
 frame_rate="0.25"
 filter_complex="scale=$scale:force_original_aspect_ratio=decrease,pad=$scale:(ow-iw)/2:(oh-ih)/2"
-image_wildcard="*.jpg"
+image_wildcard=".jpg|.JPG"
 audio_file=""
 title_text=""
 output_file="output.mp4"
@@ -47,12 +47,12 @@ title_size="1600x1200"
 usage() {
 cat << EOF
   Usage: $my_name [options]
-    -i <image[s]>   --> input images [default: $image_wildcard]
-    -t <text>       --> text can contain '\n' for multi-line to create a title image [optional]
-    -a <mp3>        --> mp3 audio for adding background [optional]
-    -s <scale>      --> scale images to width:height [default: $scale]
-    -f <framerate>  --> framerate image/sec i.e. 1 means 1 image/sec [default: $frame_rate]"
-    -o <output>     --> filename for output video [default: $output_file]
+    -i <images]>   --> regex for input images in current dir [default: "$image_wildcard"]
+    -t <text>      --> text can contain '\n' for multi-line to create a title image [optional]
+    -a <mp3>       --> mp3 audio for adding background [optional]
+    -s <scale>     --> scale images to width:height [default: $scale]
+    -f <framerate> --> framerate image/sec i.e. 1 means 1 image/sec [default: $frame_rate]"
+    -o <output>    --> filename for output video [default: $output_file]
   
    example: $my_name -t "Vacation 2023\nPictures from our vacation" -i "$image_wildcard" -a background.mp3 -s $scale -o $output_file
 
@@ -81,7 +81,7 @@ create_sorted_filelist() {
   else
     echo -n "" > $image_list_file
   fi
-  for f in `ls -rt $image_wildcard` ; do
+  for f in `ls -rt | egrep "$image_wildcard"` ; do
     if [ $f == $title_image ] ; then
       continue
     fi
