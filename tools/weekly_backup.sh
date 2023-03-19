@@ -40,7 +40,7 @@ rsync_bin="/usr/bin/rsync"
 # when a device is 90% full, send a nag email
 space_limit_percent=90
 backup_failed=0
-offsite_device="/media/usb-ssd-250g"
+offsite_device="/media/usb-ssd-500g"
 IFS_old=$IFS
 
 # list of devices: descriptive name and mount points. NOTE: the /etc/fstab
