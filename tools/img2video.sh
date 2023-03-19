@@ -113,5 +113,5 @@ while getopts $options opt; do
 done
 
 echo "[INFO] creating video file using all images found at `pwd`/$image_wildcard ..." |tee -a $log_file
-ffmpeg -framerate $frame_rate -pattern_type glob -i "$image_wildcard" $audio_file $video_codec -filter_complex "$filter_complex" -pix_fmt yuv420p -r 30 -shortest -y $output_file >> $log_file 2>&1
+ffmpeg -framerate $frame_rate -pattern_type glob -i "$image_wildcard" $audio_file $video_codec -filter_complex "$filter_complex" -pix_fmt yuv420p -r 30 -y $output_file >> $log_file 2>&1
 echo "[INFO] Created video file: `pwd`/$output_file" | tee -a $log_file
