@@ -112,7 +112,7 @@ do_backup() {
     echo "    Backup of /data/transfer ... `date`" >> $log_file
     nice -19 $rsync_bin $rsync_opts /data/transfer $backup_dir
   else
-    echo "    Off-site backup /data/transfer/arul-backup/data/encrypted"
+    echo "    Off-site backup /data/transfer/arul-backup/data/encrypted" >> $log_file
     nice -19 $rsync_bin $rsync_opts /data/transfer/arul-backup/data/encrypted $backup_dir
   fi
 
