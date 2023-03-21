@@ -14,6 +14,8 @@ my_version="`basename $0` v$version"
 host_name=`hostname`
 os_name=`uname -s`
 cmdline_args=`printf "%s " $@`
+dir_name=`dirname $0`
+my_path=$(cd $dir_name; pwd -P)
 
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 options="vh?"
@@ -47,12 +49,14 @@ write_log() {
 
   echo "$msg_type $msg" | tee -a $log_file
 }
+
 init_log() {
   if [ -f $log_file ] ; then
     rm -f $log_file
   fi
   write_log "[STAT]" "$my_version"
-  write_log "[STAT]" "starting at `date +'%m/%d/%y %r'` ..."
+  write_log "[STAT]" "Running from: $my_path"
+  write_log "[STAT]" "Start time:   `date +'%m/%d/%y %r'` ..."
 }
 
 init_osenv() {
