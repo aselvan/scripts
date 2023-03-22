@@ -104,6 +104,7 @@ if [ -f $log_file ] ; then
   rm $log_file
 fi
 echo "[INFO] $my_version" |tee $log_file
+echo "[INFO] cmdline: $my_name $cmdline_args" |tee $log_file
 
 # parse commandline options
 while getopts $options opt; do
