@@ -43,6 +43,8 @@ title_foreground="white"
 title_font="Chalkboard-SE-Bold" # This is macOS font found @ /System/Library/Fonts/Supplemental/
 title_font_size=75
 title_size="1600x1200"
+cmdline_args=`printf "%s " $@`
+IFS_old=$IFS
 
 usage() {
 cat << EOF
@@ -81,7 +83,8 @@ create_sorted_filelist() {
   else
     echo -n "" > $image_list_file
   fi
-  for f in `ls -rt | egrep "$image_wildcard"` ; do
+  
+  for f in `ls -rt | egrep $image_wildcard` ; do
     if [ $f == $title_image ] ; then
       continue
     fi
@@ -113,7 +116,11 @@ while getopts $options opt; do
       create_title_image
       ;;
     a)
-      audio_file="-stream_loop -1 -i $OPTARG -shortest -map 0:v -map 1:a"
+      if [ -f $OPTARG ] ; then
+        audio_file="-stream_loop -1 -i $OPTARG -shortest -map 0:v -map 1:a"
+      else
+        echo "[WARN] audio file ($OPTARG) does not exists, continuing w/ out audio" | tee -a $log_file
+      fi
       ;;
     s)
       scale="$OPTARG"
@@ -143,7 +150,7 @@ create_sorted_filelist
 echo "[INFO] creating video using all images found at: `pwd`/$image_wildcard ..." |tee -a $log_file
 ffmpeg -f concat -safe 0 -r $frame_rate -i $image_list_file $audio_file $video_codec -filter_complex "$filter_complex" -pix_fmt yuv420p -r 30 -y $output_file >> $log_file 2>&1
 if [ $? -eq 0 ] ; then
-  echo "[INFO] Success creating video file: `pwd`/$output_file" | tee -a $log_file
+  echo "[INFO] Success creating video file: $output_file" | tee -a $log_file
 else
   echo "[ERROR] Failed to create video, ffmpeg returned error see log file $log_file for details " | tee -a $log_file
 fi
