@@ -150,11 +150,14 @@ create_sorted_filelist
 
 echo "[INFO] creating video using all images found at: `pwd`/$image_wildcard ..." |tee -a $log_file
 ffmpeg -f concat -safe 0 -r $frame_rate -i $image_list_file $audio_file $video_codec -filter_complex "$filter_complex" -pix_fmt yuv420p -r 30 -y $output_file >> $log_file 2>&1
-if [ $? -eq 0 ] ; then
-  echo "[INFO] Success creating video file: $output_file" | tee -a $log_file
-else
-  echo "[ERROR] Failed to create video, ffmpeg returned error see log file $log_file for details " | tee -a $log_file
-fi
+rc=$?
 echo "[INFO] cleaning up tmp files" | tee -a $log_file
 cleanup_tmp
-echo "[INFO] all done" | tee -a $log_file
+
+if [ $rc -eq 0 ] ; then
+  echo "[INFO] Success creating video file: $output_file" | tee -a $log_file
+  exit 0
+else
+  echo "[ERROR] Failed to create video, ffmpeg returned error see log file $log_file for details " | tee -a $log_file
+  exit 1
+fi
