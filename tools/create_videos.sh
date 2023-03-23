@@ -16,14 +16,14 @@
 # first line ignored as header and no comments are supported.
 #
 # ------------------  CSV File Sample ---------------------
-# Directory Path,  Image Files,  Background MP3, Video Title, Video File Name
-# /Users/arul/test, .jpg|.JPG, background.mp3, "Our Vacation 1\n2023", vacation1.mp4
-# /Users/arul/test, .jpeg|.JPEG, background.mp3, "Our Vacation 2\n2023", vacation2.mp4
-# /foo/bar, .png, background.mp3, "Our Vacation 1\n2023", vacation1.mp4
+# Directory Path,  Image Files,  Background MP3, Video Title, Video File Name, Create Date
+# /Users/arul/test, .jpg|.JPG, background.mp3, "Our Vacation 1\n2023", vacation1.mp4, 19850101800
+# /Users/arul/test, .jpeg|.JPEG, background.mp3, "Our Vacation 2\n2023", vacation2.mp4,
+# /foo/bar, .png, background.mp3, "Our Vacation 1\n2023", vacation1.mp4,
 #
 # Note: 
 #   Title column can have space, line feed '\n' etc but rest like path, mask, 
-#   filename should not contain space or linefeed etc.
+#   filename should not contain space or linefeed etc. Create date format YYYYMMDDHHMM
 #
 # PreReq: 
 #   the following scripts from https://github.com/aselvan/scripts/tree/master/tools 
@@ -67,6 +67,7 @@ video_name=""
 IFS_old=$IFS
 record_count=0
 img2video_args=""
+default_create_date=`date +%Y%m%d%H%M`
 
 # ensure path for cron runs
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
@@ -136,6 +137,7 @@ trim_column_values() {
   video_title=$(echo $video_title|xargs)
   video_name=$(echo $video_name|xargs)
   background_mp3_file=$(echo $background_mp3_file|xargs)
+  create_date=$(echo $create_date|xargs)
 }
 
 create_video() {
@@ -153,6 +155,11 @@ create_video() {
   if [ ! -d $src_path ] ; then
     write_log "[ERROR] Image source directory $src_path does not exist!, skipping row #$record_count"
     return
+  fi
+
+  # if createdate is not provided use current timestamp
+  if [ -z $create_date ] ; then
+    create_date=$default_create_date
   fi
   
   # we should be in $stage_dir/images directory, just to be save use full path amd ensure it is clean
@@ -174,13 +181,19 @@ create_video() {
   # inject /dev/null as the input stream otherwise it would mess up our (parent)
   # input stream where we are reading the CSV file.
   if [ ! -z "$video_title" ] ; then
-    $img2video $img2video_args -t "$video_title" < /dev/null
+    $img2video $img2video_args -t "$video_title" -d $create_date < /dev/null
+    rc=$?
   else
-    $img2video $img2video_args < /dev/null
+    $img2video $img2video_args -d $create_date < /dev/null
+    rc=$?
+  fi
+  if [ $rc -eq 0 ] ; then
+    write_log "[STAT]" "Success creating video at $stage_dir/$video_name ..."
+  else
+    write_log "[ERROR]" "Video create failed, see log for details ($log_file) ..."
   fi
 
   # finally cleanup $stage_dir/images/ for next row
-  write_log "[STAT]" "Video created at $stage_dir/$video_name ..."
   rm -f $stage_dir/images/*
 }
 
@@ -230,7 +243,7 @@ fi
 # loop through CSV file and create video for each entry
 exec < $csv_file
 read header
-while IFS="," read -r src_path src_mask background_mp3_file video_title video_name ; do
+while IFS="," read -r src_path src_mask background_mp3_file video_title video_name create_date ; do
   # check for EOF
   if [ -z "$src_path" ] ; then
     continue
