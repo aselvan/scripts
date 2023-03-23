@@ -23,10 +23,11 @@
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
 
 # version format YY.MM.DD
-version=23.03.19
+version=23.03.23
 my_name=`basename $0`
 my_version="$my_name v$version"
-options="i:a:s:o:f:t:h?"
+options="i:a:s:o:f:t:d:vh?"
+verbose=0
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 image_list_file="image_list.txt"
 scale="2400:1600"
@@ -44,7 +45,9 @@ title_font="Chalkboard-SE-Bold" # This is macOS font found @ /System/Library/Fon
 title_font_size=75
 title_size="1600x1200"
 cmdline_args=`printf "%s " $@`
-IFS_old=$IFS
+copyright="created by SelvanSoft, LLC (selvansoft.com)"
+title_metadata="$my_version, $copyright"
+creation_date=`date +%Y%m%d%H%M`
 
 usage() {
 cat << EOF
@@ -54,12 +57,42 @@ cat << EOF
     -a <mp3>       --> mp3 audio for adding background [optional]
     -s <scale>     --> scale images to width:height [default: $scale]
     -f <framerate> --> framerate image/sec i.e. 1 means 1 image/sec [default: $frame_rate]"
+    -d <timestamp> --> Set output video timestamp; format YYYYMMDDHHMM [default: ${creation_date}01]"
+    -v             ---> verbose mode prints INFO messages, otherwise just errors
     -o <output>    --> filename for output video [default: $output_file]
   
    example: $my_name -t "Vacation 2023\nPictures from our vacation" -i "$image_wildcard" -a background.mp3 -s $scale -o $output_file
 
 EOF
   exit 0
+}
+
+check_pre_requirements() {
+  # ensure ffmpeg is available
+  which ffmpeg >/dev/null 2>&1
+  if [ $? -ne 0 ] ; then
+    echo "[ERROR] ffmpeg is required for this script to work, install it first [ex: brew install ffmpeg]."
+    exit 1
+  fi
+}
+
+write_log() {
+  local msg_type=$1
+  local msg=$2
+
+  # log info type only when verbose flag is set
+  if [ "$msg_type" == "[INFO]" ] && [ $verbose -eq 0 ] ; then
+    return
+  fi
+
+  echo "$msg_type $msg" | tee -a $log_file
+}
+init_log() {
+  if [ -f $log_file ] ; then
+    rm -f $log_file
+  fi
+  write_log "[STAT]" "$my_version"
+  write_log "[STAT]" "starting at `date +'%m/%d/%y %r'` ..."
 }
 
 cleanup_tmp() {
@@ -73,7 +106,7 @@ cleanup_tmp() {
 
 # for now hardcoded values, can expand to take arguments for font/image size etc.
 create_title_image() {
-  echo "[INFO] creating video title image $title_image ..." |tee -a $log_file
+  write_log "[INFO]" "creating video title image $title_image ..."
   convert -size $title_size -gravity center -background $title_background -fill $title_foreground -font $title_font -pointsize $title_font_size label:"$title_text" $title_image
 }
 
@@ -93,18 +126,8 @@ create_sorted_filelist() {
 }
 
 # ----------  main --------------
-# ensure ffmpeg is available
-which ffmpeg >/dev/null 2>&1
-if [ $? -ne 0 ] ; then
-  echo "[ERROR] ffmpeg is required for this script to work, install it first [ex: brew install ffmpeg]."
-  exit 1
-fi
-
-if [ -f $log_file ] ; then
-  rm $log_file
-fi
-echo "[INFO] $my_version" |tee $log_file
-echo "[INFO] cmdline: $my_name $cmdline_args" |tee $log_file
+init_log
+check_pre_requirements
 
 # parse commandline options
 while getopts $options opt; do
@@ -114,13 +137,15 @@ while getopts $options opt; do
       ;;
     t)
       title_text="$OPTARG"
+      clean_title=$(echo ${title_text//\\n/ })
+      title_metadata="$clean_title, $copyright"
       create_title_image
       ;;
     a)
       if [ -f $OPTARG ] ; then
         audio_file="-stream_loop -1 -i $OPTARG -shortest -map 0:v -map 1:a"
       else
-        echo "[WARN] audio file ($OPTARG) does not exists, continuing w/ out audio" | tee -a $log_file
+        write_log "[WARN]" "audio file ($OPTARG) does not exists, continuing w/ out audio"
       fi
       ;;
     s)
@@ -130,8 +155,14 @@ while getopts $options opt; do
     o)
       output_file="$OPTARG"
       ;;
+    d)
+      creation_date="$OPTARG"
+      ;;
     f)
       frame_rate="$OPTARG"
+      ;;
+    v)
+      verbose=1
       ;;
     ?)
       usage
@@ -148,16 +179,17 @@ done
 # create the timeline based order we want
 create_sorted_filelist
 
-echo "[INFO] creating video using all images found at: `pwd`/$image_wildcard ..." |tee -a $log_file
-ffmpeg -f concat -safe 0 -r $frame_rate -i $image_list_file $audio_file $video_codec -filter_complex "$filter_complex" -pix_fmt yuv420p -r 30 -y $output_file >> $log_file 2>&1
+write_log "[INFO]" "creating video using all images found at: `pwd`/$image_wildcard ..."
+ffmpeg -f concat -safe 0 -r $frame_rate -i $image_list_file $audio_file $video_codec -filter_complex "$filter_complex" -pix_fmt yuv420p -r 30 -y -timestamp ${creation_date}01 -metadata title="$title_metadata" $output_file >> $log_file 2>&1
 rc=$?
-echo "[INFO] cleaning up tmp files" | tee -a $log_file
+write_log "[INFO]" "cleaning up tmp files"
 cleanup_tmp
 
 if [ $rc -eq 0 ] ; then
-  echo "[INFO] Success creating video file: $output_file" | tee -a $log_file
+  write_log "[INFO]" "Success creating video file: $output_file"
+  touch -t $creation_date $output_file
   exit 0
 else
-  echo "[ERROR] Failed to create video, ffmpeg returned error see log file $log_file for details " | tee -a $log_file
+  write_log "[ERROR]" "Failed to create video, ffmpeg returned error see log file $log_file for details"
   exit 1
 fi
