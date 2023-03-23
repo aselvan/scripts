@@ -16,14 +16,18 @@
 # first line ignored as header and no comments are supported.
 #
 # ------------------  CSV File Sample ---------------------
-# Directory Path,  Image Files,  Background MP3,          Video Title,           Video File Name
-# /data/vacation1, ".jpg|.JPG", /vacation1/bg_music1.mp3, "Our Vacation 1\n2023", vacation1.mp4
-# /data/vacation2, ".png",      /vacation1/bg_music2.mp3, "Our Vacation 2\n2023", vacation2.mp4
-# /data/vacation3, ".png",                              ,                       , vacation3.mp4
+# Directory Path,  Image Files,  Background MP3, Video Title, Video File Name
+# /Users/arul/test, .jpg|.JPG, background.mp3, "Our Vacation 1\n2023", vacation1.mp4
+# /Users/arul/test, .jpeg|.JPEG, background.mp3, "Our Vacation 2\n2023", vacation2.mp4
+# /foo/bar, .png, background.mp3, "Our Vacation 1\n2023", vacation1.mp4
+#
+# Note: 
+#   Title column can have space, line feed '\n' etc but rest like path, mask, 
+#   filename should not contain space or linefeed etc.
 #
 # PreReq: 
-#   the following scripts from https://github.com/aselvan/scripts/tree/master/tools should 
-#   be in the current dir.
+#   the following scripts from https://github.com/aselvan/scripts/tree/master/tools 
+#   should be in the current dir.
 #
 #   img2video.sh 
 #   reset_file_timestamp.sh
@@ -35,7 +39,7 @@
 #
 
 # version format YY.MM.DD
-version=23.03.19
+version=23.03.22
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 host_name=`hostname`
@@ -124,10 +128,6 @@ build_img2video_arguments() {
   if [ ! -z "$background_mp3_file" ] ; then
     img2video_args="$img2video_args -a $background_mp3_file"
   fi
-
-  if [ ! -z "$video_title" ] ; then
-    img2video_args="$img2video_args -t \"$video_title\""
-  fi
 }
 
 trim_column_values() {
@@ -169,7 +169,15 @@ create_video() {
 
   # execute img2video and wait till it completes
   write_log "[STAT]" "Creating video. This task may take a long time, please wait ..."
-  $img2video $img2video_args
+  # handle args w/ space separately as they don't work on subshell.
+
+  # inject /dev/null as the input stream otherwise it would mess up our (parent)
+  # input stream where we are reading the CSV file.
+  if [ ! -z "$video_title" ] ; then
+    $img2video $img2video_args -t "$video_title" < /dev/null
+  else
+    $img2video $img2video_args < /dev/null
+  fi
 
   # finally cleanup $stage_dir/images/ for next row
   write_log "[STAT]" "Video created at $stage_dir/$video_name ..."
@@ -212,7 +220,7 @@ if [ ! -d "$stage_dir" ] ; then
 else
   # prepare staging dir and cd over there for our processing
   cd $stage_dir >/dev/null 2>&1
-  if [ $? -ne 0 ] ; then 
+  if [ $? -ne 0 ] ; then
     write_log "[ERROR]" "Unable to cd to stagedir: $stage_dir" || usage
   fi
   mkdir -p images
@@ -222,8 +230,7 @@ fi
 # loop through CSV file and create video for each entry
 exec < $csv_file
 read header
-while IFS="," read -r src_path src_mask background_mp3_file video_title video_name
-do
+while IFS="," read -r src_path src_mask background_mp3_file video_title video_name ; do
   # check for EOF
   if [ -z "$src_path" ] ; then
     continue
@@ -243,4 +250,4 @@ do
   
   # finally, create video
   create_video
-done 
+done
