@@ -15,16 +15,21 @@
 # and 4th column (video title) are optional (see row 3) can can be empty. Also the 
 # first line ignored as header and no comments are supported.
 #
-# ------------------  CSV File Sample ---------------------
+# ------------------  CSV File Format definition  ---------------------
 # Directory Path,  Image Files,  Background MP3, Video Title, Video File Name, Create Date
 # /Users/arul/test, .jpg|.JPG, background.mp3, "Our Vacation 1\n2023", vacation1.mp4, 19850101800
 # /Users/arul/test, .jpeg|.JPEG, background.mp3, "Our Vacation 2\n2023", vacation2.mp4,
 # /foo/bar, .png, background.mp3, "Our Vacation 1\n2023", vacation1.mp4,
+# 
+# See create_videos.csv file in this directory which is part of actual CSV rows
+# I used to create all my videos.
 #
 # Note: 
 #   Title column can have space, line feed '\n' etc but rest like path, mask, 
-#   filename should not contain space or linefeed etc. Create date format YYYYMMDDHHMM
-#
+#   filename should not contain space or linefeed etc. Create date should be 
+#   in UTC timzone with the format YYYYMMDDHHMM. If you don't care about exact 
+#   hour on the date you can just use timestamp in your timezone.
+# ------------------  CSV File Format definition  ---------------------
 # PreReq: 
 #   the following scripts from https://github.com/aselvan/scripts/tree/master/tools 
 #   should be in the current dir.
@@ -39,7 +44,7 @@
 #
 
 # version format YY.MM.DD
-version=23.03.22
+version=23.03.24
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 host_name=`hostname`
@@ -67,7 +72,7 @@ video_name=""
 IFS_old=$IFS
 record_count=0
 img2video_args=""
-default_create_date=`date +%Y%m%d%H%M`
+default_create_date=`date -u +%Y%m%d%H%M`
 
 # ensure path for cron runs
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
@@ -76,12 +81,12 @@ usage() {
   cat << EOF
 
   Usage: $my_name [options]
-     -c <csvfile>  ---> CSV file formated as explained above (read code)
+     -c <csvfile>  ---> CSV file formated as explained above (code comments)
      -s <stagedir> ---> staging path must have at least 100GB free space [default: '$stage_dir']
      -v            ---> verbose mode prints info messages, otherwise just errors
      -h            ---> print usage/help
 
-  example: $my_name -h
+  example: $my_name -c /data/videos/create_videos.csv -s /data/videos
   
 EOF
   exit 0
