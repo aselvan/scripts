@@ -47,7 +47,7 @@ title_size="1600x1200"
 cmdline_args=`printf "%s " $@`
 copyright="created by SelvanSoft, LLC (selvansoft.com)"
 title_metadata="$my_version, $copyright"
-creation_date=`date +%Y%m%d%H%M`
+creation_date=`date -u +%Y%m%d%H%M`
 
 usage() {
 cat << EOF
@@ -57,7 +57,7 @@ cat << EOF
     -a <mp3>       --> mp3 audio for adding background [optional]
     -s <scale>     --> scale images to width:height [default: $scale]
     -f <framerate> --> framerate image/sec i.e. 1 means 1 image/sec [default: $frame_rate]"
-    -d <timestamp> --> Set output video timestamp; format YYYYMMDDHHMM [default: ${creation_date}01]"
+    -d <timestamp> --> Set video create time in UTC; format is YYYYMMDDHHMM [default: ${creation_date}01]"
     -v             ---> verbose mode prints INFO messages, otherwise just errors
     -o <output>    --> filename for output video [default: $output_file]
   
