@@ -23,7 +23,7 @@
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
 
 # version format YY.MM.DD
-version=23.03.23
+version=23.03.24
 my_name=`basename $0`
 my_version="$my_name v$version"
 options="i:a:s:o:f:t:d:vh?"
@@ -36,9 +36,9 @@ frame_rate="0.25"
 filter_complex="scale=$scale:force_original_aspect_ratio=decrease,pad=$scale:(ow-iw)/2:(oh-ih)/2"
 image_wildcard=".jpg|.JPG"
 audio_file=""
-title_text=""
 output_file="output.mp4"
 title_image="title.jpg"
+end_image="end.jpg"
 title_background="blue"
 title_foreground="white"
 title_font="Chalkboard-SE-Bold" # This is macOS font found @ /System/Library/Fonts/Supplemental/
@@ -48,6 +48,8 @@ cmdline_args=`printf "%s " $@`
 copyright="created by SelvanSoft, LLC (selvansoft.com)"
 title_metadata="$my_version, $copyright"
 creation_date=`date -u +%Y%m%d%H%M`
+title_text="Home video from pictures\n$copyright"
+end_text="THE end!\n$copyright"
 
 usage() {
 cat << EOF
@@ -99,9 +101,17 @@ cleanup_tmp() {
   if [ -f $title_image ] ; then
     rm $title_image
   fi
+  if [ -f $end_image ] ; then
+    rm $end_image
+  fi
   if [ -f $image_list_file ] ; then
     rm $image_list_file
   fi
+}
+
+create_end_image() {
+  write_log "[INFO]" "creating video end image $end_image ..."
+  convert -size $title_size -gravity center -background $title_background -fill $title_foreground -font $title_font -pointsize $title_font_size label:"$end_text" $end_image
 }
 
 # for now hardcoded values, can expand to take arguments for font/image size etc.
@@ -123,6 +133,9 @@ create_sorted_filelist() {
     fi
     echo "file '$f'" >> $image_list_file
   done
+
+  # add end slide
+  echo "file '$end_image'" >> $image_list_file
 }
 
 # ----------  main --------------
@@ -137,9 +150,6 @@ while getopts $options opt; do
       ;;
     t)
       title_text="$OPTARG"
-      clean_title=$(echo ${title_text//\\n/ })
-      title_metadata="$clean_title, $copyright"
-      create_title_image
       ;;
     a)
       if [ -f $OPTARG ] ; then
@@ -175,6 +185,12 @@ while getopts $options opt; do
       ;;
   esac
 done
+
+# create title and end slide pictures
+clean_title=$(echo ${title_text//\\n/ })
+title_metadata="$clean_title, $copyright"
+create_title_image
+create_end_image
 
 # create the timeline based order we want
 create_sorted_filelist
