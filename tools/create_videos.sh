@@ -5,30 +5,30 @@
 # This is a handy script to convert all images into videos so we can store it 
 # in YouTube for free. This script will use the img2video.sh script to actually 
 # convert images and create 1 video for 1 directory full of JPG images. All is 
-# needed is a CSV file as described below to describe, each directory path, video 
+# needed is a CSV file as described below to define directory path, video 
 # title, output name, images to include with regex mask, a background mp3 etc. 
-# The videos will be created under the $stage_dir so need to ensure adiquate 
+# The videos will be created under the $stage_dir/ so need to ensure adiquate 
 # space is available there for copying source images and making video files 
 # which could be pretty large, just reserve at least 100GB
 #
-# The following is a sample CSV input file format. The 3rd column (background mp3)
-# and 4th column (video title) are optional (see row 3) can can be empty. Also the 
-# first line ignored as header and no comments are supported.
+# CSV format notes:
+# ----------------
+# The following is a sample CSV input file format. See create_videos.csv file in 
+# this directory which is part of actual CSV rows I used to create all my videos.
+# Title column can have space, line feed '\n' etc but rest like path, mask, 
+# filename should not contain space or linefeed etc. Create date should be in 
+# UTC timzone with the format YYYYMMDDHHMM. If you don't care about exact hour on 
+# the date you can just use timestamp in your timezone. The 3rd column (background mp3) 
+# and 4th column (video title) and 6th column (timestamp) are optional (see row 3) 
+# and can can be empty. Also the first line skipped as a 'header' row and also lines 
+# contain '#' indicating they are comments.
 #
 # ------------------  CSV File Format definition  ---------------------
 # Directory Path,  Image Files,  Background MP3, Video Title, Video File Name, Create Date
 # /Users/arul/test, .jpg|.JPG, background.mp3, "Our Vacation 1\n2023", vacation1.mp4, 19850101800
 # /Users/arul/test, .jpeg|.JPEG, background.mp3, "Our Vacation 2\n2023", vacation2.mp4,
-# /foo/bar, .png, background.mp3, "Our Vacation 1\n2023", vacation1.mp4,
-# 
-# See create_videos.csv file in this directory which is part of actual CSV rows
-# I used to create all my videos.
-#
-# Note: 
-#   Title column can have space, line feed '\n' etc but rest like path, mask, 
-#   filename should not contain space or linefeed etc. Create date should be 
-#   in UTC timzone with the format YYYYMMDDHHMM. If you don't care about exact 
-#   hour on the date you can just use timestamp in your timezone.
+# /foo/bar, .png, background.mp3, , vacation1.mp4,
+# # /foo/baz, .png, background.mp3, , vacation1.mp4,
 # ------------------  CSV File Format definition  ---------------------
 # PreReq: 
 #   the following scripts from https://github.com/aselvan/scripts/tree/master/tools 
@@ -44,7 +44,7 @@
 #
 
 # version format YY.MM.DD
-version=23.03.24
+version=23.03.25
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 host_name=`hostname`
@@ -249,17 +249,25 @@ fi
 exec < $csv_file
 read header
 while IFS="," read -r src_path src_mask background_mp3_file video_title video_name create_date ; do
+
   # check for EOF
   if [ -z "$src_path" ] ; then
+    continue
+  fi
+
+  # row counter
+  ((record_count++))
+
+  # check for comments
+  if [[ "$src_path" == *"#"* ]]; then
+    write_log "[INFO]" "Row #${record_count} contains comment char, ignoring row ..."
     continue
   fi
 
   # trim whitspace on all column values first
   trim_column_values
 
-  # row counter
-  ((record_count++))
-  write_log "[STAT]" "### Processing row #$record_count ###      "
+  write_log "[STAT]" "### Processing row #${record_count} ###      "
   write_log "[INFO]" "  Path: '$src_path'"
   write_log "[INFO]" "  Mask: '$src_mask'"
   write_log "[INFO]" "  Title: '$video_title'"
