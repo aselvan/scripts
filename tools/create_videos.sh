@@ -70,7 +70,7 @@ background_mp3_file=""
 video_title=""
 video_name=""
 IFS_old=$IFS
-record_count=0
+record_count=1
 img2video_args=""
 default_create_date=`date -u +%Y%m%d%H%M`
 
@@ -148,17 +148,17 @@ trim_column_values() {
 create_video() {
   # validate requirements (if we don't have src path & mask nothing to do)
   if [ -z "$src_path" ] ; then
-    write_log "[WARN] missing CSV column 'Directory Path' ... skipping row $record_count"
+    write_log "[WARN] missing CSV column 'Directory Path' ... skipping line #$record_count"
     return
   fi
   if [ -z "$src_mask" ] ; then
-    write_log "[WARN] missing CSV column 'Image Files' ... skipping row $record_count"
+    write_log "[WARN] missing CSV column 'Image Files' ... skipping line #$record_count"
     return
   fi
 
   # validate source image path
   if [ ! -d $src_path ] ; then
-    write_log "[ERROR] Image source directory $src_path does not exist!, skipping row #$record_count"
+    write_log "[ERROR] Image source directory $src_path does not exist!, skipping line #$record_count"
     return
   fi
 
@@ -198,7 +198,7 @@ create_video() {
     write_log "[ERROR]" "Video create failed, see log for details ($log_file) ..."
   fi
 
-  # finally cleanup $stage_dir/images/ for next row
+  # finally cleanup $stage_dir/images/ for next line
   rm -f $stage_dir/images/*
 }
 
@@ -250,29 +250,30 @@ exec < $csv_file
 read header
 while IFS="," read -r src_path src_mask background_mp3_file video_title video_name create_date ; do
 
-  # check for EOF
+  # line counter
+  ((record_count++))
+
+  # check for EOF (or empty lines?)
   if [ -z "$src_path" ] ; then
     continue
   fi
 
-  # row counter
-  ((record_count++))
-
   # check for comments
   if [[ "$src_path" == *"#"* ]]; then
-    write_log "[INFO]" "Row #${record_count} contains comment char, ignoring row ..."
+    write_log "[INFO]" "Line #${record_count} contains comment skip ..."
     continue
   fi
 
   # trim whitspace on all column values first
   trim_column_values
 
-  write_log "[STAT]" "### Processing row #${record_count} ###      "
-  write_log "[INFO]" "  Path: '$src_path'"
-  write_log "[INFO]" "  Mask: '$src_mask'"
-  write_log "[INFO]" "  Title: '$video_title'"
-  write_log "[INFO]" "  Name:  '$video_name'"
-  write_log "[INFO]" "  Background: '$background_mp3_file'"
+  write_log "[STAT]" "### Processing line #${record_count} ###      "
+  write_log "[INFO]" "  Path:           '$src_path'"
+  write_log "[INFO]" "  Image Mask:     '$src_mask'"
+  write_log "[INFO]" "  Background:     '$background_mp3_file'"
+  write_log "[INFO]" "  Title:          '$video_title'"
+  write_log "[INFO]" "  Video Filename: '$video_name'"
+  write_log "[INFO]" "  Timestamp:      '$create_date'"
   
   # finally, create video
   create_video
