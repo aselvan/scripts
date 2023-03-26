@@ -106,6 +106,9 @@ do_backup() {
   echo "    Backup of /var/www  ... `date`" >> $log_file
   nice -19 $rsync_bin $rsync_opts /var/www $backup_dir
 
+  echo "    Backup of /data/videos4youtube  ... `date`" >> $log_file
+  nice -19 $rsync_bin $rsync_opts /data/videos4youtube $backup_dir
+
   # Skip this for offsite storage as we may have sensitive information
   # For off-site device copy just the encrypted container.
   if [ "$usb_mount" != "$offsite_device" ] ; then
