@@ -157,13 +157,13 @@ create_video() {
   fi
 
   # validate source image path
-  if [ ! -d $src_path ] ; then
+  if [ ! -d "$src_path" ] ; then
     write_log "[ERROR] Image source directory $src_path does not exist!, skipping line #$record_count"
     return
   fi
 
   # if createdate is not provided use current timestamp
-  if [ -z $create_date ] ; then
+  if [ -z "$create_date" ] ; then
     create_date=$default_create_date
   fi
   
