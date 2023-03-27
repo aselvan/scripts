@@ -20,15 +20,18 @@
 # UTC timzone with the format YYYYMMDDHHMM. If you don't care about exact hour on 
 # the date you can just use timestamp in your timezone. The 3rd column (background mp3) 
 # and 4th column (video title) and 6th column (timestamp) are optional (see row 3) 
-# and can can be empty. Also the first line skipped as a 'header' row and also lines 
-# contain '#' indicating they are comments.
+# and can can be empty. A directory with MP3 files can be specified optionally with 
+# -m argument which can be used with RANDOM_MP3 variable as background MP3 in which 
+# case a random MP3 from the specified directory can be used as background MP3. Also 
+# the first line skipped as a 'header' row and also lines contain '#' indicating 
+# they are comments.
 #
 # ------------------  CSV File Format definition  ---------------------
 # Directory Path,  Image Files,  Background MP3, Video Title, Video File Name, Create Date
 # /Users/arul/test, .jpg|.JPG, background.mp3, "Our Vacation 1\n2023", vacation1.mp4, 19850101800
 # /Users/arul/test, .jpeg|.JPEG, background.mp3, "Our Vacation 2\n2023", vacation2.mp4,
 # /foo/bar, .png, background.mp3, , vacation1.mp4,
-# # /foo/baz, .png, background.mp3, , vacation1.mp4,
+# # /foo/baz, .png, RANDOM_MP3, , vacation1.mp4,
 # ------------------  CSV File Format definition  ---------------------
 # PreReq: 
 #   the following scripts from https://github.com/aselvan/scripts/tree/master/tools 
@@ -44,7 +47,7 @@
 #
 
 # version format YY.MM.DD
-version=23.03.25
+version=23.03.27
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 host_name=`hostname`
@@ -54,7 +57,7 @@ dir_name=`dirname $0`
 my_path=$(cd $dir_name; pwd -P)
 
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
-options="c:s:vh?"
+options="c:s:m:vh?"
 verbose=0
 
 # staging path and it should have ton of freespace to create potentially
@@ -63,6 +66,7 @@ verbose=0
 img2video="$my_path/img2video.sh"
 reset_file_timestamp="$my_path/reset_file_timestamp.sh"
 stage_dir=""
+mp3_dir=""
 csv_file=""
 src_path=""
 src_mask=""
@@ -83,6 +87,7 @@ usage() {
   Usage: $my_name [options]
      -c <csvfile>  ---> CSV file formated as explained above (code comments)
      -s <stagedir> ---> staging path must have at least 100GB free space [default: '$stage_dir']
+     -m <mp3dir>   ---> directory of mp3 files to be used for background music [default: '$mp3_dir']
      -v            ---> verbose mode prints info messages, otherwise just errors
      -h            ---> print usage/help
 
@@ -111,6 +116,12 @@ init_log() {
   write_log "[STAT]" "starting at `date +'%m/%d/%y %r'` ..."
 }
 
+# mp3_dir is set, return a random mp3 file path, otherwise blank
+get_random_mp3() {
+  random_mp3=`ls $mp3_dir/*.mp3 2>/dev/null |shuf -n1`
+  echo $random_mp3
+}
+
 check_pre_requirements() {
   if [ ! -x $img2video ] ; then
     write_log "[ERROR] required script ($img2video) missing!"
@@ -132,7 +143,17 @@ build_img2video_arguments() {
   fi
 
   if [ ! -z "$background_mp3_file" ] ; then
-    img2video_args="$img2video_args -a $background_mp3_file"
+    if [ "$background_mp3_file" == "RANDOM_MP3" ] ; then
+      local mp3=$(get_random_mp3)
+      if [ "$mp3" != "" ] ; then
+        img2video_args="$img2video_args -a $mp3"
+        echo "CHOSEN MP3: $img2video_args"
+      else
+        write_log "[WARN]" "no mp3 found in the directory: '$mp3_dir' ... continue w/ out audio!"        
+      fi
+    else
+      img2video_args="$img2video_args -a $background_mp3_file"
+    fi
   fi
 }
 
@@ -214,6 +235,13 @@ while getopts $options opt; do
       ;;
     s)
       stage_dir="$OPTARG"
+      ;;
+    m)
+      mp3_dir="$OPTARG"
+      if [ ! -d $mp3_dir ] ; then
+        write_log "[ERROR]" "The MP3 directory ($mp3_dir) does not exists! (see usage)"
+        usage
+      fi
       ;;
     v)
       verbose=1
