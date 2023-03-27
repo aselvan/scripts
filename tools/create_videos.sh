@@ -147,7 +147,6 @@ build_img2video_arguments() {
       local mp3=$(get_random_mp3)
       if [ "$mp3" != "" ] ; then
         img2video_args="$img2video_args -a $mp3"
-        echo "CHOSEN MP3: $img2video_args"
       else
         write_log "[WARN]" "no mp3 found in the directory: '$mp3_dir' ... continue w/ out audio!"        
       fi
