@@ -16,7 +16,7 @@ export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
 version=23.03.02
 my_name=`basename $0`
 my_version="$my_name v$version"
-options_list="s:l:epch"
+options_list="s:l:uepch"
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 device=""
 call_log_count=1
@@ -76,6 +76,7 @@ usage() {
   echo "  -e          ---> end/hangup the current call"
   echo "  -p          ---> pickup call"
   echo "  -c          ---> call state"
+  echo "  -u          ---> list all unread messages"
   echo "  -h help"
   exit
 }
@@ -131,6 +132,18 @@ call_log() {
   echo $log_lines|awk -F',' "$parseLogScript"
 }
 
+show_unread_message() {
+  echo "[INFO] list of unread messages on '$device'" | tee -a $log_file
+  # search by unread
+  adb $device shell content query --uri content://sms/inbox --where "read=\'0\'" | tee -a $log_file
+
+  # search by number
+  #adb $device shell content query --uri content://sms/inbox --where "address=\'+19725551212\'"
+  # Other columns available
+  # thread_id, address, person, date, date_sent, protocol read=1, status=-1, type=2, body, 
+  # service_center locked=0, sub_id=2, error_code=-1,  seen=1
+}
+
 # --------------- main ----------------------
 echo "[INFO] $my_version starting ..." | tee $log_file
 
@@ -163,6 +176,9 @@ while getopts "$options_list" opt ; do
       call_log_count=$OPTARG
       action=4
       ;;
+    u)
+      action=5
+      ;;
     h)
       usage
       ;;
@@ -189,6 +205,9 @@ case $action in
     ;;
   4)
     call_log
+    ;;
+  5)
+    show_unread_message 
     ;;
   *)
     echo "[ERROR] no arguments!, see usage below" | tee -a $log_file
