@@ -18,7 +18,7 @@ export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
 version=23.03.02
 my_name=`basename $0`
 my_version="$my_name v$version"
-options_list="s:r:m:a:lh"
+options_list="s:r:m:a:w:lh"
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 device=""
 ring_vol=0
@@ -26,15 +26,26 @@ media_vol=0
 alarm_vol=0
 device_count=0
 dnd_status=0
+wifi_action=""
+
+# ensure path for cron runs
+export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
 
 usage() {
-  echo "Usage: $my_name [-s <device] [-r <value>] [-m <value>] [-a <value>]"
-  echo "  -s <device> ---> andrioid device id of your phone paired with adb"
-  echo "  -r <value>  ---> ringer volume level 0-7"
-  echo "  -m <value>  ---> media volume level 0-25"
-  echo "  -a <value>  ---> alaram volume level 0-7"
-  echo "  -l          ---> list available devices"
-  echo "  -h help"
+  cat << EOF
+  Usage: $my_name [-s <device] [-r <value>] [-m <value>] [-a <value>] -w <disable|enable>
+      -s <device> ---> andrioid device id of your phone paired with adb
+      -r <value>  ---> ringer volume level 0-7
+      -m <value>  ---> media volume level 0-25
+      -a <value>  ---> alaram volume level 0-7
+      -w <action> ---> action is "enable" turn on wifi or "disable" to turn it off
+      -l          ---> list available devices
+      -h help"
+
+  Examples: 
+    $my_name -s pixel:5555 -w enable
+    $my_name -s pixel:5555 -r 5 -a 5
+EOF
   exit
 }
 
@@ -90,6 +101,14 @@ display_values() {
   fi
 }
 
+enable_disable_wifi() {
+  if [[ "$wifi_action" != "enable" && "$wifi_action" != "disable" ]] ; then
+    echo "[ERROR] Invalid -w argument. Must be 'enable' or 'disable'. See usage below" | tee -a $log_file
+    usage
+  fi
+  adb $device shell "svc wifi $wifi_action"
+}
+
 # --------------- main ----------------------
 echo "[INFO] $my_version starting ..." | tee $log_file
 
@@ -122,6 +141,9 @@ while getopts "$options_list" opt ; do
     a)
       alarm_vol=$OPTARG
       ;;
+    w)
+      wifi_action=$OPTARG
+      ;;
     h)
       usage
       ;;
@@ -134,6 +156,12 @@ if [ $device_count -gt 1 ] && [ -z "$device" ] ; then
   echo "[ERROR] more than one device connected to adb, please specify device to use with -s option" | tee -a $log_file
   usage
   exit 2
+fi
+
+# if this call is to enable/disable wifi just perform and exit
+if [ ! -z "$wifi_action" ] ; then
+  enable_disable_wifi
+  exit 0
 fi
 
 dnd_status=`adb $device shell settings get global zen_mode`
