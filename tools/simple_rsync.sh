@@ -96,11 +96,10 @@ write_log "[STAT]" "Starting rsync backup (target=$backup_dir) ..."
 
 IFS=',' read -ra src_list_array <<< "$src_list"
 for src_path in "${src_list_array[@]}"; do
-  echo "Path: $src_path"
-
-  # write_log "[INFO]" "    Backup of $src_path  ... `date`"
-  # nice -19 rsync $rsync_opts $src_path $backup_dir
+  write_log "[INFO]" "    Backup of $src_path  ... `date`"
+  nice -19 rsync $rsync_opts $src_path $backup_dir
 
 done
-write_log "[INFO]" "Starting rsync backup (target=$backup_dir) ..."
+write_log "[STAT]" "Doing a OS sync ..."
 sync
+write_log "[STAT]" "Backup complete."
