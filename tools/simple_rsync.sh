@@ -11,7 +11,7 @@
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
 
 # version format YY.MM.DD
-version=23.05.18
+version=23.04.21
 my_name=`basename $0`
 my_version="`basename $0` v$version"
 host_name=`hostname`
@@ -20,7 +20,7 @@ options="s:d:vh"
 
 run_host=`hostname`
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
-rsync_opts="-rlptgoq --ignore-errors --delete --cvs-exclude --temp-dir=/tmp --exclude \"*.vmdk\" --exclude=/root/gdrive"
+rsync_opts="-rlptoq --ignore-errors --delete --cvs-exclude --temp-dir=/tmp --exclude \"*.vmdk\" --exclude=/root/gdrive"
 IFS_old=$IFS
 verbose=0
 
@@ -96,10 +96,13 @@ write_log "[STAT]" "Starting rsync backup (target=$backup_dir) ..."
 
 IFS=',' read -ra src_list_array <<< "$src_list"
 for src_path in "${src_list_array[@]}"; do
-  write_log "[INFO]" "    Backup of $src_path  ... `date`"
+  write_log "[INFO]" "    Backup Path: $src_path  ..."
+  write_log "[INFO]" "    Start: `date +'%D %H:%M %p'`"
   nice -19 rsync $rsync_opts $src_path $backup_dir
+  write_log "[INFO]" "    End:   `date +'%D %H:%M %p'`"
 
 done
+
 write_log "[STAT]" "Doing a OS sync ..."
 sync
 write_log "[STAT]" "Backup complete."
