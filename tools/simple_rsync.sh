@@ -92,14 +92,14 @@ if [ -z "$src_list" ] || [ -z "$backup_dir" ] ; then
 fi
 
 # start backup
-write_log "[STAT]" "Starting rsync backup (target=$backup_dir) ..."
+write_log "[STAT]" "Starting rsync backup to Destination: $backup_dir"
 
 IFS=',' read -ra src_list_array <<< "$src_list"
 for src_path in "${src_list_array[@]}"; do
-  write_log "[INFO]" "    Backup Path: $src_path  ..."
-  write_log "[INFO]" "    Start: `date +'%D %H:%M %p'`"
+  write_log "[INFO]" "    Source:       $src_path  ..."
+  write_log "[INFO]" "    Backup Start: `date +'%D %H:%M %p'`"
   nice -19 rsync $rsync_opts $src_path $backup_dir
-  write_log "[INFO]" "    End:   `date +'%D %H:%M %p'`"
+  write_log "[INFO]" "    Backup End:   `date +'%D %H:%M %p'`"
 
 done
 
