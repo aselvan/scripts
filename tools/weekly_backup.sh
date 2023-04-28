@@ -167,7 +167,7 @@ while getopts "$options_list" opt; do
 done
 
 # reset the list in case offsite_device is provided as cmdline option
-device_names=("Primary,/media/usb-1tb-2" "Secondary,/media/usb-1tb-3" "Tertiary eSATA-RAID,/media/sata-3tb" "Offsite SSD,$offsite_device" )
+device_names=("Primary,/media/usb-1tb-2" "Secondary,/media/usb-1tb-3" "Tertiary eSATA-RAID,/media/sata-3tb" "General Purpose,/media/usb-ssd-256g" "Offsite SSD,$offsite_device" )
 
 for devpair in "${device_names[@]}" ; do
   IFS=,
