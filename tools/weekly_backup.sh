@@ -109,6 +109,9 @@ do_backup() {
   echo "    Backup of /data/videos4youtube  ... `date`" >> $log_file
   nice -19 $rsync_bin $rsync_opts /data/videos4youtube $backup_dir
 
+  echo "    Backup of /data/debbie-backup  ... `date`" >> $log_file
+  nice -19 $rsync_bin $rsync_opts /data/debbie-backup $backup_dir
+
   # Skip this for offsite storage as we may have sensitive information
   # For off-site device copy just the encrypted container.
   if [ "$usb_mount" != "$offsite_device" ] ; then
@@ -167,7 +170,7 @@ while getopts "$options_list" opt; do
 done
 
 # reset the list in case offsite_device is provided as cmdline option
-device_names=("Primary,/media/usb-1tb-2" "Secondary,/media/usb-1tb-3" "Tertiary eSATA-RAID,/media/sata-3tb" "General Purpose,/media/usb-ssd-256g" "Offsite SSD,$offsite_device" )
+device_names=("Primary,/media/usb-1tb-2" "Secondary,/media/usb-1tb-3" "Tertiary eSATA-RAID,/media/sata-3tb" "Offsite SSD,$offsite_device" )
 
 for devpair in "${device_names[@]}" ; do
   IFS=,
