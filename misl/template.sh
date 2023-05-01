@@ -18,7 +18,7 @@ dir_name=`dirname $0`
 my_path=$(cd $dir_name; pwd -P)
 
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
-options="vh?"
+options_list="vh?"
 verbose=0
 sample_env="${SAMPLE_ENV:-default_value}"
 
@@ -120,15 +120,12 @@ path_separate() {
 init_log
 init_osenv
 # parse commandline options
-while getopts $options opt; do
+while getopts $options_list opt ; do
   case $opt in
     v)
       verbose=1
       ;;
-    ?)
-      usage
-      ;;
-    *)
+    ?|h|*)
       usage
       ;;
   esac
