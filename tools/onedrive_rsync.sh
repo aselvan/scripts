@@ -39,7 +39,9 @@ rsync_opts="-azqt -O --no-links --no-D --delete --inplace --cvs-exclude --exclud
 photos_src="/var/www/photos"
 videos_src="/var/www/video"
 scrapbooks_src="/var/www/scrapbooks"
-src_dirs="$photos_src $videos_src $scrapbooks_src"
+yt_videos="/data/videos4youtube"
+debbie_backup="/data/debbie-backup"
+src_dirs="$photos_src $videos_src $scrapbooks_src $yt_videos $debbie_backup"
 
 onedrive_label="onedrive"
 mount_point="/mnt/onedrive"
