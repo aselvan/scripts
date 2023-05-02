@@ -49,7 +49,7 @@ while getopts "$options_list" opt; do
       cores=$OPTARG
       ;;
     i)
-      boot_image="$image_path/${OPTARG}.qcow2"
+      boot_image="${OPTARG}"
       ;;
     a)
       additional_args="$OPTARG"
