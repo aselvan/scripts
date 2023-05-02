@@ -32,7 +32,7 @@ usage() {
   echo "  -i <image> image name from $image_path ex: -i linux"
   echo "  -a <args> any additional qemu args to pass directly to $qemu_bin" 
   echo "  -w enable writing to base image. default is snapshot mode"
-  echo "  -d <hostdir> the host dir will be shared as a readonly disk in windows guest or /dev/sdb1 in linux guest"
+  echo "  -d <hostdir> shared as a read/write disk on running VM  i.e. /dev/sda1|sdb1 in linux"
   echo "  -h usage/help"
   exit
 }
@@ -59,7 +59,10 @@ while getopts "$options_list" opt; do
       ;;
     d)
       host_dir_path=${OPTARG}
-      host_dir_arg="-drive file=fat:ro:${host_dir_path}/,format=raw,media=disk"
+      #host_dir_arg="-drive file=fat:ro:${host_dir_path}/,format=raw,media=disk"
+      host_dir_arg="-drive file=fat:rw:${host_dir_path}/,format=raw,media=disk"
+      # host share is now read-write so disable snapshot for it to work
+      snapshot=""
       ;;
     h)
       usage
@@ -80,7 +83,7 @@ echo "[INFO] options: memory=$memory; cpu=$cores; snapshot=$snapshot additional_
 echo "[INFO] options: image=$boot_image ..." | tee -a $log_file
 
 if [ ! -z $host_dir_path ] ; then
-  echo "[INFO] host directory ($host_dir_path) is shared as readonly drive to guest VM" | tee -a $log_file
+  echo "[INFO] host directory ($host_dir_path) is shared as read/write drive i.e. /dev/sdb1 (or sda1)" | tee -a $log_file
 fi
 
 $qemu_bin \
