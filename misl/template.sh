@@ -8,7 +8,7 @@
 #
 
 # version format YY.MM.DD
-version=23.03.17
+version=23.05.02
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 host_name=`hostname`
@@ -18,9 +18,14 @@ dir_name=`dirname $0`
 my_path=$(cd $dir_name; pwd -P)
 
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
-options_list="vh?"
+options="e:vh?"
 verbose=0
+failure=0
 sample_env="${SAMPLE_ENV:-default_value}"
+
+email_address=""
+email_subject_success="$host_name: SUCCESS"
+email_subject_failed="$host_name: FAILED"
 
 # ensure path for cron runs
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
@@ -29,8 +34,9 @@ usage() {
   cat << EOF
 
   Usage: $my_name [options]
-     -v     ---> verbose mode prints info messages, otherwise just errors are printed
-     -h     ---> print usage/help
+     -e <email>    ---> email address to send success/failure messages
+     -v            ---> verbose mode prints info messages, otherwise just errors are printed
+     -h            ---> print usage/help
 
   example: $my_name -h
   
@@ -72,6 +78,20 @@ check_root() {
     write_log "[ERROR]" "root access needed to run this script, run with 'sudo $my_name' ... exiting."
     exit
   fi
+}
+
+send_mail() {
+  if [ -z $email_address ] ; then
+    return;
+  fi
+
+  write_log "[INFO]" "Sending mail ..."
+  if [ $failure -ne 0 ] ; then
+    /bin/cat $log_file | /usr/bin/mail -s "$email_subject_failed" $email_address
+  else
+    /bin/cat $log_file | /usr/bin/mail -s "$email_subject_success" $email_address
+  fi
+
 }
 
 confirm_action() {
@@ -120,10 +140,13 @@ path_separate() {
 init_log
 init_osenv
 # parse commandline options
-while getopts $options_list opt ; do
+while getopts $options opt ; do
   case $opt in
     v)
       verbose=1
+      ;;
+    e)
+      email_address="$OPTARG"
       ;;
     ?|h|*)
       usage
@@ -131,6 +154,7 @@ while getopts $options_list opt ; do
   esac
 done
 
+send_mail
 confirm_action "About to make a change..."
 check_connectivity
 if [ $? -eq 0 ] ; then
