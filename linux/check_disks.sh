@@ -105,7 +105,7 @@ validate_uuid() {
   local uuid=$1
   disk_dev=`/usr/bin/readlink -nf  $uuid_path/$uuid`
   
-  write_log "[INFO]" "validating uuid: $uuid ..."
+  write_log "[INFO]" "validating uuid: $uuid"
   if [ ! -b $disk_dev ] ; then
     return 1
   else
@@ -118,11 +118,10 @@ validate_uuids() {
   local atleast_one_failed=0
   local uuid=""
 
-  write_log "[INFO]" "validating uuids ..."
   for uuid in $uuid_list ; do
     validate_uuid $uuid
     if [ $? -ne 0 ]; then
-      write_log "[WARN]" "UUID ($uuid) is invalid!"      
+      write_log "[WARN]" "  Invalid/non-existent uuid: $uuid"      
       atleast_one_failed=1
     fi
   done
@@ -160,7 +159,6 @@ while getopts "$options_list" opt ; do
       ;;
     e)
       email_address="$OPTARG"
-      echo "$OPTARG"
       ;;
     v)
       verbose=1
