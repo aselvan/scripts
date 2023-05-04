@@ -86,6 +86,13 @@ if [ ! -z $host_dir_path ] ; then
   echo "[INFO] host directory ($host_dir_path) is shared as read/write drive i.e. /dev/sdb1 (or sda1)" | tee -a $log_file
 fi
 
+#
+# we can add usb devices as shown on a 'as needed' basis. The vendor/product ids are from
+# lsusb with colon separated ex: 1050:0120 (is Yuibico). Adding following argument would 
+# expose yubi key to guest VM
+#
+# -device usb-host,vendorid=0x1050,productid=0x0120 \
+
 $qemu_bin \
   -usb -device usb-tablet \
   -device intel-hda -device hda-output \
