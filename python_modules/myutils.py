@@ -20,7 +20,7 @@ The module contains the following public functions & classes:
 
     - requireRoot -- check if the user is 'root' otherwise, exit
 
-    - sendMail -- send mail
+    - SendMail -- send mail
 
 This module and other modules are on 'python_modules' directory which is 
 one level up i.e. root directory of the scripts git repo so add modules 
@@ -40,14 +40,15 @@ import logging
 import os
 from pathlib import Path
 
-__version__ = '1.0'
+__version__ = '23.05.17'
 __all__ = [
   'getArgParser',
   'getLogger'
   'checkConnectivity',
   'getLogFilename',
   'requireRoot'
-  'sendMail'
+  'SendMail'
+  'getMyName'
 ]
 
 PING_HOST="8.8.8.8"
@@ -62,7 +63,7 @@ tmp_dir="/tmp"
 
 
 # ---------------- getArgParser ---------------------
-def getArgParser(description,name):
+def getArgParser(description=None,name=None):
   """ 
   create & return a commone/base argparse object. Use as follows in calling script, note the
   spefication of conflict_handler to ensure extended classes can override the options as needed
@@ -78,14 +79,15 @@ def getArgParser(description,name):
   
   # base parser to have common args for any script like -v, -e etc
   arg_parser = argparse.ArgumentParser(description=description,prog=name)
-  arg_parser.add_argument("-v", "--verbose",help="if enabled all messages will be printed, otherwise just info/warn/error", 
-    action="store_const", const=True, default=False)
+  arg_parser.add_argument("-l", "--log",
+    help="directly maps to logger levels [default: %(default)s]", default="INFO",
+    dest="logLevel", choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'])
   arg_parser.add_argument("-e", "--email", help="email address to send mail", type=str)
 
   return arg_parser
 
 # ---------------- getLogger ---------------------
-def getLogger(logFileName=None, verbose=VERBOSE):
+def getLogger(logFileName=None, logLevel="INFO"):
 
   """ 
   create & return a logger with stdout & file in single instance. If logfilename is not 
@@ -98,11 +100,7 @@ def getLogger(logFileName=None, verbose=VERBOSE):
     return logger
 
   logger = logging.getLogger()
-  if (verbose):
-    logger.setLevel(logging.DEBUG)
-  else:
-    logger.setLevel(logging.INFO)
-    
+  logger.setLevel(logging.getLevelName(logLevel))
   formatter = logging.Formatter(LOG_FORMATTER,datefmt=DATE_FMT)
 
   stdout_handler = logging.StreamHandler(sys.stdout)
@@ -137,6 +135,11 @@ def checkConnectivity(
 
   return False
 
+
+# ---------------- getMyName---------------------
+def getMyName(scriptPath):
+  return str(Path(os.path.basename(scriptPath)));
+
 # ---------------- getLogFilename ---------------------
 def getLogFilename(scriptPath):
   global tmp_dir
@@ -151,21 +154,30 @@ def requireRoot():
     getLogger().fatal("root access is needed to run this script, exiting...")
     sys.exit(1)
 
-# ---------------- sendMail??? can be a class instead? ---------------------
-def sendMail():
-  print("send mail")
 
-
-# ---------------- Foo example ---------------------
-# example for a class
-class Foo:
+# ---------------- SendMail class  ---------------------
+class SendMail:
 
   #init method
-  def __init__(self,name):
-    self.name = name
-  
+  def __init__(self,address, subject):
+    self.address = address
+    self.subject = subject
+
+  def setAddress(self,address):
+    self.address = address
+
+  def setSubject(self,subject):
+    self.subject = subject
+
+  def setBody(self, body):
+    self.body = body
+
+  def send(self):
+    # send the mail
+    getLogger().debug("send mail")
+
   # to use in print()
   def __str__(self):
-    return f"Class with a name {self.name}"
+    return f"SendMail: subject: {self.subject}; address: {self.address}"
 
 
