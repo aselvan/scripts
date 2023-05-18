@@ -43,7 +43,8 @@ logger.error("this is error message")
 logger.debug("debug message")
 
 # test mail
-m = myutils.SendMail("foo@bar.com", "test mail")
+m = myutils.SendMail("foo@bar.com", "python test mail")
+m.setBody("mail body text for python text mail")
 print (m)
 m.send()
 

@@ -157,6 +157,11 @@ def requireRoot():
 
 # ---------------- SendMail class  ---------------------
 class SendMail:
+  """
+  Simple mail class using commandline mail instead of python's smtpllib library
+  as our need for now is just send a quick text based mail, don't need all the 
+  bells & whistles comes w/ the python module.
+  """
 
   #init method
   def __init__(self,address, subject):
@@ -175,7 +180,12 @@ class SendMail:
   def send(self):
     # send the mail
     getLogger().debug("send mail")
-
+    mail_cmd=f"echo \"{self.body}\" | mail -s \"{self.subject}\" {self.address}"
+    getLogger().debug("mail.cmd="+str(mail_cmd))
+    cp = subprocess.call(mail_cmd,shell=True)
+    if (cp > 0 ):
+      raise Exception(f"Error sending mail, errorCode = {cp}")
+    
   # to use in print()
   def __str__(self):
     return f"SendMail: subject: {self.subject}; address: {self.address}"
