@@ -36,7 +36,6 @@ EOF
 }
 
 # ----------  main --------------
-echo "$my_version" | tee $log_file
 
 # parse commandline options
 while getopts $options opt ; do
@@ -52,6 +51,8 @@ while getopts $options opt ; do
       ;;
   esac
 done
+
+echo "$my_version" > $log_file
 
 # save current volume to restore, & set new volume
 cur_vol=$(osascript -e 'output volume of (get volume settings)')
