@@ -130,7 +130,7 @@ def checkConnectivity(
     cp = subprocess.run(cmd, capture_output=True, text=True)
     if (cp.returncode == 0):
       return True
-    # print (cp.stdout)
+    getLogger().debug(f"no response from {ping_host} ; errorcode={cp.returncode}")
     time.sleep(ping_interval)
 
   return False
@@ -179,15 +179,14 @@ class SendMail:
 
   def send(self):
     # send the mail
-    getLogger().debug("send mail")
     mail_cmd=f"echo \"{self.body}\" | mail -s \"{self.subject}\" {self.address}"
     getLogger().debug("mail.cmd="+str(mail_cmd))
     cp = subprocess.call(mail_cmd,shell=True)
     if (cp > 0 ):
+      getLogger().debug(f"send mail failed ; errorcode={cp}")
       raise Exception(f"Error sending mail, errorCode = {cp}")
     
   # to use in print()
   def __str__(self):
     return f"SendMail: subject: {self.subject}; address: {self.address}"
-
 
