@@ -125,9 +125,14 @@ def checkConnectivity(
   ping_attempt=PING_ATTEMPT):
 
   """Return the True if there is connectivity, False otherwise. """
-  
-  cmd=f"ping -t{ping_interval} -c3 -q {ping_host}".split()
-  
+ 
+  # ping is not same everywhere
+  match os.uname().sysname:
+    case "Darwin":
+      cmd=f"ping -t{ping_interval} -c3 -q {ping_host}".split()
+    case "Linux" | _ :
+      cmd=f"ping -W{ping_interval} -c3 -q {ping_host}".split()
+        
   for i in range(ping_attempt):
     cp = subprocess.run(cmd, capture_output=True, text=True)
     if (cp.returncode == 0):

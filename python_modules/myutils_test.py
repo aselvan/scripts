@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 # 
 # myutils_test.py -- quick and dirty test harness for myutils.py module
 #
@@ -48,7 +48,7 @@ logger.debug (m)
 #m.send()
 
 # getIP
-print("My IP: "+myutils.getIP("en1"))
+logger.info("My IP: "+myutils.getIP("en1"))
 
 # test root
 myutils.requireRoot()
