@@ -26,6 +26,7 @@ parser = argparse.ArgumentParser(parents=[myutils.getArgParser()],
 parser.add_argument("-i", "--integer", dest="counter",help="integer option with a list", default="0", choices=[0,1,2], type=int)
 parser.add_argument("-d", "--data", dest="animal", help="string option with a list", choices=['cow','goat'], type=str)
 parser.add_argument("-p", "--path", dest="path", help="path option, also a required", type=pathlib.Path,required=True)
+parser.add_argument("-f", "--file", dest="fname", help="filename option", type=str)
 args=parser.parse_args()
 
 # test logger 
@@ -34,6 +35,15 @@ logger.info("this is info message")
 logger.warning("this is warn message")
 logger.error("this is error message")
 logger.debug("debug message")
+
+# validate path
+if not os.path.isdir(args.path):
+  logger.error(str(args.path)+": is not a valid path!")
+
+# if filename provided, validate
+if (args.fname):
+  if not os.path.isfile(args.fname):
+    logger.error(args.fname+": is not a valid file!")
 
 #parser.print_help()
 #help(myutils)
