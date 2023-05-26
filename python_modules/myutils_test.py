@@ -47,6 +47,8 @@ m.setBody("mail body text for python text mail")
 logger.debug (m)
 #m.send()
 
+# getIP
+print("My IP: "+myutils.getIP("en1"))
 
 # test root
 myutils.requireRoot()

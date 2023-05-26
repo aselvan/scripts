@@ -40,7 +40,7 @@ import logging
 import os
 from pathlib import Path
 
-__version__ = '23.05.17'
+__version__ = '23.05.26'
 __all__ = [
   'getArgParser',
   'getLogger'
@@ -49,6 +49,8 @@ __all__ = [
   'requireRoot'
   'SendMail'
   'getMyName'
+  'getIP'
+  'runPopen'
 ]
 
 PING_HOST="8.8.8.8"
@@ -154,7 +156,27 @@ def requireRoot():
     getLogger().fatal("root access is needed to run this script, exiting...")
     sys.exit(1)
 
+# ---------------- runPopen ---------------------
+def runPopen(cmd):
+  """
+  Execute a string of piped commands passed as the argument. If all is well, 
+  this will return the output of the pipe(s), otherwise raises exception
+  """
 
+  process = os.popen(cmd)
+  result=process.read().strip()
+  rc=process.close()
+  if (rc != None):
+    getLogger().error(f"pipe command \"{cmd}\" failed")
+    raise Exception(f"Pipe command \"{cmd}\" failed, errorCode = {rc}")
+
+  return result
+
+# ---------------- getIP ---------------------
+def getIP(iface):
+  pipe_cmd=f"ifconfig {iface}"+"| grep 'inet '|awk '{print $2;}'"
+  return runPopen(pipe_cmd)
+  
 # ---------------- SendMail class  ---------------------
 class SendMail:
   """
