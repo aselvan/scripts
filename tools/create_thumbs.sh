@@ -17,7 +17,7 @@ my_name=`basename $0`
 options="e:t:d:h"
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 extensions="JPG|jpg|JPEG|jpeg|PNG|png"
-thumbs_per_row=5
+thumbs_per_row=6
 title="title"
 desc="thumbnail pictures"
 convert_opt="-quality 75 -scale 100x75"
@@ -29,17 +29,19 @@ vlink_color="#bbbbee"
 font_family="helvetica,arial,sans-serif"
 index_file="index.html"
 today=`date +%D`
+root_dir=$(basename `pwd`)
+abs_url="https://selvans.net/photos/$root_dir"
+
 
 usage() {
   cat <<EOF
   
-Usage: $my_name [options]
-  
+Usage: $my_name 
   -t <title>  ==> title string to use for generated images
   -d <desc>   ==> brief description to use for generated images
-  -e <ext>    ==> extenstion list ex: "jpg|png" etc. Default: "$extensions"
+  -e <ext>    ==> extenstion list ex: "jpg|png" etc. [Default: "$extensions"]
 
-  example: $my_name -t "Title" -d "Our vacation pics" -e "JPG|png|jpeg"
+  example: $my_name -t "Title" -d "Our vacation pics" -e "JPG|png|jpeg "
 
 EOF
   exit 1
@@ -61,15 +63,19 @@ check_prereq() {
 
 do_create_thumbs() {
   # write header
+  mobile_friendly="<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
+
   echo "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">" > $index_file
   echo "<html><head><title>$site_name - $title</title>" >> $index_file
-  echo "<style type=\"text/css\">H1, P {font-family: $font_family}</style>" >> $index_file
+  echo "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">" >> $index_file
+  echo "<link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css\">" >> $index_file
+  #echo "<style type=\"text/css\">H1, P {font-family: $font_family}</style>" >> $index_file
   echo "</head> <body bgcolor=\"$bg_color\" text=\"$text_color\"" >> $index_file 
   echo "vlink=\"$vlink_color\" link=\"$link_color\">" >> $index_file
   echo "<h1 align=\"center\">$title</h1>" >> $index_file
   echo "<p align=\"center\"/>$desc" >> $index_file
   echo "<p align=\"center\"> <font color=\"red\">" >> $index_file
-  echo "<small><b>NOTE:</b> click on the pic while holding down shift key to see full picture </small></font>" >> $index_file
+  echo "<small><b>NOTE:&nbsp;</b>Click on a thumbnail for full image or click on WhatsApp icon to share</small></font>" >> $index_file
 
   table_start="<center><table border=0 cellspacing=5 cellpadding=7 align=\"center\" summary=\"\" ><tr>"
   local count=0
@@ -80,9 +86,9 @@ do_create_thumbs() {
   # shopt below needed to expand ls argument properly
   shopt -s extglob
   
+  # table start for thumbnail icons
   echo "$table_start <td></td>" >> $index_file
-  
-  for fname in `ls -vt *.@($extensions)`; do
+  for fname in `ls -vtr *.@($extensions)`; do
 	  count_loop=`expr $count \% $thumbs_per_row`
 	  if [ $count_loop -eq 0 ]; then
 		  echo "</tr></table></center>$table_start" >> $index_file
@@ -98,18 +104,24 @@ do_create_thumbs() {
     echo "<p align=\"center\">" >> $index_file
     echo "<a href=\"$fname\"><img src=\"thumb/$thumb_fname\"" >> $index_file
     echo "alt=\"$fname\"></a><br>" >> $index_file
+    echo "<a href=\"whatsapp://send?text=$abs_url/$fname\" target=\"_blank\">" >> $index_file
+    echo "<i class=\"fa fa-whatsapp\" style=\"font-size:24px;color:green\">" >> $index_file
+    echo "</i></a>" >> $index_file
     echo "</td>" >> $index_file
   done
-  echo "</tr></table>" >> $index_file
+
+  # finish table
+  echo "</tr></table></center>" >> $index_file
   echo "<p align=\"center\">[<a href=\"../\">Photos</a>]   [<a href=\"../../\" target=\"_blank\">Home</a>]" >> $index_file
 
   # write a footer 
-  echo "<blockquote> <hr align=\"center\" size=\"2\" noshade> <center><small>Copyright (c) 1999-2021" >> $index_file
+  echo "<blockquote> <hr align=\"center\" size=\"2\" noshade> <center><small>Copyright (c) 1999-2023" >> $index_file
   echo " <a href=\"https://selvans.net/\" target=\"_blank\" >https://selvans.net</a> <br>" >> $index_file
   echo "Last updated: $today </small> </center></blockquote>" >> $index_file
-
   echo "</body></html>" >> $index_file
-  tidy -wrap 120 -m -i -q -raw $index_file >> $log_file 2>&1
+
+  # tidy up html to be radable
+  tidy -wrap 120 -m -i -q -raw --drop-empty-elements no $index_file >> $log_file 2>&1
 }
 
 # ---------------- main entry --------------------
