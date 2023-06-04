@@ -14,7 +14,7 @@
 os_name=`uname -s`
 my_name=`basename $0`
 
-options="e:t:d:q:h"
+options="e:t:d:h"
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 extensions="JPG|jpg|JPEG|jpeg|PNG|png"
 thumbs_per_row=6
@@ -30,8 +30,7 @@ font_family="helvetica,arial,sans-serif"
 index_file="index.html"
 today=`date +%D`
 root_dir=$(basename `pwd`)
-abs_url="https://selvans.net/photos/$root_dir"
-query_string=""
+abs_url="https://selvans.net/php/fetch_photo.php?data=$root_dir"
 
 usage() {
   cat <<EOF
@@ -40,8 +39,6 @@ Usage: $my_name
   -t <title>  ==> title string to use for generated images
   -d <desc>   ==> brief description to use for generated images
   -e <ext>    ==> extenstion list ex: "jpg|png" etc. [Default: "$extensions"]
-  -q <string> ==> query string to append that webserver use to bypass authentication 
-        [see /etc/apache2/sites-enabled/000-default-ssl.conf where string is used]
 
   example: $my_name -t "Title" -d "Our vacation pics" -e "JPG|png|jpeg"
 
@@ -106,9 +103,19 @@ do_create_thumbs() {
     echo "<p align=\"center\">" >> $index_file
     echo "<a href=\"$fname\"><img src=\"thumb/$thumb_fname\"" >> $index_file
     echo "alt=\"$fname\"></a><br>" >> $index_file
-    echo "<a href=\"whatsapp://send?text=$abs_url/$fname?$query_string\" target=\"_blank\">" >> $index_file
+    
+    # whatsapp share
+    wa_share="whatsapp://send?text=${abs_url},${fname}"
+    echo "<a href=\"${wa_share}\" target=\"_blank\">" >> $index_file
     echo "<i class=\"fa fa-whatsapp\" style=\"font-size:24px;color:green\">" >> $index_file
+    echo "</i></a> &nbsp;" >> $index_file
+
+    # facebook share
+    fb_share="https://www.facebook.com/sharer/sharer.php?u=${abs_url},image_name=${fname}"
+    echo "<a href=\"${fb_share}\" target=\"_blank\">" >> $index_file
+    echo "<i class=\"fa fa-facebook\" style=\"font-size:24px;color:blue\">" >> $index_file
     echo "</i></a>" >> $index_file
+    
     echo "</td>" >> $index_file
   done
 
@@ -142,9 +149,6 @@ while getopts $options opt; do
     e)
       extenstions="$OPTARG"
       ;;
-    q)
-      query_string="$OPTARG"
-      ;;
     ?)
       usage
       ;;
@@ -153,11 +157,6 @@ while getopts $options opt; do
       ;;
     esac
 done
-
-if [ -z "$query_string" ] ; then
-  echo "[ERROR] missing query string for bypassing authentication"
-  usage
-fi
 
 # create thumnail htmls
 do_create_thumbs
