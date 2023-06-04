@@ -111,7 +111,7 @@ do_create_thumbs() {
     echo "</i></a> &nbsp;" >> $index_file
 
     # facebook share
-    fb_share="https://www.facebook.com/sharer/sharer.php?u=${abs_url},image_name=${fname}"
+    fb_share="https://www.facebook.com/sharer/sharer.php?u=${abs_url},${fname}"
     echo "<a href=\"${fb_share}\" target=\"_blank\">" >> $index_file
     echo "<i class=\"fa fa-facebook\" style=\"font-size:24px;color:blue\">" >> $index_file
     echo "</i></a>" >> $index_file
