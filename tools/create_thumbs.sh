@@ -74,7 +74,7 @@ do_create_thumbs() {
   echo "<h1 align=\"center\">$title</h1>" >> $index_file
   echo "<p align=\"center\"/>$desc" >> $index_file
   echo "<p align=\"center\"> <font color=\"red\">" >> $index_file
-  echo "<small><b>NOTE:  </b></font>Click on a thumbnail for full image and/or click on WhatsApp icon to share</small>" >> $index_file
+  echo "<small><b>NOTE:  </b></font>Click on a thumbnail for full image and/or click on WhatsApp or Facebook icon to share</small>" >> $index_file
 
   table_start="<center><table border=0 cellspacing=5 cellpadding=7 align=\"center\" summary=\"\" ><tr>"
   local count=0
