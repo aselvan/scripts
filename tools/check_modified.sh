@@ -38,12 +38,12 @@ EOF
 send_mail() {
   local path=$1
 
-  if [ -z $email_address ] ; then
+  if [ -z "$email_address" ] ; then
     return;
   fi
   
   email_body="${my_version}: $path changed"
-  if [ -z $email_subject ] ; then
+  if [ -z "$email_subject" ] ; then
     email_subject="${my_version}: $path changed"
   fi
   echo "$email_body" | mail -s "$email_subject" "$email_address"
