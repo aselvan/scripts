@@ -19,6 +19,8 @@ options_list="s:f:crh?"
 output_file_prefix="/tmp/$(echo $my_name|cut -d. -f1)"
 output_file=""
 device=""
+video_bitrate="64m"
+video_format="h264"
 video_length=30
 video_size_scrcpy=768
 video_size_adb="540x960"
@@ -33,12 +35,12 @@ usage() {
 
   Usage: $my_name [options]
      -s <device> ---> device id of your phone [run 'adb devices' to get device id]
-     -f <output> ---> output filename [default: $output_file_prefix.[png|mp4]"s
+     -f <output> ---> output filename [default: $output_file_prefix.[png|mp4]
      -c          ---> capture a screenshot
      -r          ---> record a video for $video_length seconds to file
      -h          ---> print usage/help
 
-  example: $my_name -s 
+  example: $my_name -s deviceid -c -f /tmp/phone_screen.png
   
 EOF
   exit 0
@@ -111,15 +113,22 @@ screen_record() {
   #  record_with_scrcpy
   #  exit
   #fi
-  # TODO: not able to pass " to screenrecod, need to figureout ...
-  sr_args="screenrecord --output-format=h264 --time-limit=$video_length --bit-rate=64m --size=$video_size_adb -"
-  adb -s $device exec-out $sr_args > "$output_file"
+
+  # screen record args
+  sr_args="screenrecord --output-format=$video_format --time-limit=$video_length --bit-rate=$video_bitrate --size=$video_size_adb"
+  
+  # TODO: not able to pass "" to screenrecord for directly saving file on host. Need to figureout.
+  #adb -s $device exec-out "$sr_args -" > $output_file
+  # For now just save it on phone and do a 'adb pull'
+  adb -s $device shell $sr_args /sdcard/tmp.mp4 2>&1 | tee -a $log_file
+  adb -s $device pull /sdcard/tmp.mp4 $output_file 2>&1 | tee -a $log_file
+  adb -s $device shell rm /sdcard/tmp.mp4 2>&1 | tee -a $log_file
   echo "[INFO] done" | tee -a $log_file
   exit 0
 }
 
 # --------------- main ----------------------
-echo "[STAT]" "$my_version" | tee $log_file
+echo "$my_version" | tee $log_file
 while getopts "$options_list" opt ; do
   case $opt in 
     s)
@@ -151,9 +160,7 @@ fi
 if [ $ss_type -eq 0 ] ; then
   screen_capture
 elif [ $ss_type -eq 1 ] ; then
-  echo "[INFO] screen record not implemented (not working) yet!"
-  exit 0
-  #screen_record
+  screen_record
 else
   echo "[ERROR] invalid command tyoe"
   usage
