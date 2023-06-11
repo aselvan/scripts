@@ -16,10 +16,11 @@ export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
 version=23.03.02
 my_name=`basename $0`
 my_version="$my_name v$version"
-options_list="s:l:uepch"
+options_list="s:lm:r:uepch"
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 device=""
-call_log_count=1
+limit_row=1
+phone_number=""
 
 #
 # prepare an awk script for parsing call log. The following are some headers 
@@ -70,14 +71,21 @@ read -d '' parseLogScript << EOF
 EOF
 
 usage() {
-  echo "Usage: $my_name [-s <device] [-r <value>] [-m <value>] [-a <value>]"
-  echo "  -s <device> ---> andrioid device id of your phone paired with adb"
-  echo "  -l <count>  ---> show last <count> number of call logs"
-  echo "  -e          ---> end/hangup the current call"
-  echo "  -p          ---> pickup call"
-  echo "  -c          ---> call state"
-  echo "  -u          ---> list all unread messages"
-  echo "  -h help"
+  cat << EOF
+
+  Usage: $my_name [-s <device] [-r <value>] [-m <value>] [-a <value>]
+    -s <device> ---> andrioid device id of your phone paired with adb
+    -r <count>  ---> limit all queries by the count provided [default: $limit_row]
+    -l          ---> show call logs [Note: number of logs can be limted by -r option above]
+    -m <phone>  ---> show messages from phone ex:  '19725551212'
+    -e          ---> end/hangup the current call
+    -p          ---> pickup call
+    -c          ---> call state
+    -u          ---> list all unread messages
+    -h          ---> help
+
+  example: $my_name -s myphone_device_address -l -r3
+EOF
   exit
 }
 
@@ -110,7 +118,6 @@ check_device() {
   exit 1
 }
 
-
 call_pickup() {
   echo "[INFO] picking up call on device $device" | tee -a $log_file
   adb $device shell input keyevent 5 | tee -a $log_file
@@ -127,8 +134,8 @@ call_state() {
 }
 
 call_log() {
-  echo "[INFO] log of last $call_log_count calls on the $device" | tee -a $log_file
-  log_lines=$(adb $device shell content query --uri content://call_log/calls|tail -n$call_log_count | tee -a $log_file)
+  echo "[INFO] log of last $limit_row calls on the $device" | tee -a $log_file
+  log_lines=$(adb $device shell content query --uri content://call_log/calls|tail -n$limit_row | tee -a $log_file)
   echo $log_lines|awk -F',' "$parseLogScript"
 }
 
@@ -143,6 +150,14 @@ show_unread_message() {
   # thread_id, address, person, date, date_sent, protocol read=1, status=-1, type=2, body, 
   # service_center locked=0, sub_id=2, error_code=-1,  seen=1
 }
+
+show_message() {
+  echo "[INFO] list of messages on '$device' from phone '$phone_number' limit by $limit_row rows ..." | tee -a $log_file
+  # search by phone if provided
+  #adb $device shell content query --uri content://sms --projection "body:person" --where "address=\'$phone_number\'" --sort "date_sent\ ASC\ limit\ $limit_row" | tee -a $log_file
+  adb $device shell content query --uri content://sms --projection "body:person" --where "address=\'$phone_number\'" | head -n$limit_row | tee -a $log_file
+}
+
 
 # --------------- main ----------------------
 echo "[INFO] $my_version starting ..." | tee $log_file
@@ -163,6 +178,9 @@ while getopts "$options_list" opt ; do
       check_device
       device="-s $device"
       ;;
+    r)
+      limit_row=$OPTARG
+      ;;
     e)
       action=1
       ;;
@@ -173,11 +191,14 @@ while getopts "$options_list" opt ; do
       action=3
       ;;
     l)
-      call_log_count=$OPTARG
       action=4
       ;;
     u)
       action=5
+      ;;
+    m)
+      action=6
+      phone_number="$OPTARG"
       ;;
     h)
       usage
@@ -208,6 +229,9 @@ case $action in
     ;;
   5)
     show_unread_message 
+    ;;
+  6)
+    show_message
     ;;
   *)
     echo "[ERROR] no arguments!, see usage below" | tee -a $log_file
