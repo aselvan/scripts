@@ -100,10 +100,11 @@ confirm_action() {
   read -p "Are you sure? (y/n) " -n 1 -r
   echo 
   if [[ $REPLY =~ ^[Yy]$ ]] ; then
+    write_log "[STAT]" "Confirm action is: YES"
     return
   else
-    write_log "[STAT]" "Cancelled executing $my_name!"
-    exit 1
+    write_log "[STAT]" "Confirm action is: NO"
+    return
   fi
 }
 
@@ -136,6 +137,12 @@ path_separate() {
   echo "Ext:  $ext"
 }
 
+msec_to_date() {
+  local msec=$1
+  human_readable_date=$(date -r $(( ($msec + 500) / 1000 )) +"%m/%d/%Y %H:%M:%S")
+  echo $human_readable_date
+}
+
 # ----------  main --------------
 init_log
 init_osenv
@@ -164,4 +171,6 @@ else
 fi
 
 path_separate "/var/log/apache2/access.log"
+date_st=$(msec_to_date "1686709485000")
+echo "Converted 1686709485000 to human readble date: $date_st"
 
