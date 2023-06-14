@@ -19,7 +19,7 @@ my_version="$my_name v$version"
 options_list="s:lm:r:uepch"
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 device=""
-limit_row=1
+limit_row=3
 phone_number=""
 
 #
@@ -155,7 +155,7 @@ show_message() {
   echo "[INFO] list of messages on '$device' from phone '$phone_number' limit by $limit_row rows ..." | tee -a $log_file
   # search by phone if provided
   #adb $device shell content query --uri content://sms --projection "body:person" --where "address=\'$phone_number\'" --sort "date_sent\ ASC\ limit\ $limit_row" | tee -a $log_file
-  adb $device shell content query --uri content://sms --projection "body:person" --where "address=\'$phone_number\'" | head -n$limit_row | tee -a $log_file
+  adb $device shell content query --uri content://sms --projection "body:date_sent" --where "address=\'$phone_number\'" | head -n$limit_row | tee -a $log_file
 }
 
 
