@@ -35,7 +35,8 @@ additional_items_to_remove="\
   /System/Library/LaunchDaemons/com.apple.systemstats.analysis.plist \
   /System/Library/LaunchAgents/com.apple.NowPlayingTouchUI.plist \
   /System/Library/LaunchAgents/com.apple.touchbar.agent.plist \
-  /Library/LaunchDaemons/com.crashplan.engine.plist"
+  /Library/LaunchDaemons/com.crashplan.engine.plist \
+  /System/Library/LaunchAgents/com.apple.rcd.plist"
 
 others="\
   /Library/LaunchDaemons/com.fitbit.galileod.plist \
