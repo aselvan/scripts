@@ -17,7 +17,7 @@ version=23.06.21
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
-options="l:r:dvh?"
+options="l:r:e:dvh?"
 my_path=$(cd $dir_name; pwd -P)
 verbose=0
 the_list=""
@@ -25,6 +25,7 @@ ref_object=""
 ref_file=""
 ref_arg=""
 all_files=0
+file_ext=""
 
 # ensure path for cron runs
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
@@ -33,13 +34,14 @@ usage() {
   cat << EOF
 
   Usage: $my_name [options]
-     -l <list>     ---> List of space separted files/directories in quotes to set timestamp.
-     -r <file|dir> ---> file or a directory to read timestamp from, if not provided, current timestamp used.
-     -d            ---> causes all files in dir to be reset if an item in <list> is dir.
-     -v            ---> verbose mode prints info messages, otherwise just errors are printed.
-     -h            ---> print usage/help
+     -l <list>  ---> List of space separted files/directories in quotes to set timestamp.
+     -r <ref>   ---> file or a directory to read timestamp from, if not provided, current timestamp used.
+     -e <ext>   ---> only the files w/ <ext> are used to determine which latest file in dir should be used as ref
+     -d         ---> causes all files in dir to be reset if an item in <list> is dir.
+     -v         ---> verbose mode prints info messages, otherwise just errors are printed.
+     -h         ---> print usage/help
 
-  example: $my_name -l "/home/foo.txt /home/user/dir" -r /home/bar.txt
+  example: $my_name -l "/home/foo.txt /home/user/dir" -r /home/ -e jpg
   
 EOF
   exit 0
@@ -77,8 +79,8 @@ get_timestamp_object() {
       write_log "[ERROR]" "The reference argument directory ($ref_object) does not contain any file!"
       exit 1
     fi
-    # find the latest file in that directory as ref file
-    ref_file="${ref_object}/`ls -tap ${ref_object} | grep -v /$ | head -1`"
+    # find the latest file in that directory as ref file 
+    ref_file=`ls -tap ${ref_object}/${file_ext} | grep -v /$ | head -1`
   else
     echo ref_file=""
   fi
@@ -94,6 +96,9 @@ while getopts $options opt ; do
       ;;
     r)
       ref_object="$OPTARG"
+      ;;
+    e)
+      file_ext="*.$OPTARG"
       ;;
     d)
       all_files=1
