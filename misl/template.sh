@@ -80,6 +80,14 @@ check_root() {
   fi
 }
 
+check_installed() {
+  local app=$1
+  if [ ! `which $app` ]; then
+    write_log "[ERROR]" "required binary ('$app') is missing, install it and try again"
+    exit 1
+  fi
+}
+
 send_mail() {
   if [ -z $email_address ] ; then
     return;
@@ -146,6 +154,8 @@ msec_to_date() {
 # ----------  main --------------
 init_log
 init_osenv
+check_installed certigo
+
 # parse commandline options
 while getopts $options opt ; do
   case $opt in
