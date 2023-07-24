@@ -46,8 +46,8 @@ EOF
 print_domain_info() {
   echo ""
   echo "---------- Domain Information ($domain_name) ----------"
-  domain_name=$(grep 'Domain Name:' $whois_file | cut -d: -f2-)
-  echo "Domain:" $domain_name
+  dname=$(grep 'Domain Name:' $whois_file | cut -d: -f2-)
+  echo "Domain:" $dname
   registrar=$(grep 'Registrar:' $whois_file | cut -d: -f2-)
   echo "Registrar:" $registrar
   create_date=$(grep 'Creation Date:' $whois_file | cut -d: -f2-)
