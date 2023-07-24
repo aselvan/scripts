@@ -44,7 +44,8 @@ EOF
 }
 
 print_domain_info() {
-  echo "---------- Domain Information ----------"
+  echo ""
+  echo "---------- Domain Information ($domain_name) ----------"
   domain_name=$(grep 'Domain Name:' $whois_file | cut -d: -f2-)
   echo "Domain:" $domain_name
   registrar=$(grep 'Registrar:' $whois_file | cut -d: -f2-)
@@ -65,7 +66,7 @@ print_domain_info() {
 
 print_optional_info() {
   option=$1  
-  echo "---------- $option Contact ---------- "
+  echo "---------- $option Contact ($domain_name) ---------- "
   name=$(grep "$option Name:" $whois_file| cut -d: -f2-)
   echo "Name:" $name
   org=$(grep "$option Organization:" $whois_file| cut -d: -f2-)
@@ -114,13 +115,18 @@ if [ -z $domain_name ] ; then
 fi
 
 echo "$my_version"
-# get the whois record
-whois $domain_name 2>&1 > $whois_file
+
+# get the whois record and strip CRs at the same time.
+whois $domain_name 2>&1 | tr -d '\r' > $whois_file
 registrar_server=`cat $whois_file | grep "Registrar WHOIS Server:" | head -n1 | awk '{print $4'}`
-registrar_server=${registrar_server%$'\r'}
 if [ ! -z $registrar_server ] ; then
   # get records from registrar server instead
-  whois -h $registrar_server $domain_name 2>&1 > $whois_file
+  echo "Using registrar server '$registrar_server' to query for '$domain_name' records..."
+  # just sleep 2 seconds make sure whois does not ratelimit and produce empty output
+  sleep 2
+  whois -h $registrar_server $domain_name 2>&1 | tr -d '\r' > $whois_file
+else
+  echo "Using default whois server to query for '$domain_name' records..."
 fi
 
 # print domain info
@@ -138,3 +144,4 @@ fi
 if [ $print_tech_contact -ne 0 ] ; then
   print_optional_info "Tech"
 fi
+echo ""
