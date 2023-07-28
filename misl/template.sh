@@ -48,34 +48,46 @@ write_log() {
   local msg_type=$1
   local msg=$2
 
-  # log info type only when verbose flag is set
-  if [ "$msg_type" == "[INFO]" ] && [ $verbose -eq 0 ] ; then
-    return
-  fi
-
-  echo "$msg_type $msg" | tee -a $log_file
+  case $msg_type in
+    # skip info if verbose is not set [default]
+    info|INFO)
+      if [ $verbose -eq 0 ] ; then
+        return;
+      fi
+      echo -e "\e[1;36m[INFO]\e[0m $msg" | tee -a $log_file      
+      ;;
+    stat|STAT)
+      echo -e "\e[1;34m[STAT]\e[0m $msg" | tee -a $log_file
+      ;;
+    warn|WARN)
+      echo -e "\e[1;33m[WARN]\e[0m $msg" | tee -a $log_file
+      ;;
+    error|ERROR)
+      echo -e "\e[1;31m[ERROR]\e[0m $msg" | tee -a $log_file
+      ;;
+  esac
 }
 
 init_log() {
   if [ -f $log_file ] ; then
     rm -f $log_file
   fi
-  write_log "[STAT]" "$my_version"
-  write_log "[STAT]" "Running from: $my_path"
-  write_log "[STAT]" "Start time:   `date +'%m/%d/%y %r'` ..."
+  write_log "stat" "$my_version"
+  write_log "stat" "Running from: $my_path"
+  write_log "stat" "Start time:   `date +'%m/%d/%y %r'` ..."
 }
 
 init_osenv() {
   if [ $os_name = "Darwin" ] ; then
-    write_log "[STAT]" "MacOS environment"
+    write_log "info" "MacOS environment"
   else
-    write_log "[STAT]" "Other environment (Linux)"
+    write_log "info" "Other environment (Linux)"
   fi
 }
 
 check_root() {
   if [ `id -u` -ne 0 ] ; then
-    write_log "[ERROR]" "root access needed to run this script, run with 'sudo $my_name' ... exiting."
+    write_log "ERROR" "root access needed to run this script, run with 'sudo $my_name' ... exiting."
     exit
   fi
 }
@@ -83,7 +95,7 @@ check_root() {
 check_installed() {
   local app=$1
   if [ ! `which $app` ]; then
-    write_log "[ERROR]" "required binary ('$app') is missing, install it and try again"
+    write_log "ERROR" "required binary ('$app') is missing, install it and try again"
     exit 1
   fi
 }
@@ -93,7 +105,7 @@ send_mail() {
     return;
   fi
 
-  write_log "[INFO]" "Sending mail ..."
+  write_log "INFO" "Sending mail ..."
   if [ $failure -ne 0 ] ; then
     /bin/cat $log_file | /usr/bin/mail -s "$email_subject_failed" $email_address
   else
@@ -108,10 +120,10 @@ confirm_action() {
   read -p "Are you sure? (y/n) " -n 1 -r
   echo 
   if [[ $REPLY =~ ^[Yy]$ ]] ; then
-    write_log "[STAT]" "Confirm action is: YES"
+    write_log "STAT" "Confirm action is: YES"
     return
   else
-    write_log "[STAT]" "Confirm action is: NO"
+    write_log "STAT" "Confirm action is: NO"
     return
   fi
 }
@@ -123,12 +135,12 @@ check_connectivity() {
   local ping_attempt=3
 
   for (( attempt=0; attempt<$ping_attempt; attempt++ )) {
-    write_log "[INFO]" "checking for connectivity, attempt #$attempt ..."
+    write_log "INFO" "checking for connectivity, attempt #$attempt ..."
     ping -t30 -c3 -q $gdns >/dev/null 2>&1
     if [ $? -eq 0 ] ; then
       return 0
     fi
-    write_log "[INFO]" "sleeping for $ping_interval sec for another attempt"
+    write_log "INFO" "sleeping for $ping_interval sec for another attempt"
     sleep $ping_interval
   }
   return 1
@@ -175,9 +187,9 @@ send_mail
 confirm_action "About to make a change..."
 check_connectivity
 if [ $? -eq 0 ] ; then
-  write_log "[INFO]" "we have connectivity!"
+  write_log "info" "we have connectivity!"
 else
-  write_log "[WARN]" "We don't have network connectivity!"
+  write_log "warn" "We don't have network connectivity!"
 fi
 
 path_separate "/var/log/apache2/access.log"
