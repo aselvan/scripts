@@ -16,7 +16,7 @@ dir_name=`dirname $0`
 my_path=$(cd $dir_name; pwd -P)
 
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
-options="s:vh?"
+options="s:lvh?"
 verbose=0
 ssid=""
 airport="/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport"
@@ -29,6 +29,7 @@ usage() {
 
   Usage: $my_name [options]
      -s <ssid>  ---> Your wifi ssid whose password you need to read
+     -l         ---> List all the wifi SSIDs saved in your OS.
      -v         ---> verbose mode prints info messages, otherwise just errors are printed
      -h         ---> print usage/help
 
@@ -61,7 +62,6 @@ write_log() {
       ;;
   esac
 }
-
 init_log() {
   if [ -f $log_file ] ; then
     rm -f $log_file
@@ -70,6 +70,22 @@ init_log() {
   write_log "info" "Running from: $my_path"
   write_log "info" "Start time:   `date +'%m/%d/%y %r'` ..."
 }
+
+list_ssids() {
+  # need to find out the WiFi device first as they are not always en0
+  wifi_dev=$(networksetup -listallhardwareports| awk '/Hardware Port: Wi-Fi/{getline; print $2}')
+  if [ -z $wifi_dev ] ; then
+    write_log "error" "Not able to determine your WiFi interface!"
+    exit 2
+  fi
+  write_log "info" "Your WiFi interface is '$wifi_dev'"
+  write_log "stat" "Below is a list of WiFi SSIDs saved."
+
+  networksetup -listpreferredwirelessnetworks $wifi_dev
+  exit 0
+}
+
+
 
 # ----------  main --------------
 init_log
@@ -86,6 +102,9 @@ while getopts $options opt ; do
       ;;
     s)
       ssid="$OPTARG"
+      ;;
+    l)
+      list_ssids
       ;;
     ?|h|*)
       usage
