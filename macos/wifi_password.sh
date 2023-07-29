@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# get_wifi_password.sh --- handy script to read the wifi password from MacOS keychain
+# wifi_password.sh --- handy script to read the wifi password from MacOS keychain
 #
 #
 # Author:  Arul Selvan
