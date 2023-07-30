@@ -18,6 +18,7 @@ dir_name=`dirname $0`
 my_path=$(cd $dir_name; pwd -P)
 
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
+log_init=0
 options="e:vh?"
 verbose=0
 failure=0
@@ -44,50 +45,63 @@ EOF
   exit 0
 }
 
-write_log() {
-  local msg_type=$1
-  local msg=$2
+log.init() {
+  if [ $log_init -eq 1 ] ; then
+    return
+  fi
 
-  case $msg_type in
-    # skip info if verbose is not set [default]
-    info|INFO)
-      if [ $verbose -eq 0 ] ; then
-        return;
-      fi
-      echo -e "\e[1;36m[INFO]\e[0m $msg" | tee -a $log_file      
-      ;;
-    stat|STAT)
-      echo -e "\e[1;34m[STAT]\e[0m $msg" | tee -a $log_file
-      ;;
-    warn|WARN)
-      echo -e "\e[1;33m[WARN]\e[0m $msg" | tee -a $log_file
-      ;;
-    error|ERROR)
-      echo -e "\e[1;31m[ERROR]\e[0m $msg" | tee -a $log_file
-      ;;
-  esac
-}
-
-init_log() {
+  log_init=1
   if [ -f $log_file ] ; then
     rm -f $log_file
   fi
-  write_log "stat" "$my_version"
-  write_log "stat" "Running from: $my_path"
-  write_log "stat" "Start time:   `date +'%m/%d/%y %r'` ..."
+  echo -e "\e[0;34m$my_version, `date +'%m/%d/%y %r'` \e[0m" | tee -a $log_file
+}
+
+log.info() {
+  if [ $verbose -eq 0 ] ; then
+    return;
+  fi
+  log.init
+  local msg=$1
+  echo -e "\e[0;32m$msg\e[0m" | tee -a $log_file 
+}
+log.debug() {
+  if [ $verbose -eq 0 ] ; then
+    return;
+  fi
+  log.init
+  local msg=$1
+  echo -e "\e[1;30m$msg\e[0m" | tee -a $log_file 
+}
+
+log.stat() {
+  log.init
+  local msg=$1
+  echo -e "\e[0;34m$msg\e[0m" | tee -a $log_file 
+}
+
+log.warn() {
+  log.init
+  local msg=$1
+  echo -e "\e[1;33m$msg\e[0m" | tee -a $log_file 
+}
+log.error() {
+  log.init
+  local msg=$1
+  echo -e "\e[1;31m$msg\e[0m" | tee -a $log_file 
 }
 
 init_osenv() {
   if [ $os_name = "Darwin" ] ; then
-    write_log "info" "MacOS environment"
+    log.info "MacOS environment"
   else
-    write_log "info" "Other environment (Linux)"
+    log.info "Other environment (Linux)"
   fi
 }
 
 check_root() {
   if [ `id -u` -ne 0 ] ; then
-    write_log "ERROR" "root access needed to run this script, run with 'sudo $my_name' ... exiting."
+    log.error "root access needed to run this script, run with 'sudo $my_name' ... exiting."
     exit
   fi
 }
@@ -95,7 +109,7 @@ check_root() {
 check_installed() {
   local app=$1
   if [ ! `which $app` ]; then
-    write_log "ERROR" "required binary ('$app') is missing, install it and try again"
+    log.error "required binary ('$app') is missing, install it and try again"
     exit 1
   fi
 }
@@ -105,7 +119,7 @@ send_mail() {
     return;
   fi
 
-  write_log "INFO" "Sending mail ..."
+  log.info "Sending mail ..."
   if [ $failure -ne 0 ] ; then
     /bin/cat $log_file | /usr/bin/mail -s "$email_subject_failed" $email_address
   else
@@ -120,10 +134,10 @@ confirm_action() {
   read -p "Are you sure? (y/n) " -n 1 -r
   echo 
   if [[ $REPLY =~ ^[Yy]$ ]] ; then
-    write_log "STAT" "Confirm action is: YES"
+    log.stat "Confirm action is: YES"
     return
   else
-    write_log "STAT" "Confirm action is: NO"
+    log.stat "Confirm action is: NO"
     return
   fi
 }
@@ -135,12 +149,12 @@ check_connectivity() {
   local ping_attempt=3
 
   for (( attempt=0; attempt<$ping_attempt; attempt++ )) {
-    write_log "INFO" "checking for connectivity, attempt #$attempt ..."
+    log.info "checking for connectivity, attempt #$attempt ..."
     ping -t30 -c3 -q $gdns >/dev/null 2>&1
     if [ $? -eq 0 ] ; then
       return 0
     fi
-    write_log "INFO" "sleeping for $ping_interval sec for another attempt"
+    log.info "sleeping for $ping_interval sec for another attempt"
     sleep $ping_interval
   }
   return 1
@@ -164,7 +178,7 @@ msec_to_date() {
 }
 
 # ----------  main --------------
-init_log
+log.init
 init_osenv
 check_installed certigo
 
@@ -183,13 +197,15 @@ while getopts $options opt ; do
   esac
 done
 
+log.debug "Debug message"
+
 send_mail
 confirm_action "About to make a change..."
 check_connectivity
 if [ $? -eq 0 ] ; then
-  write_log "info" "we have connectivity!"
+  log.info "we have connectivity!"
 else
-  write_log "warn" "We don't have network connectivity!"
+  log.info "We don't have network connectivity!"
 fi
 
 path_separate "/var/log/apache2/access.log"
