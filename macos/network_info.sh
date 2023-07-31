@@ -10,7 +10,7 @@
 #
 
 # version format YY.MM.DD
-version=23.07.29
+version=23.07.31
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 os_name=`uname -s`
