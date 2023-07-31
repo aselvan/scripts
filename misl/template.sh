@@ -83,12 +83,12 @@ log.stat() {
 log.warn() {
   log.init
   local msg=$1
-  echo -e "\e[1;33m$msg\e[0m" | tee -a $log_file 
+  echo -e "\e[0;33m$msg\e[0m" | tee -a $log_file 
 }
 log.error() {
   log.init
   local msg=$1
-  echo -e "\e[1;31m$msg\e[0m" | tee -a $log_file 
+  echo -e "\e[0;31m$msg\e[0m" | tee -a $log_file 
 }
 
 init_osenv() {
