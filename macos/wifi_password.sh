@@ -16,6 +16,8 @@ dir_name=`dirname $0`
 my_path=$(cd $dir_name; pwd -P)
 
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
+log_init=0
+
 options="s:lvh?"
 verbose=0
 ssid=""
@@ -39,58 +41,71 @@ EOF
   exit 0
 }
 
-write_log() {
-  local msg_type=$1
-  local msg=$2
+log.init() {
+  if [ $log_init -eq 1 ] ; then
+    return
+  fi
 
-  case $msg_type in
-    # skip info if verbose is not set [default]
-    info|INFO)
-      if [ $verbose -eq 0 ] ; then
-        return;
-      fi
-      echo -e "\e[1;36m[INFO]\e[0m $msg" | tee -a $log_file      
-      ;;
-    stat|STAT)
-      echo -e "\e[1;34m[STAT]\e[0m $msg" | tee -a $log_file
-      ;;
-    warn|WARN)
-      echo -e "\e[1;33m[WARN]\e[0m $msg" | tee -a $log_file
-      ;;
-    error|ERROR)
-      echo -e "\e[1;31m[ERROR]\e[0m $msg" | tee -a $log_file
-      ;;
-  esac
-}
-init_log() {
+  log_init=1
   if [ -f $log_file ] ; then
     rm -f $log_file
   fi
-  write_log "stat" "$my_version"
-  write_log "info" "Running from: $my_path"
-  write_log "info" "Start time:   `date +'%m/%d/%y %r'` ..."
+  echo -e "\e[0;34m$my_version, `date +'%m/%d/%y %r'` \e[0m" | tee -a $log_file
+}
+
+log.info() {
+  if [ $verbose -eq 0 ] ; then
+    return;
+  fi
+  log.init
+  local msg=$1
+  echo -e "\e[0;32m$msg\e[0m" | tee -a $log_file 
+}
+log.debug() {
+  if [ $verbose -eq 0 ] ; then
+    return;
+  fi
+  log.init
+  local msg=$1
+  echo -e "\e[1;30m$msg\e[0m" | tee -a $log_file 
+}
+
+log.stat() {
+  log.init
+  local msg=$1
+  echo -e "\e[0;34m$msg\e[0m" | tee -a $log_file 
+}
+
+log.warn() {
+  log.init
+  local msg=$1
+  echo -e "\e[1;33m$msg\e[0m" | tee -a $log_file 
+}
+log.error() {
+  log.init
+  local msg=$1
+  echo -e "\e[1;31m$msg\e[0m" | tee -a $log_file 
 }
 
 list_ssids() {
   # need to find out the WiFi device first as they are not always en0
   wifi_dev=$(networksetup -listallhardwareports| awk '/Hardware Port: Wi-Fi/{getline; print $2}')
   if [ -z $wifi_dev ] ; then
-    write_log "error" "Not able to determine your WiFi interface!"
+    log.error "Not able to determine your WiFi interface!"
     exit 2
   fi
-  write_log "info" "Your WiFi interface is '$wifi_dev'"
-  write_log "stat" "Below is a list of WiFi SSIDs saved."
+  log.info "Your WiFi interface is '$wifi_dev'"
+  log.info "Below is a list of WiFi SSIDs saved."
 
   networksetup -listpreferredwirelessnetworks $wifi_dev
   exit 0
 }
 
 
-
 # ----------  main --------------
-init_log
+log.init
 if [ "$os_name" != "Darwin" ] ; then
-  write_log "error" "This script only works on MacOS!"
+  log.error "error" "This script is for MacOS only!"
   exit 1
 fi
 
@@ -113,15 +128,19 @@ while getopts $options opt ; do
 done
 
 if [ -z $ssid ] ; then
-  write_log "stat" "SSID not provided, attempting to determine currently connected SSID ..."
+  log.stat "SSID not provided, attempting to determine currently connected SSID ..."
   ssid=`$airport -I |awk '/ SSID:/ {print $2}'`
   if [ -z "$ssid" ] ; then
-    write_log "error" "Unable to read current SSID!"
+    log.error "Unable to read current SSID!"
     exit 1
   fi
-  write_log "stat" "Using SSID '$ssid'..."
+  log.info "Using SSID '$ssid'..."
 fi
 
-write_log "stat" "Enter your MacOS username and password when prompted to continue ..."
+log.stat "Enter your MacOS username and password when prompted to continue ..."
 password=$(security find-generic-password -ga $ssid 2>&1 >/dev/null|awk '/password:/ {print $2;}'|tr -d '"')
-echo "SSID=$ssid  password=$password"
+log.stat "SSID=$ssid  password=$password"
+
+# copy password to paste buffer
+echo $password|pbcopy
+log.stat "Password is copied to paste buffer for convenience [Cmd+v to paste]"
