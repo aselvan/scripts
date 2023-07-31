@@ -120,6 +120,11 @@ check_args() {
 
 # ----------  main --------------
 log.init
+if [ "$os_name" != "Darwin" ] ; then
+  log.error "error" "This script is for MacOS only!"
+  exit 1
+fi
+
 # parse commandline options
 while getopts $options opt ; do
   case $opt in
