@@ -115,19 +115,21 @@ print_info() {
   echo "    Gateway:      `ipconfig getoption $net_dev router`"
   echo "    Broadcast:    `ipconfig getoption $net_dev broadcast_address`"
   echo "    DHCP Lease:   `ipconfig getoption $net_dev lease_time` seconds"
+  echo "    `networksetup -getMTU $net_dev`"
 
   # if device is WiFi print additional info
   if [ "$dev_string" = "Wi-Fi" ] ; then
     rssi=`$airport -I |awk '/ agrCtlRSSI:/ {print $2}'`
     noise=`$airport -I |awk '/ agrCtlNoise:/ {print $2}'`
-    echo "    WiFi Name:         `$airport -I |awk '/ SSID:/ {print $2}'`"
-    echo "    WiFi Channel:      `$airport -I |awk '/ channel:/ {print $2}'`"
-    echo "    WiFi Auth:         `$airport -I |awk '/ link auth:/ {print $3}'`"
-    echo "    WiFi Channel:      `$airport -I |awk '/ channel:/ {print $2}'`"
-    echo "    WiFI RSSI:         $rssi [range: (-100,0) note: closer to 0 is better, ex: -55 is pretty damn good]"
-    echo "    WiFi Noise:        $noise [range: (-120,0) note: closer to -120 is better]"
-    echo "    WiFi Quality:      $((rssi - noise)) [should be at least 20 or greater]"
-    echo "    WiFi Last TxnRate: `$airport -I |awk '/ lastTxRate:/ {print $2}'` mbps"
+    echo "    `networksetup -getairportpower $net_dev`"
+    echo "    Wi-Fi Name:         `$airport -I |awk '/ SSID:/ {print $2}'`"
+    echo "    Wi-Fi Channel:      `$airport -I |awk '/ channel:/ {print $2}'`"
+    echo "    Wi-Fi Auth:         `$airport -I |awk '/ link auth:/ {print $3}'`"
+    echo "    Wi-Fi Channel:      `$airport -I |awk '/ channel:/ {print $2}'`"
+    echo "    Wi-FI RSSI:         $rssi [range: (-100,0) note: closer to 0 is better, ex: -55 is pretty damn good]"
+    echo "    Wi-Fi Noise:        $noise [range: (-120,0) note: closer to -120 is better]"
+    echo "    Wi-Fi Quality:      $((rssi - noise)) [should be at least 20 or greater]"
+    echo "    Wi-Fi Last TxnRate: `$airport -I |awk '/ lastTxRate:/ {print $2}'` mbps"
   fi
 
   exit 0
