@@ -51,10 +51,15 @@ Download the install script from below
 2. download the script to the router
 wget http://bin.entware.net/aarch64-k3.10/installer/generic.sh
 
-3. execute the script (note: there is a but in gt-ax11000 where /opt/var link is missing so you need
-to first install my asus_usbmount.sh referenced above first).
+3. execute the script. NOTE: before you do that we need to reboot the router with the 
+   script_usbmount alias is in place saved in nvram because there is a bug in gt-ax11000 where 
+   /opt/var link that we (i.e. entware installer script) needs to install tools is 
+   missing as stock firmware creates bunch of readonly non-existant links under /opt/var. What
+   we do here in the script_usbmount script above, mount our external USB as /opt/var where we 
+   have full write access and can install anything we need. 
 
-4. If all goes well you got entware installed. You can update by opkg update; opkg install <whatever tool you need>
+4. If all goes well you got entware installed. You can update/install etc by
+    opkg update; opkg install <whatever tool you need>
 
 5. Read the documentation here: https://github.com/Entware/Entware/wiki/Install-on-Asus-stock-firmware
 
