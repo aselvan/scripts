@@ -19,6 +19,9 @@ dig_output="/tmp/$(echo $my_name|cut -d. -f1).txt"
 log_init=0
 options="s:vh?"
 verbose=0
+green=32
+red=31
+blue=34
 
 sigok="sigok.ippacket.stream"
 sigfail="sigfail.ippacket.stream"
@@ -73,11 +76,14 @@ log.debug() {
   local msg=$1
   echo -e "\e[1;30m$msg\e[0m" | tee -a $log_file 
 }
-
 log.stat() {
   log.init
   local msg=$1
-  echo -e "\e[0;34m$msg\e[0m" | tee -a $log_file 
+  local color=$2  
+  if [ -z $color ] ; then
+    color=$blue
+  fi
+  echo -e "\e[0;${color}m$msg\e[0m" | tee -a $log_file 
 }
 
 log.warn() {
@@ -113,7 +119,7 @@ done
 dig $sigok $other_dns_server 2>&1 > $dig_output
 # read the DNS server contacted
 dns_server=$(cat $dig_output|awk '/;; SERVER: /{print $3}')
-log.stat "  Checking DNS server: $dns_server"
+log.stat "  DNS server: $dns_server"
 
 flags_line=$(cat $dig_output|awk '/;; flags: / {print $0}')
 log.debug "OK test response: $flags_line"
@@ -129,8 +135,10 @@ if [[ $flags_line = *"SERVFAIL"* ]] ; then
 fi
 
 if [ $oktest -eq 1 ] && [ $failtest -eq 1 ] ; then
-  log.stat "  Success: DNS server is DoT capable!"
+  log.stat  "  DoT protocol: Pass" $green
+elif [ $oktest -eq 1 ] ; then
+  log.warn "  DoT protocol: Maybe"
 else
-  log.error "  Falied: DNS server is NOT DoT capable!"
+  log.stat "  DoT protocol: Failed" $red
 fi
 
