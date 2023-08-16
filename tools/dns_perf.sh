@@ -16,13 +16,14 @@ my_path=$(cd $dir_name; pwd -P)
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 default_host_list="/tmp/$(echo $my_name|cut -d. -f1).txt"
 log_init=0
-options="l:s:vh?"
+options="s:l:d:vh?"
 verbose=0
 green=32
 red=31
 blue=34
 host_list=""
 dns_server=""
+single_host=""
 
 # ensure path for cron runs
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
@@ -31,12 +32,14 @@ usage() {
   cat << EOF
 
   Usage: $my_name [options]
-     -l <host_list>  ---> file with list of hosts (one host per line) to use.
-     -s <dns_server> ---> DNS server to use instead of default. 
-     -v              ---> verbose mode prints info messages, otherwise just errors are printed.
-     -h              ---> print usage/help
+     -s <host>  ---> see how long it takes to query a single host
+     -l <list>  ---> see how long to query a bunch of hosts
+     -d <dns>   ---> DNS server to use instead of default
+     -v         ---> verbose mode prints info messages, otherwise just errors are printed.
+     -h         ---> print usage/help
 
-  example: $my_name 
+  example: $my_name -l myhostlist.txt
+  example: $my_name -t yahoo.com
   
 EOF
   exit 0
@@ -523,9 +526,13 @@ mypassword.us
 EOF
 }
 
+do_single_host() {
+  local host=$1
+  dig $host +noall +answer +stats $dns_server | awk '$3 == "IN" && $4 == "A"{ip=$5}/Query time:/{t=$4 " " $5}END{print ip, t}'
+}
+
 # ----------  main --------------
 log.init
-log.stat "dig'ing crap ton of random FQDNs to check DNS performance ..."
 
 # parse commandline options
 while getopts $options opt ; do
@@ -534,6 +541,9 @@ while getopts $options opt ; do
       host_list="${OPTARG}"
       ;;
     s)
+      single_host=${OPTARG}
+      ;;
+    d)
       dns_server="@${OPTARG}"
       log.stat "Using DNS server: $dns_server"
       ;;
@@ -546,6 +556,13 @@ while getopts $options opt ; do
   esac
 done
 
+if [ ! -z $single_host ] ; then
+  log.stat "DNS performance test for single host: $single_host"
+  do_single_host
+  exit 0
+fi
+
+log.stat "DNS perforamce test for list of hosts"
 if [ ! -z $host_list ] ; then
   log.stat "Using host list file: $host_list"
   time -p dig -f $host_list +noall +answer $dns_server  >/dev/null
