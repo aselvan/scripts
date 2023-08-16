@@ -16,13 +16,16 @@ os_name=`uname -s`
 cmdline_args=`printf "%s " $@`
 dir_name=`dirname $0`
 my_path=$(cd $dir_name; pwd -P)
+sample_env="${SAMPLE_ENV:-default_value}"
 
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 log_init=0
 options="e:vh?"
 verbose=0
 failure=0
-sample_env="${SAMPLE_ENV:-default_value}"
+green=32
+red=31
+blue=34
 
 email_address=""
 email_subject_success="$host_name: SUCCESS"
@@ -45,6 +48,7 @@ EOF
   exit 0
 }
 
+# -- Log functions ---
 log.init() {
   if [ $log_init -eq 1 ] ; then
     return
@@ -73,13 +77,15 @@ log.debug() {
   local msg=$1
   echo -e "\e[1;30m$msg\e[0m" | tee -a $log_file 
 }
-
 log.stat() {
   log.init
   local msg=$1
-  echo -e "\e[0;34m$msg\e[0m" | tee -a $log_file 
+  local color=$2
+  if [ -z $color ] ; then
+    color=$blue
+  fi
+  echo -e "\e[0;${color}m$msg\e[0m" | tee -a $log_file 
 }
-
 log.warn() {
   log.init
   local msg=$1
@@ -197,6 +203,7 @@ while getopts $options opt ; do
   esac
 done
 
+log.stat "Log message in green" $green
 log.debug "Debug message"
 
 send_mail
