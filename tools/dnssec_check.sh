@@ -28,10 +28,10 @@ sigfail="sigfail.ippacket.stream"
 oktest=0
 failtest=0
 other_dns_server=""
+doh_flag="+https"
 
-
-# ensure path for cron runs
-export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
+# ensure path for cron runs (make sure usr/local/gin
+export PATH="/usr/local/bin:/bin:/usr/bin:/sbin:/usr/sbin:$PATH"
 
 usage() {
   cat << EOF
@@ -97,6 +97,63 @@ log.error() {
   echo -e "\e[0;31m$msg\e[0m" | tee -a $log_file 
 }
 
+dot_check() {
+  # make query and save output (we need 2 pice of info)
+  dig $sigok $other_dns_server > $dig_output 2>&1
+  # read the DNS server contacted
+  dns_server=$(cat $dig_output|awk '/;; SERVER: /{print $3}')
+  log.stat "  DNS server: $dns_server"
+
+  flags_line=$(cat $dig_output|awk '/;; flags: / {print $0}')
+  log.debug "OK test response: $flags_line"
+  # check if sigok DNS query response contains 'ad' flag a.k.a "Authenticated Data"
+  if [[ $flags_line = *"ad"* ]] ; then
+    oktest=1
+  fi
+
+  flags_line=$(dig $sigfail $other_dns_server |awk '/status: / {print $0}')
+  log.debug "Fail test response: $flags_line"
+  if [[ $flags_line = *"SERVFAIL"* ]] ; then
+    failtest=1
+  fi
+
+  if [ $oktest -eq 1 ] && [ $failtest -eq 1 ] ; then
+    log.stat  "  DoT protocol: Pass" $green
+  elif [ $oktest -eq 1 ] ; then
+    log.warn "  DoT protocol: Maybe"
+  else
+    log.stat "  DoT protocol: Failed" $red
+  fi
+}
+
+doh_check() {
+  # make with +https flags (will fail if dig is old or dns server does not support)
+  dig $doh_flag $sigok $other_dns_server > $dig_output 2>&1
+  rc=$?
+  case $rc in 
+    0)
+      flags_line=$(cat $dig_output|awk '/;; flags: / {print $0}')
+      log.debug "OK test response: $flags_line"
+      # check if sigok DNS query response contains 'ad' flag a.k.a "Authenticated Data"
+      if [[ $flags_line = *"ad"* ]] ; then
+      # doh supported
+        log.stat "  DoH protocol: Pass" $green
+      else
+        # doh not supported
+        log.warn "  DoH protocol: Failed"    
+      fi
+      ;;
+    1)
+      # likely the case where dig client doesnt know +https argument
+      log.warn "  DoH protocol: Failed (possibly dig client is not latest, upgrade & try)"
+      ;;
+    9)
+      # likely the case where the dns_server used does not support DoH
+      log.warn "  DoH protocol: Failed (DNS server does not suppor DoH protocol)"
+      ;;
+  esac
+}
+
 # ----------  main --------------
 log.init
 
@@ -115,30 +172,8 @@ while getopts $options opt ; do
   esac
 done
 
-# make query and save output (we need 2 pice of info)
-dig $sigok $other_dns_server 2>&1 > $dig_output
-# read the DNS server contacted
-dns_server=$(cat $dig_output|awk '/;; SERVER: /{print $3}')
-log.stat "  DNS server: $dns_server"
+# check for DoT support
+dot_check
 
-flags_line=$(cat $dig_output|awk '/;; flags: / {print $0}')
-log.debug "OK test response: $flags_line"
-# check if sigok DNS query response contains 'ad' flag a.k.a "Authenticated Data"
-if [[ $flags_line = *"ad"* ]] ; then
-  oktest=1
-fi
-
-flags_line=$(dig $sigfail $other_dns_server |awk '/status: / {print $0}')
-log.debug "Fail test response: $flags_line"
-if [[ $flags_line = *"SERVFAIL"* ]] ; then
-  failtest=1
-fi
-
-if [ $oktest -eq 1 ] && [ $failtest -eq 1 ] ; then
-  log.stat  "  DoT protocol: Pass" $green
-elif [ $oktest -eq 1 ] ; then
-  log.warn "  DoT protocol: Maybe"
-else
-  log.stat "  DoT protocol: Failed" $red
-fi
-
+# check for DoH support
+doh_check
