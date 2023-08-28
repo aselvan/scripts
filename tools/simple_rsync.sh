@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
-# simple_rsync.sh --- simple copy using rsync with multiple sources
+# simple_rsync.sh --- simple copy using rsync with multiple sources to single destination
 #
 #
 # Author:  Arul Selvan
@@ -11,7 +11,7 @@
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
 
 # version format YY.MM.DD
-version=23.04.21
+version=23.08.28
 my_name=`basename $0`
 my_version="`basename $0` v$version"
 host_name=`hostname`
@@ -20,9 +20,14 @@ options="s:d:vh"
 
 run_host=`hostname`
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
+log_init=0
+verbose=0
+green=32
+red=31
+blue=34
+
 rsync_opts="-rlptoq --ignore-errors --delete --cvs-exclude --temp-dir=/tmp --exclude \"*.vmdk\" --exclude=/root/gdrive"
 IFS_old=$IFS
-verbose=0
 
 # source paths
 src_list=""
@@ -42,27 +47,57 @@ EOF
   exit 0
 }
 
-write_log() {
-  local msg_type=$1
-  local msg=$2
-
-  # log info type only when verbose flag is set
-  if [ "$msg_type" == "[INFO]" ] && [ $verbose -eq 0 ] ; then
+# -- Log functions ---
+log.init() {
+  if [ $log_init -eq 1 ] ; then
     return
   fi
 
-  echo "$msg_type $msg" | tee -a $log_file
-}
-init_log() {
+  log_init=1
   if [ -f $log_file ] ; then
     rm -f $log_file
   fi
-  write_log "[STAT]" "$my_version"
-  write_log "[STAT]" "starting at `date +'%m/%d/%y %r'` ..."
+  echo -e "\e[0;34m$my_version, `date +'%m/%d/%y %r'` \e[0m" | tee -a $log_file
+}
+
+log.info() {
+  if [ $verbose -eq 0 ] ; then
+    return;
+  fi
+  log.init
+  local msg=$1
+  echo -e "\e[0;32m$msg\e[0m" | tee -a $log_file 
+}
+log.debug() {
+  if [ $verbose -eq 0 ] ; then
+    return;
+  fi
+  log.init
+  local msg=$1
+  echo -e "\e[1;30m$msg\e[0m" | tee -a $log_file 
+}
+log.stat() {
+  log.init
+  local msg=$1
+  local color=$2
+  if [ -z $color ] ; then
+    color=$blue
+  fi
+  echo -e "\e[0;${color}m$msg\e[0m" | tee -a $log_file 
+}
+log.warn() {
+  log.init
+  local msg=$1
+  echo -e "\e[0;33m$msg\e[0m" | tee -a $log_file 
+}
+log.error() {
+  log.init
+  local msg=$1
+  echo -e "\e[0;31m$msg\e[0m" | tee -a $log_file 
 }
 
 # ----------  main --------------
-init_log
+log.init
 
 # parse commandline options
 while getopts $options opt; do
@@ -87,22 +122,25 @@ done
 
 # check args
 if [ -z "$src_list" ] || [ -z "$backup_dir" ] ; then
-  write_log "[ERROR]" "Source and/or dest path missing! See usage"
+  log.error "Source and/or dest path missing! See usage"
   usage
 fi
 
 # start backup
-write_log "[STAT]" "Starting rsync backup to Destination: $backup_dir"
+log.stat "Starting rsync backup to Destination: $backup_dir"
 
 IFS=',' read -ra src_list_array <<< "$src_list"
 for src_path in "${src_list_array[@]}"; do
-  write_log "[INFO]" "    Source:       $src_path  ..."
-  write_log "[INFO]" "    Backup Start: `date +'%D %H:%M:%S %p'`"
+  log.stat "  Source:       $src_path  ..."
+  log.stat "  Start: `date +'%D %H:%M:%S %p'`"
   nice -19 rsync $rsync_opts $src_path $backup_dir
-  write_log "[INFO]" "    Backup End:   `date +'%D %H:%M:%S %p'`"
-
+  if [ $? -ne 0 ] ; then
+    log.error "  Backup failed, error code=$?"
+  else
+    log.stat "  End: `date +'%D %H:%M:%S %p'`"
+  fi
 done
 
-write_log "[STAT]" "Doing a OS sync ..."
+log.stat "Doing a OS sync ..."
 sync
-write_log "[STAT]" "Backup complete."
+log.stat "Backup complete."
