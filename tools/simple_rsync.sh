@@ -131,13 +131,13 @@ log.stat "Starting rsync backup to Destination: $backup_dir"
 
 IFS=',' read -ra src_list_array <<< "$src_list"
 for src_path in "${src_list_array[@]}"; do
-  log.stat "  Source:       $src_path  ..."
-  log.stat "  Start: `date +'%D %H:%M:%S %p'`"
+  log.stat "  Source:  $src_path  ..." $green
+  log.stat "  Start:  `date +'%D %H:%M:%S %p'`" $green
   nice -19 rsync $rsync_opts $src_path $backup_dir
   if [ $? -ne 0 ] ; then
     log.error "  Backup failed, error code=$?"
   else
-    log.stat "  End: `date +'%D %H:%M:%S %p'`"
+    log.stat "  End: `date +'%D %H:%M:%S %p'`" $green
   fi
 done
 
