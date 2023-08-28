@@ -137,7 +137,7 @@ for src_path in "${src_list_array[@]}"; do
   if [ $? -ne 0 ] ; then
     log.error "  Backup failed, error code=$?"
   else
-    log.stat "  End:    `date +'%D %H:%M:%S %p'`" $green
+    log.stat "  End:     `date +'%D %H:%M:%S %p'`" $green
   fi
 done
 
