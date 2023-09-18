@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # exif_check.sh --- Query specific exif metadata present on a media file
 #
@@ -14,28 +14,91 @@
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
 
 # version format YY.MM.DD
-version=23.01.13
+version=23.09.17
 my_name=`basename $0`
 my_version="$my_name v$version"
 os_name=`uname -s`
 options="p:ltah"
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
+log_init=0
+verbose=0
+failure=0
+green=32
+red=31
+blue=34
 source_path=""
-exiftool_bin="/usr/bin/exiftool"
 exiftool_opt="-m"
 check_gps=0
+check_camera=0
 check_createtime=0
 
+# ensure path for cron runs
+export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
+
 usage() {
-  echo ""
-  echo "Usage: $my_name [options]"
-  echo "  -l  ---> check if lat/lon present as metadata"
-  echo "  -t  ---> check if createdate present as metadata"
-  echo "  -a  ---> check both createdate and gps present as metadata"
-  echo ""
-  echo "example: $my_name -l -p image.jpg"
-  echo ""
+  cat << EOF
+
+  $my_name --- Query specific exif metadata present on a media file
+
+  Usage: $my_name [options]
+    -l  ---> check if lat/lon present as metadata
+    -t  ---> check if createdate present as metadata
+    -a  ---> check both createdate and gps present as metadata
+    -v  ---> verbose mode prints info messages, otherwise just errors are printed
+    -h  ---> print usage/help
+  
+  example: $my_name -l -p image.jpg
+EOF
   exit 0
+}
+
+# -- Log functions ---
+log.init() {
+  if [ $log_init -eq 1 ] ; then
+    return
+  fi
+
+  log_init=1
+  if [ -f $log_file ] ; then
+    rm -f $log_file
+  fi
+  echo -e "\e[0;34m$my_version, `date +'%m/%d/%y %r'` \e[0m" | tee -a $log_file
+}
+
+log.info() {
+  if [ $verbose -eq 0 ] ; then
+    return;
+  fi
+  log.init
+  local msg=$1
+  echo -e "\e[0;32m$msg\e[0m" | tee -a $log_file 
+}
+log.debug() {
+  if [ $verbose -eq 0 ] ; then
+    return;
+  fi
+  log.init
+  local msg=$1
+  echo -e "\e[1;30m$msg\e[0m" | tee -a $log_file 
+}
+log.stat() {
+  log.init
+  local msg=$1
+  local color=$2
+  if [ -z $color ] ; then
+    color=$blue
+  fi
+  echo -e "\e[0;${color}m$msg\e[0m" | tee -a $log_file 
+}
+log.warn() {
+  log.init
+  local msg=$1
+  echo -e "\e[0;33m$msg\e[0m" | tee -a $log_file 
+}
+log.error() {
+  log.init
+  local msg=$1
+  echo -e "\e[0;31m$msg\e[0m" | tee -a $log_file 
 }
 
 # check if file is a media file that could support metadata
@@ -53,9 +116,18 @@ is_media() {
   esac
 }
 
+has_camera() {
+  local f=$1
+  # must be an easier way to tell exiftool to spit out tag value but this should work as well
+  camera_model=$(exiftool $f | grep "Camera Model Name"|awk -F: '{print $2}')
+  if [ -z "$camera_model" ] ; then
+    camera_model="Unknown"
+  fi
+}
+
 has_gps() {
   local f=$1
-  $exiftool_bin $exiftool_opt -if 'defined $gpslatitude' -filename -T $f 2>&1 >/dev/null
+  exiftool $exiftool_opt -if 'defined $gpslatitude' -filename -T $f 2>&1 >/dev/null
   if [ $? -eq 0 ] ; then
     gps_present="Yes"
   else
@@ -65,7 +137,7 @@ has_gps() {
 
 has_createtime() {
   local f=$1
-  $exiftool_bin $exiftool_opt -if 'defined $createdate' -filename -T $f 2>&1 >/dev/null
+  exiftool $exiftool_opt -if 'defined $createdate' -filename -T $f 2>&1 >/dev/null
   if [ $? -eq 0 ] ; then
     createtime_present="Yes"
   else
@@ -74,6 +146,8 @@ has_createtime() {
 }
 
 # ----------  main --------------
+log.init
+
 # parse commandline options
 while getopts $options opt; do
   case $opt in
@@ -86,36 +160,25 @@ while getopts $options opt; do
     t)
       check_createtime=1
       ;;
+    c)
+      check_camera=1
+      ;;
     a)
       check_gps=1
       check_createtime=1
+      check_camera=1      
       ;;
-    h)
-      usage
+    v)
+      verbose=1
       ;;
-    *)
+    ?|h|*)
       usage
       ;;
   esac
 done
 
-if [ -f $log_file ] ; then
-  rm $log_file
-fi
-echo "[INFO] $my_version" | tee -a $log_file
-
-if [ $os_name = "Darwin" ]; then
-  exiftool_bin=/usr/local/bin/exiftool
-fi
-
-# ensure exiftool is available
-if [ ! -e $exiftool_bin ] ; then
-  echo "[ERROR] $exiftool_bin is required for this script to work"
-  exit 1
-fi
-
 if [ -z "$source_path" ] ; then
-  echo "[ERROR] required argument i.e. path/name is missing!"
+  log.error "Required argument i.e. path/name is missing!"
   usage
 fi
 
@@ -131,7 +194,7 @@ fi
 for fname in ${file_list} ;  do
   is_media $fname
   if [ $? -ne 0 ] ; then
-    echo "[WARN] the file '$fname' is not known media type, skipping ..." | tee -a $log_file
+    log.warn "The file '$fname' is not known media type, skipping ..."
     continue
   fi
   output="File Name:$fname"
@@ -143,5 +206,10 @@ for fname in ${file_list} ;  do
     has_createtime $fname
     output="$output ; Create Time:$createtime_present"
   fi
-  echo "[INFO] $output"
+  if [ $check_camera -eq 1 ] ; then
+    has_camera $fname
+    output="$output ; Camera:$camera_model"
+  fi
+
+  log.stat "$output"
 done
