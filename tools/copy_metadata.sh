@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # copy_metadata.sh --- copy metadata from source file to one or more destination files
 #
@@ -23,14 +23,18 @@
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
 
 # version format YY.MM.DD
-version=23.06.24
+version=23.09.17
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 dir_name=`dirname $0`
 my_path=$(cd $dir_name; pwd -P)
-log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 options="r:p:ovh?"
+log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
+log_init=0
 verbose=0
+green=32
+red=31
+blue=34
 exiftool_opt="-m"
 type_check=0
 ref_file=""
@@ -40,6 +44,8 @@ skip_tag="-wm cg"
 
 usage() {
   cat << EOF
+
+  $my_name --- copy metadata from source file to one or more destination files
 
   Usage: $my_name [options]
     -r <name> ---> the reference source file to copy metadata from
@@ -53,6 +59,56 @@ usage() {
 EOF
   exit 0
 }
+
+# -- Log functions ---
+log.init() {
+  if [ $log_init -eq 1 ] ; then
+    return
+  fi
+
+  log_init=1
+  if [ -f $log_file ] ; then
+    rm -f $log_file
+  fi
+  echo -e "\e[0;34m$my_version, `date +'%m/%d/%y %r'` \e[0m" | tee -a $log_file
+}
+
+log.info() {
+  if [ $verbose -eq 0 ] ; then
+    return;
+  fi
+  log.init
+  local msg=$1
+  echo -e "\e[0;32m$msg\e[0m" | tee -a $log_file 
+}
+log.debug() {
+  if [ $verbose -eq 0 ] ; then
+    return;
+  fi
+  log.init
+  local msg=$1
+  echo -e "\e[1;30m$msg\e[0m" | tee -a $log_file 
+}
+log.stat() {
+  log.init
+  local msg=$1
+  local color=$2
+  if [ -z $color ] ; then
+    color=$blue
+  fi
+  echo -e "\e[0;${color}m$msg\e[0m" | tee -a $log_file 
+}
+log.warn() {
+  log.init
+  local msg=$1
+  echo -e "\e[0;33m$msg\e[0m" | tee -a $log_file 
+}
+log.error() {
+  log.init
+  local msg=$1
+  echo -e "\e[0;31m$msg\e[0m" | tee -a $log_file 
+}
+
 
 # check if file is a media file that could support metadata
 is_media() {
@@ -69,30 +125,31 @@ is_media() {
   esac
 }
 
-write_log() {
-  local msg_type=$1
-  local msg=$2
+reset_os_timestamp() {
+  local fname=$1
 
-  # log info type only when verbose flag is set
-  if [ "$msg_type" == "[INFO]" ] && [ $verbose -eq 0 ] ; then
+  # reset file OS timestamp to match create date
+  log.info "resetting OS timestamp to match create date of '$fname' ..."
+  create_date=`exiftool -d "%Y%m%d%H%M.%S" -createdate $fname | awk -F: '{print $2;}'`
+  if [ -z "$create_date" ] ; then
+    log.warn "metadata for $fname does not contain create date, skipping ..."
+    return
+  fi
+ 
+  # validate createdate since sometimes images contain create date but show " 0000"
+  if [ "$create_date" = " 0000" ] ; then
+    log.warn "Invalid create date ($create_date) for $fname, skipping ..."
     return
   fi
 
-  echo "$msg_type $msg" | tee -a $log_file
+  log.debug "resetting date: touch -t $create_date $fname"
+  touch -t $create_date $fname
 }
 
-init_log() {
-  if [ -f $log_file ] ; then
-    rm -f $log_file
-  fi
-  write_log "[STAT]" "$my_version"
-  write_log "[STAT]" "Running from: $my_path"
-  write_log "[STAT]" "Start time:   `date +'%m/%d/%y %r'` ..."
-}
-
+ 
 # ----------  main --------------
 # parse commandline options
-init_log
+log.init
 
 while getopts $options opt; do
   case $opt in
@@ -116,11 +173,11 @@ done
 
 
 if [ -z "$ref_file" ] ; then
-  write_log "[ERROR]" "required argument i.e. reference file is missing!"
+  log.error "Required argument i.e. reference file is missing!"
   usage
 fi
 if [ -z "$dest_path" ] ; then
-  write_log "[ERROR]" "required argument i.e. destination path/file is missing!"
+  log.error "Required argument i.e. destination path/file is missing!"
   usage
 fi
 
@@ -137,9 +194,10 @@ fi
 for fname in ${file_list} ;  do
   is_media $fname
   if [ $? -ne 0 ] ; then
-    write_log "[WARN]" "the file '$fname' is not known media type, skipping ..."
+    log.warn "The file '$fname' is not known media type, skipping ..."
     continue
   fi
-  write_log "[INFO]" "transfering date/gps info to '$fname' ..."
+  log.stat "Transfering date/gps and reseting OS timestamp of '$fname' ..." $green
   exiftool $exiftool_opt -TagsFromFile $ref_file -AllDates -gps:all $skip_tag -overwrite_original $fname 2>&1 >> $log_file
+  reset_os_timestamp $fname
 done
