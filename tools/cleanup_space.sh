@@ -36,9 +36,10 @@ sed_st="s/__TITLE__/$title/g;s/__DESC__/$desc/g"
 dir=""
 days=""
 ext=""
+download_dir="/var/www/download/files"
 
 # cleanup list is list of "path,#days,.ext" array separated by space
-cleanup_list=("/var/www/tmp,7," "/var/lib/tripwire/report,7,.html" "/var/lib/tripwire/report,30,.twr" "/var/lib/amavis/virusmails,30," "/var/www/public/share,30,")
+cleanup_list=("/var/www/tmp,7," "/var/lib/tripwire/report,7,.html" "/var/lib/tripwire/report,30,.twr" "/var/lib/amavis/virusmails,30," "/var/www/public/share,30," "$download_dir,30,")
 
 usage() {
   cat << EOF
@@ -106,6 +107,41 @@ log.error() {
   echo -e "\e[0;31m$msg\e[0m" | tee -a $log_file 
 }
 
+write_std_readme() {
+  cat << EOF > $dir/README.txt
+  selvans.net --- file/directory cleanup
+
+  This directory is wiped periodically to avoid log and other files piling up since
+  it is not part of system logrotate daemon ... so anything here will be removed after 
+  specific time to conserve space.
+
+  Last cleanup run: `date`
+EOF
+}
+
+write_download_readme() {
+  cat << EOF > $dir/README.txt
+  selvans.net --- download/temporary storage
+
+  This directory contains files shared between family/friends and is a transient 
+  storage area. You can store files here by uploading your it via the following
+  upload URL: https://upload.selvans.net 
+
+
+  DISCLAIMER:
+  ----------
+  Though this storage area protected w/ basic HTTP authentication, by no means it is 
+  secure so do not upload anything that may contain information you may not want to share. 
+  I take no responsibility whatsoever on the security of the file and its contents.
+
+  NOTE:
+  -----
+  This directory is wiped periodically (every 30 days) so anything you upload to this 
+  directory via the URL https://upload.selvans.net does not stay here forever.
+
+  Last cleanup run: `date`
+EOF
+}
 
 do_cleanup() {
   log.stat "Cleaning $dir/*$ext that are older than $days days ..."
@@ -115,9 +151,13 @@ do_cleanup() {
     return
   fi
   log.debug "\tfind $dir -name \*$ext -type f -mtime +$days ! -iname index.php ! -iname index.html -delete"
-  find $dir -name \*$ext -type f -mtime +$days ! -iname index.php ! -iname index.html -delete 2>&1 >> $log_file
-  # ensure empty dir cleanup does not get rid of the directory, we need to preserve the top dir
-  touch $dir/.placeholder
+  find $dir -name \*$ext -type f -mtime +$days ! -iname index.php ! -iname index.html ! -iname README.txt -delete 2>&1 >> $log_file
+  # write a readme file
+  if [ $dir = "$download_dir" ] ; then
+    write_download_readme
+  else
+    write_std_readme
+  fi
   find $dir -type d -empty -delete 2>&1 >> $log_file
 }
 
