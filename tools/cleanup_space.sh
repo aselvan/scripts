@@ -116,7 +116,9 @@ do_cleanup() {
   fi
   log.debug "\tfind $dir -name \*$ext -type f -mtime +$days ! -iname index.php ! -iname index.html -delete"
   find $dir -name \*$ext -type f -mtime +$days ! -iname index.php ! -iname index.html -delete 2>&1 >> $log_file
-  find $dir/ -type d -empty -delete 2>&1 >> $log_file
+  # ensure empty dir cleanup does not get rid of the directory, we need to preserve the top dir
+  touch $dir/.dont_remove
+  find $dir -type d -empty -delete 2>&1 >> $log_file
 }
 
 create_html_log() {
