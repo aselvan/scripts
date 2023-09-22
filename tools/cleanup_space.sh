@@ -116,12 +116,12 @@ do_cleanup() {
   fi
   log.debug "\tfind $dir -name \*$ext -type f -mtime +$days ! -iname index.php ! -iname index.html -delete"
   find $dir -name \*$ext -type f -mtime +$days ! -iname index.php ! -iname index.html -delete 2>&1 >> $log_file
-  find $dir -type d -empty -delete 2>&1 >> $log_file
+  find $dir/ -type d -empty -delete 2>&1 >> $log_file
 }
 
 create_html_log() {
   cat $std_header| sed -e "$sed_st"  > $html_file
-  echo "<body><h2>Cleanup Log run</h2><br> <pre>" >> $html_file
+  echo "<body><h2>Cleanup Log run</h2><pre>" >> $html_file
   # copy log file content to html file after striping ansi color code
   cat $log_file | sed 's/\x1b\[[0-9;]*m//g'  >> $html_file
   echo "</pre></body></html>" >> $html_file
