@@ -1,5 +1,3 @@
 Directory Path,  Image Files,  Background MP3, Video Title,  Output File Name, Create Date
-/var/www/photos/year-2022, .jpg|.JPG, /data/videos4youtube/mp3/background.mp3, "Highlights of 2022\nAll pictures from the year 2022", year-2022.mp4, 202212310101
-/var/www/photos/year-2021, .jpg|.JPG, /data/videos4youtube/mp3/Feel-Good.mp3, "Highlights of 2021\nAll pictures from the year 2021", year-2021.mp4, 202112310101
-/var/www/photos/year-2020, .jpg|.JPG, /data/videos4youtube/mp3/Journey.mp3, "Highlights of 2020\nAll pictures from the year 2020", year-2020.mp4,   202012310101
-/var/www/photos/corpus-sa-austin_feb2023, .jpg|.JPG, /data/videos4youtube/mp3/sweet.mp3, "Road Trip 2023\nAll pics from Austin/SA/Corpus road trip", roadtrip-feb2023.mp4, 202302030101
+/var/www/photos/morocco-egypt_sep2023, .jpg|.JPG, /data/videos4youtube/mp3/background.mp3, "Morocco & Egypt Vacation\nSep 2-17, 2023", morocco-egypt_sep2023.mp4, 202309020101
+/var/www/photos/year-2023, .jpg|.JPG, /data/videos4youtube/mp3/Feel-Good.mp3, "Highlights of 2023\nAll pictures from the year 2023", year-2023.mp4, 202312310101
