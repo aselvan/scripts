@@ -26,6 +26,7 @@ desc="Weekly backup log file"
 sed_st="s/__TITLE__/$title/g;s/__DESC__/$desc/g"
 www_root=/var/www
 std_header=$www_root/std_header.html
+std_footer=/var/www/std_footer.html
 html_file=$www_root/weekly_backup_log.html
 
 email_address=""
@@ -59,7 +60,10 @@ create_html_log() {
   cat $std_header| sed -e "$sed_st"  > $html_file
   echo "<body><pre>" >> $html_file
   cat $log_file  >> $html_file
-  echo "</pre></body></html>" >> $html_file
+  echo "</pre>" >> $html_file
+
+  # write footer (takes care of ending body/html tags
+  cat $std_footer >> $html_file
 }
 
 do_backup() {
