@@ -29,6 +29,8 @@ log_file=$home_dir/speed_test.txt
 log_file_reverse=$home_dir/speed_test_reverse.txt
 html_file=$home_dir/speed_test.html
 std_header=$www_root/std_header.html
+std_footer=/var/www/std_footer.html
+
 line_count=1
 total=0
 average=0
@@ -152,7 +154,8 @@ echo "<h2>Speed Test: Measured with Netflix provided fast.com testing tool</h2>"
 echo "<h3>$speedtest_bin </h3>" >> $html_file
 echo "<h3>Average of last $nrun runs: $average Mbps</h3>" >>$html_file
 tac $log_file  >> $html_file
-echo "</pre></body></html>" >> $html_file
+echo "</pre>" >> $html_file
+cat $std_footer >> $html_file
 mv $html_file ${www_root}/.
 
 # finally, mail if we found speed is lower than the low_speed threshold
