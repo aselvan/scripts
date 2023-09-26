@@ -211,10 +211,6 @@ while getopts "$options_list" opt ; do
   case $opt in 
     p)
       scan_path="$OPTARG"
-      if [ ! -d "$scan_path" ] ; then
-        echo "[ERROR] specified path ($scan_path) does not exists!"
-        usage
-      fi
       ;;
     c)
       changed_only=1
