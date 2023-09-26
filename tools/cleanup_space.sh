@@ -167,7 +167,7 @@ create_html_log() {
   echo "<body><h2>Cleanup Log run</h2><pre>" >> $html_file
   # copy log file content to html file after striping ansi color code
   cat $log_file | sed 's/\x1b\[[0-9;]*m//g'  >> $html_file
-  echo "</pre>"
+  echo "</pre>" >> $html_file
 
   # write footer (takes care of ending body/html tags
   cat $std_footer >> $html_file
