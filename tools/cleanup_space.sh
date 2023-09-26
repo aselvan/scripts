@@ -30,6 +30,7 @@ export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
 
 html_file=/var/www/cleanup_log.html
 std_header=/var/www/std_header.html
+std_footer=/var/www/std_footer.html
 title="selvans.net common cleanup log"
 desc="This file contains selvans.net common files cleanup log"
 sed_st="s/__TITLE__/$title/g;s/__DESC__/$desc/g"
@@ -166,7 +167,10 @@ create_html_log() {
   echo "<body><h2>Cleanup Log run</h2><pre>" >> $html_file
   # copy log file content to html file after striping ansi color code
   cat $log_file | sed 's/\x1b\[[0-9;]*m//g'  >> $html_file
-  echo "</pre></body></html>" >> $html_file
+  echo "</pre>"
+
+  # write footer (takes care of ending body/html tags
+  cat $std_footer >> $html_file
 }
 
 
