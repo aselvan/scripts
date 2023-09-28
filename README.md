@@ -1,4 +1,6 @@
 # scripts
+[![status-stable](https://img.shields.io/badge/status-stable-green.svg)](https://github.com/aselvan/scripts)
+[![last commit](https://img.shields.io/github/last-commit/aselvan/scripts)](https://github.com/aselvan/scripts)
 
 ### A collection of totally random scripts.
 
