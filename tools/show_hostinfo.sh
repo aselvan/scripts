@@ -155,6 +155,6 @@ arp -an|egrep -v 'incomplete|ff:ff:ff:ff|169.254|224.|239.|.255)'> $arp_entries
 cat $arp_entries | while read -r line ; do
   ip=$(echo $line|awk -F '[()]|at | on ' '{print $2}')
   mac=$(echo $line|awk -F '[()]|at | on ' '{print $4}')
-  host=`dig +short -x $ip|sed -e 's/\.//'`
+  host=`dig +short -x $ip|sed -e 's/\.$//'`
   echo "$ip $host $host # macaddress: $mac"
 done
