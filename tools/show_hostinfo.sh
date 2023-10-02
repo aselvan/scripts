@@ -103,7 +103,7 @@ get_my_ip() {
   if [ $os_name = "Darwin" ]; then
     my_ip=`ipconfig getifaddr $iface`
   else
-    my_ip=`ip addr show $iface | grep 'inet ' | awk '{print $2}' |cut -f1 -d'/'`    
+    my_ip=`ip addr show $iface | grep 'inet '|grep 'scope global'| awk '{print $2}' |cut -f1 -d'/'`    
   fi
   echo $my_ip
 }
