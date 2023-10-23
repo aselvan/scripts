@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # 
 # script to check public data of anyone listed in PDL (peopledatalabs.com) database
@@ -11,17 +11,22 @@
 api_key=`cat ~/.peopledatalabs.apikey`
 
 # commandline options
-options_list="e:p:n:l:"
+options_list="e:p:n:l:h"
+
+version=19.11.23
+my_name="`basename $0`"
+my_version="`basename $0` v$version"
 
 usage() {
-  echo "Usage: $0 -e <e-mail> | -p <profile> | -n <name> -l <location>"
+  echo "Usage: $my_name -e <e-mail> | -p <profile> | -n <name> -l <location>"
+  echo "  ex: $my_name -n "John+Public" -l "Texas" "
   exit 1
 }
 
-peopledatalabs_api="https://api.peopledatalabs.com/v4/person?pretty=true"
-curl_args=( -X GET -H "X-Api-Key: $api_key" )
-api_query="name=Sabrina Rajendran&location=chicago"
-api_query=""
+#peopledatalabs_api="https://api.peopledatalabs.com/v4/person?pretty=true"
+peopledatalabs_api="https://api.peopledatalabs.com/v5/person/identify?pretty=true"
+curl_args=( -X GET -H \"X-Api-Key: $api_key\" )
+#api_query="&name=John+Public&location=texas"
 
 while getopts "$options_list" opt; do
   case $opt in
@@ -39,8 +44,7 @@ while getopts "$options_list" opt; do
     l)
       api_query="$api_query&location=$OPTARG"
       ;;
-    \?)
-     echo "Invalid option: -$OPTARG"
+    h)
      usage
      ;;
     :)
@@ -50,4 +54,5 @@ while getopts "$options_list" opt; do
    esac
 done
 
-curl "${curl_args[@]}" "$peopledatalabs_api$api_query"
+echo $my_version
+curl -X GET -H "X-Api-Key: $api_key" "$peopledatalabs_api$api_query"
