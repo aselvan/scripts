@@ -151,8 +151,8 @@ do_cleanup() {
     log.error "Skipping invalid/non-existent directory: $dir"
     return
   fi
-  log.debug "\tfind $dir -name \*$ext -mindepth 1 -type f -mtime +$days -delete"
-  find $dir -name $ext -mindepth 1 -type f -mtime +$days -delete 2>&1 >> $log_file
+  log.debug "\tfind $dir -mindepth 1 -name \*$ext -type f -mtime +$days -delete"
+  find $dir -mindepth 1 -name \*$ext -type f -mtime +$days -delete 2>&1 >> $log_file
   # write a readme file
   if [ $dir = "$download_dir" ] ; then
     write_download_readme
