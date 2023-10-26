@@ -151,15 +151,15 @@ do_cleanup() {
     log.error "Skipping invalid/non-existent directory: $dir"
     return
   fi
-  log.debug "\tfind $dir -name \*$ext -type f -mtime +$days ! -iname index.php ! -iname index.html -delete"
-  find $dir -name \*$ext -type f -mtime +$days ! -iname index.php ! -iname index.html ! -iname README.txt -delete 2>&1 >> $log_file
+  log.debug "\tfind $dir -name \*$ext -mindepth 1 -type f -mtime +$days -delete"
+  find $dir -name $ext -mindepth 1 -type f -mtime +$days -delete 2>&1 >> $log_file
   # write a readme file
   if [ $dir = "$download_dir" ] ; then
     write_download_readme
   else
     write_std_readme
   fi
-  find $dir -type d -empty -delete 2>&1 >> $log_file
+  find $dir -mindepth 1 -type d -empty -delete 2>&1 >> $log_file
 }
 
 create_html_log() {
