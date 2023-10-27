@@ -16,10 +16,9 @@ export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
 version=23.10.26
 my_name=`basename $0`
 my_version="$my_name v$version"
-options_list="s:l:d:r:w:vh"
+options_list="s:l:d:w:vh"
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 log_init=0
-options="e:vh?"
 verbose=0
 failure=0
 green=32
@@ -37,9 +36,8 @@ usage() {
 $my_name --- simple wrapper over adb to copy files from phone or delete.
 Usage: $my_name -s <device> -l <path> -r <path> [-d <path>] [-w <wildcard>] 
   -s <device>   ---> andrioid device id of your phone paired with adb
-  -l <path>     ---> location in android phone to pull files/dir from [Default: '$source_location']
-  -d <path>     ---> destination path in desktop/laptop to copy files to [Default: '$dest_location'] 
-  -r <path>     ---> delete the path and everything under that path [Default: '$source_location']
+  -l <path>     ---> location in phone to pull files/dir from [Default: '$source_location']
+  -d <path>     ---> destination path in desktop/laptop to copy files [Default: '$dest_location'] 
   -w <wildcard> ---> optional wildcard like *.jpg from the location/path [Default: '$wild_card']
   -v            ---> verbose mode prints info messages, otherwise just errors/warnings are printed      
   -h help
@@ -128,26 +126,6 @@ check_device() {
   exit 1
 }
 
-confirm_action() {
-  local msg=$1
-  log.stat "$msg"
-  read -p "Are you sure? (y/n) " -n 1 -r
-  echo 
-  if [[ $REPLY =~ ^[Yy]$ ]] ; then
-    log.warn "Deleting..."
-    return
-  else
-    log.stat "Remove canceled, exiting..."
-    exit 9
-  fi
-}
-
-remove_path() {
-  confirm_action "Removing everything under this path: '$remove_location'"
-  adb $device shell rm -rf $remove_location  2>&1 | tee -a $log_file
-  adb $device shell sync 2>&1 | tee -a $log_file
-}
-  
 copy_path() {
   # if wild card, we have to do one by one
   if [ ! -z $wild_card ] ; then
@@ -176,9 +154,6 @@ while getopts "$options_list" opt ; do
     d)
       dest_location="$OPTARG"
       ;;
-    r)
-      remove_location="$OPTARG"
-      ;;
     w)
       wild_card="$OPTARG"
       ;;
@@ -206,11 +181,8 @@ if [ $device_count -gt 1 ] && [ -z "$device" ] ; then
   exit 2
 fi
 
-if [ ! -z "$remove_location" ] ; then 
-  remove_path
-else
-  copy_path
-fi
+# do the copy
+copy_path
 
 exit 0
 
