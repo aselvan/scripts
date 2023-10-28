@@ -40,6 +40,7 @@ Usage: $my_name -s <device> -l <path> -r <path> [-d <path>] [-w <wildcard>]
   
   Examples: 
     $my_name -s pixel:5555 -r /sdcard/DCIM/Camera
+    $my_name -s pixel:5555 -r "/sdcard/DCIM/Camera/*.jpg"
 EOF
   exit
 }
