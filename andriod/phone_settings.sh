@@ -27,6 +27,7 @@ alarm_vol=0
 device_count=0
 dnd_status=0
 wifi_action=""
+device_offline="device offline"
 
 # ensure path for cron runs
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
@@ -57,7 +58,11 @@ check_device() {
       $device[:.]*)
         # must be a tcp device, attempt to connect
         echo "[INFO] this device ($device) is connected via TCP, attempting to connect ... "| tee -a $log_file
-        adb connect $device 2>&1 | tee -a $log_file
+        output=$(adb connect $device 2>&1)
+        if [[ $output = *"${device_offline}"* ]] ; then
+          echo "[ERROR] The device $device is offline, exiting." >> $log_file
+          exit 2
+        fi
         return
         ;;
       $device)
@@ -65,7 +70,11 @@ check_device() {
         # if TCP make connection otherwise do nothing
         if [[ $device == *":"* ]] ; then
           echo "[INFO] this device ($device) is connected via TCP, attempting to connect ... "| tee -a $log_file
-          adb connect $device 2>&1 | tee -a $log_file
+          output=$(adb connect $device 2>&1)
+          if [[ $output = *"${device_offline}"* ]] ; then
+            echo "[ERROR] The device $device is offline, exiting." >> $log_file
+            exit 3
+          fi
         else
           echo "[INFO] this device ($device) is connected via USB ... "| tee -a $log_file
         fi
