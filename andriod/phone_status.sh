@@ -18,7 +18,8 @@ my_name=`basename $0`
 my_version="$my_name v$version"
 options_list="s:lm:r:uepch"
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
-device=""
+# default to my phone so less typing -Arul
+device="arulspixel4"
 limit_row=3
 phone_number=""
 
@@ -175,8 +176,6 @@ while getopts "$options_list" opt ; do
   case $opt in 
     s)
       device=$OPTARG
-      check_device
-      device="-s $device"
       ;;
     r)
       limit_row=$OPTARG
@@ -206,6 +205,9 @@ while getopts "$options_list" opt ; do
   esac
 done
 
+# check the device
+check_device
+device="-s $device"
 
 # check if adb connected to multiple devices but we don't have -s option
 if [ $device_count -gt 1 ] && [ -z "$device" ] ; then

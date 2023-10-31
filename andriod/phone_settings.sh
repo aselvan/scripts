@@ -20,7 +20,8 @@ my_name=`basename $0`
 my_version="$my_name v$version"
 options_list="s:r:m:a:w:lh"
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
-device=""
+# default to my phone so less typing -Arul
+device="arulspixel4"
 ring_vol=0
 media_vol=0
 alarm_vol=0
@@ -138,8 +139,6 @@ while getopts "$options_list" opt ; do
       ;;
     s)
       device=$OPTARG
-      check_device
-      device="-s $device"
       ;;
     r)
       ring_vol=$OPTARG
@@ -159,6 +158,9 @@ while getopts "$options_list" opt ; do
   esac
 done
 
+# check the device
+check_device
+device="-s $device"
 
 # check if adb connected to multiple devices but we don't have -s option
 if [ $device_count -gt 1 ] && [ -z "$device" ] ; then

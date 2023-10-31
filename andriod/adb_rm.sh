@@ -25,7 +25,8 @@ green=32
 red=31
 blue=34
 
-device=""
+# default to my phone so less typing -Arul
+device="arulspixel7"
 default_remove_location="/sdcard/DCIM/Camera"
 remove_location=""
 
@@ -150,8 +151,6 @@ while getopts "$options_list" opt ; do
   case $opt in 
     s)
       device="$OPTARG"
-      check_device
-      device="-s $device"
       ;;
     r)
       remove_location="$OPTARG"
@@ -164,6 +163,10 @@ while getopts "$options_list" opt ; do
       ;;
   esac
 done
+
+# check the device
+check_device
+device="-s $device"
 
 # first get device count and see if anything is parired
 device_count=`adb devices|awk 'NR>1 {print $1}'|wc -w|tr -d ' '`
