@@ -5,13 +5,13 @@
 ### A collection of totally random scripts.
 
 - #### /android
-  Andrioid related scripts
+  Andrioid adb scripts, busybox setup, cron, phone status/settings & misl scripts
 
 - #### /car/tesla
   Wrapper script to call tesla API to do various things like lock/unlock door, honk, location, enable keyless drive, etc.
 
 - #### /raspberrypi
-  Various tools/scripts/howtos to build a image for Pi to be used as IoT device or pentest device
+  Various tools/scripts/howtos to build a image for RaspberryPI to be used as IoT device or pentest device
 
 - #### /firewall
   PF (packet filter) based firewall script to tighten your macOS (works on Yosemite onwards) with your own firewall. Very simple to setup by editing the /etc/pf.conf file (read the pf_rules_simple.conf)
@@ -22,11 +22,17 @@
 - #### /freestyle-libre 
   Script to import the blood glucose data exported from [freestyle-libre](https://www.freestylelibre.us/) reader, [libreview](https://libreview.com) export file as well as the [liapp](https://play.google.com/store/apps/details?id=de.cm.liapp&hl=en_US) (android application). The data is stored in local sqlite DB and allows you to calcuate daily, weekly and monthly A1C from historical data. 
 
+- #### /googleapps_scripts
+  Scripts for Google Apps Scripting platform
+
+- #### /googlehome_scripts
+  My google home automation scripts.
+
 - #### /docker-jitsi
   Run your own Jitsi (opensource equivelent of google meet, zoom etc) audio/video conf with dockerized images.
-  
-- #### /google_apps_script
-  Scripts for Google Apps Scripting platform
+
+- #### /docker-scripts
+  Misl. shell scripts to manipulate (clean, prune, tune, list, docker containers).
 
 - #### /linux
   Linux related scripts
@@ -48,3 +54,5 @@
 
 - #### /wifi-sdcards
   Scripts for wifi enabled SD cards
+
+
