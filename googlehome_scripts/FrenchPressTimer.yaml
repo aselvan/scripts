@@ -1,0 +1,18 @@
+#
+# selvans home automation --- Set a 4 min timer for frenchpress brew
+# Author:  Arul Selvan
+# Version: Jun 24, 2023
+#
+metadata:
+  name: French Press Timer
+  description: Set a 4 min timer for frenchpress brew
+automations:
+  - starters:
+      - type: assistant.event.OkGoogle
+        eventData: query
+        is: "french press timer"
+    actions:
+      - type: assistant.command.OkGoogle
+        devices: Homegen1 - Living Room
+        okGoogle: "set a timer for 4 minutes on Homegen1"
+

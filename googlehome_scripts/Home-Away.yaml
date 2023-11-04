@@ -1,0 +1,46 @@
+#
+# selvans home automation --- turn on living room when entering home at dark or turn off when leaving at day time
+# Author:  Arul Selvan
+# Version: Jul 19, 2023
+#
+metadata:
+  name: Home-Away
+  description: When entering home, turn on lights at night, turn off  lights when leaving home at daytime
+automations:
+  # Turn on living room when entering home after dark
+  - starters:
+      - type: home.state.HomePresence
+        state: homePresenceMode
+        is: HOME
+    condition:
+      type: time.between
+      after: sunset
+      before: sunrise
+    actions:
+      - type: device.command.OnOff
+        devices:
+          - lr1 - Living Room
+          - lr2 - Living Room
+          - lr3 - Living Room
+          - lr4 - Living Room
+          - kitchen light - Kitchen
+        on: true
+  # Turn off living room lights when leaving home during day
+  - starters:
+      - type: home.state.HomePresence
+        state: homePresenceMode
+        is: AWAY
+    condition:
+      type: time.between
+      after: sunrise
+      before: sunset
+    actions:
+      - type: device.command.OnOff
+        devices:
+          - lr1 - Living Room
+          - lr2 - Living Room
+          - lr3 - Living Room
+          - lr4 - Living Room
+          - kitchen light - Kitchen
+        on: false
+

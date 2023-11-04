@@ -1,0 +1,31 @@
+#
+# selvans home automation --- Reminder for various thing at various times
+# Author:  Arul Selvan
+# Version: Aug 25, 2023
+#
+metadata:
+  name: Reminder Announce
+  description: Reminder for various thing at various times
+automations:
+  - starters:
+      - type: time.schedule
+        at: 8:30 PM
+    actions:
+      - type: device.command.SetVolume
+        devices:
+          - kitchen - Kitchen
+          - Homegen2 - Bedroom
+        volumeLevel: 50
+      - type: assistant.command.Broadcast
+        message: This is a reminder to take night medication
+        devices:
+          - kitchen - Kitchen
+          - Homegen2 - Bedroom
+      - type: time.delay
+        for: 15 sec
+      - type: device.command.SetVolume
+        devices:
+          - kitchen - Kitchen
+          - Homegen2 - Bedroom
+        volumeLevel: 32
+

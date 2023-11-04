@@ -1,0 +1,29 @@
+#
+# selvans home automation --- TV lighting (lamp on/lights off)
+# Author:  Arul Selvan
+# Version: Jun 16, 2023
+#
+metadata:
+  name: TV lighting
+  description: TV lighting (lamp on/lights off)
+automations:
+  - starters:
+      - type: time.schedule
+        at: sunset-45min
+      - type: assistant.event.OkGoogle
+        eventData: query
+        is: "tv lighting"
+    actions:
+      - type: device.command.OnOff # Turn the device on or off.
+        on: true
+        devices:
+          - bsl - Bedroom
+          - bsl2 - Bedroom
+      - type: device.command.OnOff # Turn the device on or off.
+        on: false
+        devices:
+          - b1 - Bedroom
+          - b2 - Bedroom
+          - b3 - Bedroom
+          - b4 - Bedroom
+

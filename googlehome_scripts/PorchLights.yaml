@@ -1,0 +1,34 @@
+#
+# selvans home automation --- Portch light on/off at sunset/sunrise also w/ voice
+# Author:  Arul Selvan
+# Version: Jun 25, 2023
+#
+metadata:
+  name: Porch Lights
+  description: Portch light on/off at sunset/sunrise also w/ voice.
+automations:
+  - starters:
+      - type: time.schedule
+        at: sunset+15min
+      - type: assistant.event.OkGoogle
+        eventData: query
+        is: "porch on"
+    actions:
+      - type: device.command.OnOff # Turn the device on or off.
+        on: true
+        devices:
+          - p1 - Porch
+          - p2 - Porch
+  - starters:
+      - type: time.schedule
+        at: sunrise-60min
+      - type: assistant.event.OkGoogle
+        eventData: query
+        is: "porch off"
+    actions:
+      - type: device.command.OnOff # Turn the device on or off.
+        on: false
+        devices:
+          - p1 - Porch
+          - p2 - Porch
+

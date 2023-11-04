@@ -1,0 +1,32 @@
+#
+# selvans home automation --- When bedroom TV on, ensure celing lights off and bedside lamps on
+# Author:  Arul Selvan
+# Version: Jun 16, 2023
+#
+metadata:
+  name: Bedroom TV
+  description: When bedroom TV on, ensure lights off but bedside lamps on.
+automations:
+  starters:
+    type: device.state.OnOff
+    state: on
+    is: true
+    device: TV - Bedroom
+  condition:
+    type: time.between
+    after: sunset+30min
+    before: sunrise
+  actions:
+    - type: device.command.OnOff
+      on: false
+      devices:
+        - b1 - Bedroom
+        - b2 - Bedroom
+        - b3 - Bedroom
+        - b4 - Bedroom
+    - type: device.command.OnOff
+      on: true
+      devices:
+        - bsl2 - Bedroom
+        - bsl - Bedroom
+

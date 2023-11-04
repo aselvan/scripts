@@ -1,0 +1,64 @@
+#
+# selvans home automation --- sleep time
+# Author:  Arul Selvan
+# Version: Jun 15, 2023
+#
+metadata:
+  name: Sleep Time
+  description: Turn all the lights off at sleeptime, play rain sound for 15 min
+automations:
+  - starters:
+      #- type: time.schedule
+      #  at: 11:55 PM
+      - type: assistant.event.OkGoogle
+        eventData: query
+        is: "sleep time"
+      - type: assistant.event.OkGoogle
+        eventData: query
+        is: "bed time"
+      - type: assistant.event.OkGoogle
+        eventData: query
+        is: "going to sleep"
+    actions:
+      - type: assistant.command.Broadcast
+        message: "Alright, sleep time starts in 2 minutes ..."
+        devices: Homegen2 - Bedroom
+      - type: time.delay
+        for: 2 min
+      - type: device.command.OnOff
+        devices:
+          - b1 - Bedroom
+          - b2 - Bedroom
+          - b3 - Bedroom
+          - b4 - Bedroom
+          - bsl - Bedroom
+          - bsl2 - Bedroom
+          - lr1 - Living Room
+          - lr2 - Living Room
+          - lr3 - Living Room
+          - lr4 - Living Room
+          - u1 - Office
+          - kitchen light - Kitchen
+        on: false
+      # set the desired volume (not working)
+      - type: device.command.SetVolume
+        devices: Homegen2 - Bedroom
+        volumeLevel: 10
+
+      # turn off screen on device (may be not needed)
+      - type: assistant.command.OkGoogle
+        devices: Homegen2 - Bedroom
+        okGoogle: "turn off screen"
+
+      # play sound (flaky, does not play at all or plays sometime later)
+      - type: assistant.command.OkGoogle
+        devices: Homegen2 - Bedroom
+        okGoogle: "play ocean sounds for 15 minutes"
+
+      # seem like this is not working either
+      - type: time.delay
+        for: 16 minutes
+      - type: assistant.command.OkGoogle
+        devices: Homegen2 - Bedroom
+        okGoogle: "stop"
+

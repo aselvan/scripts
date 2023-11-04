@@ -1,0 +1,36 @@
+#
+# selvans home automation --- turn on/off kitchen light
+# Author:  Arul Selvan
+# Version: Oct 10, 2023
+#
+metadata:
+  name: Kitchen Light
+  description: Turn kitchen light on or off depending on command
+automations:
+  - starters:
+      - type: time.schedule
+        at: 11:00 PM
+      - type: time.schedule
+        at: 02:00 PM
+      - type: assistant.event.OkGoogle
+        eventData: query
+        is: "kitchen off"
+    actions:
+      - type: device.command.OnOff # Turn the device on or off.
+        on: false
+        devices:
+          - kitchen light - Kitchen
+  - starters:
+      - type: time.schedule
+        at: 7:00 AM
+      - type: time.schedule
+        at: 5:45 PM
+      - type: assistant.event.OkGoogle
+        eventData: query
+        is: "kitchen on"
+    actions:
+      - type: device.command.OnOff # Turn the device on or off.
+        on: true
+        devices:
+          - kitchen light - Kitchen
+

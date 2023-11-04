@@ -1,0 +1,72 @@
+#
+# selvans home automation
+#  Close garrage if open >10 min, also broadcase a message. Turn lights on/off on cond.
+# Author:  Arul Selvan
+# Version: Aug 29, 2023
+#
+metadata:
+  name: Garage
+  description: Close garage if open >10 min. Broadcase a message. Turn lights on/off cond.
+automations:
+  # Starter: Garage door left open for more than 10 minutes.
+  # Action to broadcase message to few google home speakers & close garrage.
+  - starters:
+      - type: device.state.OpenClose
+        state: openPercent
+        greaterThan: 0
+        for: 10 min
+        device: garage Door - Garage
+    actions:
+      - type: device.command.OpenClose
+        openPercent: 0
+        devices: garage Door - Garage
+      - type: assistant.command.Broadcast
+        message: The garage door was left open for more than 10 minutes, closing now.
+        devices:
+          - kitchen - Kitchen
+  # Starter: Garage door is closing,  broadcast a message to google home speakers
+  - starters:
+      - type: device.state.OpenClose
+        device: garage Door - Garage
+        state: openPercent
+        is: 0
+    actions:
+      - type: assistant.command.Broadcast
+        message: The garage door just closed.
+        devices:
+          - kitchen - Kitchen
+    # Starter: When garage door closed, turn off kitchen light if it is day time.
+  - starters:
+      - type: device.state.OpenClose
+        state: openPercent
+        is: 0
+        device: garage Door - Garage
+    condition:
+      type: time.between
+      after: 7:00 AM
+      before: 5:00 PM
+    actions:
+      - type: device.command.OnOff
+        on: false
+        devices:
+          - kitchen light - Kitchen
+  # Starter: When garage door opens, turn on kitchen/living room if night time.
+  - starters:
+      - type: device.state.OpenClose
+        state: openPercent
+        greaterThan: 0
+        device: garage Door - Garage
+    condition:
+      type: time.between
+      after: 5:00 PM
+      before: 1:00 AM
+    actions:
+      - type: device.command.OnOff
+        on: true
+        devices:
+          - lr1 - Living Room
+          - lr2 - Living Room
+          - lr3 - Living Room
+          - lr4 - Living Room
+          - kitchen light - Kitchen
+

@@ -1,0 +1,36 @@
+#
+# selvans home automation --- All lights off w/ voice and at various time late night
+# Author:  Arul Selvan
+# Version: Jun 25, 2023
+#
+metadata:
+  name: All lights
+  description: Turn off all lights w/ voice command and time based
+automations:
+  - starters:
+      - type: time.schedule
+        at: 11:30 PM
+      - type: time.schedule
+        at: 12:30 AM
+      - type: time.schedule
+        at: 1:30 AM
+      - type: assistant.event.OkGoogle
+        eventData: query
+        is: "all lights off"
+    actions:
+      - type: device.command.OnOff
+        on: false
+        devices:
+          - b1 - Bedroom
+          - b2 - Bedroom
+          - b3 - Bedroom
+          - b4 - Bedroom
+          - bsl - Bedroom
+          - bsl2 - Bedroom
+          - lr1 - Living Room
+          - lr2 - Living Room
+          - lr3 - Living Room
+          - lr4 - Living Room
+          - u1 - Office
+          - kitchen light - Kitchen
+

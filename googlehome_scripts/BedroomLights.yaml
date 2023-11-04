@@ -1,0 +1,40 @@
+#
+# selvans home automation --- Bedroom light on or off w/ voice
+# Author:  Arul Selvan
+# Version: Jun 16, 2023
+#
+metadata:
+  name: Bedroom Lights
+  description: Bedroom lights on or off at voice command.
+automations:
+  - starters:
+      - type: assistant.event.OkGoogle
+        eventData: query
+        is: "lights on"
+    actions:
+      - type: device.command.OnOff # Turn the device on or off.
+        on: true
+        devices:
+          - b1 - Bedroom
+          - b2 - Bedroom
+          - b3 - Bedroom
+          - b4 - Bedroom
+  - starters:
+      - type: time.schedule
+        at: 11:30 PM
+      - type: time.schedule
+        at: 12:30 AM
+      - type: time.schedule
+        at: 1:30 AM
+      - type: assistant.event.OkGoogle
+        eventData: query
+        is: "lights off"
+    actions:
+      - type: device.command.OnOff # Turn the device on or off.
+        on: false
+        devices:
+          - b1 - Bedroom
+          - b2 - Bedroom
+          - b3 - Bedroom
+          - b4 - Bedroom
+
