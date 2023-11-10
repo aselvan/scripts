@@ -10,7 +10,7 @@ automations:
   - starters:
       - type: assistant.event.OkGoogle
         eventData: query
-        is: "lights on"
+        is: "bedroom on"
     actions:
       - type: device.command.OnOff # Turn the device on or off.
         on: true
@@ -28,7 +28,7 @@ automations:
         at: 1:30 AM
       - type: assistant.event.OkGoogle
         eventData: query
-        is: "lights off"
+        is: "bedroom off"
     actions:
       - type: device.command.OnOff # Turn the device on or off.
         on: false
@@ -37,4 +37,3 @@ automations:
           - b2 - Bedroom
           - b3 - Bedroom
           - b4 - Bedroom
-
