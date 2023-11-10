@@ -1,31 +1,28 @@
 #
-# selvans home automation --- Bedroom lamp on or off at dawn/dusk & also w/ voice
+# selvans home automation --- Bedside lamp on or off at dawn/dusk & also w/ voice
 # Author:  Arul Selvan
 # Version: Jun 16, 2023
 #
 metadata:
-  name: Bedroom Lamps
-  description: Bedroom lamp on (or off) at dawn/dusk as well as with voice command.
+  name: Bedside Lamps
+  description: Bedside lamp on (or off) at dawn/dusk as well as with voice command.
 automations:
   - starters:
       - type: time.schedule
         at: sunset-45min
       - type: assistant.event.OkGoogle
         eventData: query
-        is: "lamp on"
+        is: "bedside  on"
     actions:
       - type: device.command.OnOff # Turn the device on or off.
         on: true
         devices:
-          - bsl - Bedroom
-          - bsl2 - Bedroom
+          - bsl - Bedside
+          - bsl2 - Bedside
   - starters:
       - type: assistant.event.OkGoogle
         eventData: query
-        is: "lamp off"
-      - type: assistant.event.OkGoogle
-        eventData: query
-        is: "lamps off"
+        is: "bedside  off"
       - type: time.schedule
         at: 11:30 PM
       - type: time.schedule
@@ -36,6 +33,5 @@ automations:
       - type: device.command.OnOff # Turn the device on or off.
         on: false
         devices:
-          - bsl - Bedroom
-          - bsl2 - Bedroom
-
+          - bsl - Bedside
+          - bsl2 - Bedside
