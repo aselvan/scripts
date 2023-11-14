@@ -26,15 +26,14 @@ export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
 
 usage() {
   cat << EOF
+$my_name - $my_title
 
-  $my_name - $my_title
+Usage: $my_name [options]
+  -e <email> ---> email address to send success/failure messages
+  -v         ---> verbose mode prints info messages, otherwise just errors are printed
+  -h         ---> print usage/help
 
-  Usage: $my_name [options]
-     -e <email>    ---> email address to send success/failure messages
-     -v            ---> verbose mode prints info messages, otherwise just errors are printed
-     -h            ---> print usage/help
-
-  example: $my_name -h
+example: $my_name -h -v
   
 EOF
   exit 0
