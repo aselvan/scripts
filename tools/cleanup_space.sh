@@ -8,22 +8,18 @@
 #
 
 # version format YY.MM.DD
-version=23.09.22
+version=23.11.15
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
-host_name=`hostname`
-os_name=`uname -s`
-cmdline_args=`printf "%s " $@`
-dir_name=`dirname $0`
+my_title="Sample script"
+my_dirname=`dirname $0`
+my_path=$(cd $my_dirname; pwd -P)
+my_logfile="/tmp/$(echo $my_name|cut -d. -f1).log"
+default_scripts_github=$HOME/src/scripts.github
+scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
-log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
-log_init=0
+# commandline options
 options="t:d:f:vh?"
-verbose=0
-failure=0
-green=32
-red=31
-blue=34
 
 # ensure path for cron runs
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
@@ -45,15 +41,15 @@ cleanup_list=("/var/www/tmp,7," "/var/lib/tripwire/report,7,.html" "/var/lib/tri
 usage() {
   cat << EOF
 
-  $my_name --- delete files/dir that are older than specified days
+$my_name --- delete files/dir that are older than specified days
 
-  Usage: $my_name [options]
-     -t <title>    ---> Title for html log of cleanup run
-     -d <desc>     ---> Description for html log of cleanup run
-     -v            ---> verbose mode prints info messages, otherwise just errors are printed
-     -h            ---> print usage/help
+Usage: $my_name [options]
+  -t <title> ---> Title for html log of cleanup run
+  -d <desc>  ---> Description for html log of cleanup run
+  -v         ---> verbose mode prints info messages, otherwise just errors are printed
+  -h         ---> print usage/help
 
-  example: $my_name -h
+example: $my_name -h
   
 EOF
   exit 0
@@ -174,8 +170,19 @@ create_html_log() {
 }
 
 
-# ----------  main --------------
-log.init
+# -------------------------------  main -------------------------------
+# First, make sure scripts root path is set, we need it to include files
+if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
+  # include logger, functions etc as needed 
+  source $scripts_github/utils/logger.sh
+  source $scripts_github/utils/functions.sh
+else
+  echo "ERROR: SCRIPTS_GITHUB env variable is either not set or has invalid path!"
+  echo "The env variable should point to root dir of scripts i.e. $default_scripts_github"
+  exit 1
+fi
+# init logs
+log.init $my_logfile
 
 # parse commandline options
 while getopts $options opt ; do
