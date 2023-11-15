@@ -9,22 +9,18 @@
 #
 
 # version format YY.MM.DD
-version=23.10.02
+version=23.11.15
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
-dir_name=`dirname $0`
-os_name=`uname -s`
+my_title="show hostname, IP & MAC address of active LAN hosts"
+my_dirname=`dirname $0`
+my_path=$(cd $my_dirname; pwd -P)
+my_logfile="/tmp/$(echo $my_name|cut -d. -f1).log"
+default_scripts_github=$HOME/src/scripts.github
+scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
-log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1).txt"
-log_init=0
 options="i:m:n:vh?"
-verbose=0
-failure=0
-green=32
-red=31
-blue=34
-
 link_local="169.254"
 ip_address=""
 mac_address=""
@@ -34,68 +30,19 @@ iface="en0"
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
 
 usage() {
-  cat << EOF
+cat << EOF
 
-  $my_name --- show hostname, IP & MAC address of active LAN hosts.
+$my_name - $my_title
 
-  Usage: $my_name [options]
-     -i <iface> ---> network interface to use [default: $iface]
-     -v         ---> verbose mode prints info messages, otherwise just errors are printed
-     -h         ---> print usage/help
+Usage: $my_name [options]
+  -i <iface> ---> network interface to use [default: $iface]
+  -v         ---> verbose mode prints info messages, otherwise just errors are printed
+  -h         ---> print usage/help
 
-  example: $my_name -i 192.168.1.10
+example: $my_name -i en0
   
 EOF
   exit 0
-}
-
-# -- Log functions ---
-log.init() {
-  if [ $log_init -eq 1 ] ; then
-    return
-  fi
-
-  log_init=1
-  if [ -f $log_file ] ; then
-    rm -f $log_file
-  fi
-  echo -e "\e[0;34m$my_version, `date +'%m/%d/%y %r'` \e[0m" | tee -a $log_file
-}
-
-log.info() {
-  if [ $verbose -eq 0 ] ; then
-    return;
-  fi
-  log.init
-  local msg=$1
-  echo -e "\e[0;32m$msg\e[0m" | tee -a $log_file 
-}
-log.debug() {
-  if [ $verbose -eq 0 ] ; then
-    return;
-  fi
-  log.init
-  local msg=$1
-  echo -e "\e[1;30m$msg\e[0m" | tee -a $log_file 
-}
-log.stat() {
-  log.init
-  local msg=$1
-  local color=$2
-  if [ -z $color ] ; then
-    color=$blue
-  fi
-  echo -e "\e[0;${color}m$msg\e[0m" | tee -a $log_file 
-}
-log.warn() {
-  log.init
-  local msg=$1
-  echo -e "\e[0;33m$msg\e[0m" | tee -a $log_file 
-}
-log.error() {
-  log.init
-  local msg=$1
-  echo -e "\e[0;31m$msg\e[0m" | tee -a $log_file 
 }
 
 get_my_ip() {
@@ -108,8 +55,20 @@ get_my_ip() {
   echo $my_ip
 }
 
-# ----------  main --------------
-log.init
+
+# -------------------------------  main -------------------------------
+# First, make sure scripts root path is set, we need it to include files
+if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
+  # include logger, functions etc as needed 
+  source $scripts_github/utils/logger.sh
+  source $scripts_github/utils/functions.sh
+else
+  echo "ERROR: SCRIPTS_GITHUB env variable is either not set or has invalid path!"
+  echo "The env variable should point to root dir of scripts i.e. $default_scripts_github"
+  exit 1
+fi
+# init logs
+log.init $my_logfile
 
 # parse commandline options
 while getopts $options opt ; do
