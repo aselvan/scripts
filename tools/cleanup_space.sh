@@ -62,10 +62,10 @@ log.init() {
   fi
 
   log_init=1
-  if [ -f $log_file ] ; then
-    rm -f $log_file
+  if [ -f $my_logfile ] ; then
+    rm -f $my_logfile
   fi
-  echo -e "\e[0;34m$my_version, `date +'%m/%d/%y %r'` \e[0m" | tee -a $log_file
+  echo -e "\e[0;34m$my_version, `date +'%m/%d/%y %r'` \e[0m" | tee -a $my_logfile
 }
 
 log.info() {
@@ -74,7 +74,7 @@ log.info() {
   fi
   log.init
   local msg=$1
-  echo -e "\e[0;32m$msg\e[0m" | tee -a $log_file 
+  echo -e "\e[0;32m$msg\e[0m" | tee -a $my_logfile 
 }
 log.debug() {
   if [ $verbose -eq 0 ] ; then
@@ -82,7 +82,7 @@ log.debug() {
   fi
   log.init
   local msg=$1
-  echo -e "\e[1;30m$msg\e[0m" | tee -a $log_file 
+  echo -e "\e[1;30m$msg\e[0m" | tee -a $my_logfile 
 }
 log.stat() {
   log.init
@@ -91,17 +91,17 @@ log.stat() {
   if [ -z $color ] ; then
     color=$blue
   fi
-  echo -e "\e[0;${color}m$msg\e[0m" | tee -a $log_file 
+  echo -e "\e[0;${color}m$msg\e[0m" | tee -a $my_logfile 
 }
 log.warn() {
   log.init
   local msg=$1
-  echo -e "\e[0;33m$msg\e[0m" | tee -a $log_file 
+  echo -e "\e[0;33m$msg\e[0m" | tee -a $my_logfile 
 }
 log.error() {
   log.init
   local msg=$1
-  echo -e "\e[0;31m$msg\e[0m" | tee -a $log_file 
+  echo -e "\e[0;31m$msg\e[0m" | tee -a $my_logfile 
 }
 
 write_std_readme() {
@@ -148,21 +148,21 @@ do_cleanup() {
     return
   fi
   log.debug "\tfind $dir -mindepth 1 -name \*$ext -type f -mtime +$days -delete"
-  find $dir -mindepth 1 -name \*$ext -type f -mtime +$days -delete 2>&1 >> $log_file
+  find $dir -mindepth 1 -name \*$ext -type f -mtime +$days -delete 2>&1 >> $my_logfile
   # write a readme file
   if [ $dir = "$download_dir" ] ; then
     write_download_readme
   else
     write_std_readme
   fi
-  find $dir -mindepth 1 -type d -empty -delete 2>&1 >> $log_file
+  find $dir -mindepth 1 -type d -empty -delete 2>&1 >> $my_logfile
 }
 
 create_html_log() {
   cat $std_header| sed -e "$sed_st"  > $html_file
   echo "<body><h2>Cleanup Log run</h2><pre>" >> $html_file
   # copy log file content to html file after striping ansi color code
-  cat $log_file | sed 's/\x1b\[[0-9;]*m//g'  >> $html_file
+  cat $my_logfile | sed 's/\x1b\[[0-9;]*m//g'  >> $html_file
   echo "</pre>" >> $html_file
 
   # write footer (takes care of ending body/html tags
