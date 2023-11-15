@@ -8,7 +8,7 @@
 #
 
 # version format YY.MM.DD
-version=23.05.02
+version=23.11.15
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Sample script"
@@ -51,7 +51,7 @@ else
   exit 1
 fi
 # init logs
-log.init
+log.init $my_logfile
 
 #check_installed "required_binary"
 #check_root
