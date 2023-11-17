@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # myps.sh --- simple wrapper for ps to show memory, cpu of top N processes
 #
@@ -52,6 +52,7 @@ do_format_cmd() {
   fi
 
   c=`basename "$c"`
+
   echo $c
 }
 
@@ -75,12 +76,12 @@ do_memory() {
     ps_opt="-w -m -eo pid=,%mem=,rss=,vsz=,comm="
   fi
 
-  printf "%s\t %s\t %s\t %s\t%s\n" PID %MEM RSS VSZ COMMAND
+  printf "%s\t%s\t%s\t%s\t  %s\n" PID %MEM RSS VSZ COMMAND
   while read -r pid mem rss vsz cmd; do
     cmd=`do_format_cmd "$cmd"`
     rss=`do_format_size $rss`
     vsz=`do_format_size $vsz`
-    printf "%s\t %s\t %s\t %s\t %s\n" "$pid" "$mem" "$rss" "$vsz" "$cmd"
+    printf "%s\t%s\t%s\t%s\t  %s\n" "$pid" "$mem" "$rss" "$vsz" "$cmd"
   done < <(ps $ps_opt | head -n$count)
   exit
 }
