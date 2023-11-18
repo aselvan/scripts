@@ -11,17 +11,20 @@
 #
 
 # version format YY.MM.DD
-version=23.07.24
+version=23.11.17
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
-os_name=`uname -s`
-dir_name=`dirname $0`
+my_title="Sample script"
+my_dirname=`dirname $0`
+my_path=$(cd $my_dirname; pwd -P)
+my_logfile="/tmp/$(echo $my_name|cut -d. -f1).log"
+default_scripts_github=$HOME/src/scripts.github
+scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
-log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
-log_init=0
-verbose=0
-whois_file="/tmp/$(echo $my_name|cut -d. -f1).txt"
+# commandline options
 options="d:ratvh?"
+
+whois_file="/tmp/$(echo $my_name|cut -d. -f1).txt"
 domain_name=""
 print_registrant=0
 print_admin_contact=0
@@ -33,68 +36,22 @@ whois_attempts=2
 # ensure path for cron runs
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
 
-log.init() {
-  if [ $log_init -eq 1 ] ; then
-    return
-  fi
-
-  log_init=1
-  if [ -f $log_file ] ; then
-    rm -f $log_file
-  fi
-  echo -e "\e[0;34m$my_version, `date +'%m/%d/%y %r'` \e[0m" | tee -a $log_file
-}
-
-log.info() {
-  if [ $verbose -eq 0 ] ; then
-    return;
-  fi
-  log.init
-  local msg=$1
-  echo -e "\e[0;32m$msg\e[0m" | tee -a $log_file 
-}
-log.debug() {
-  if [ $verbose -eq 0 ] ; then
-    return;
-  fi
-  log.init
-  local msg=$1
-  echo -e "\e[1;30m$msg\e[0m" | tee -a $log_file 
-}
-
-log.stat() {
-  log.init
-  local msg=$1
-  echo -e "\e[0;34m$msg\e[0m" | tee -a $log_file 
-}
-
-log.warn() {
-  log.init
-  local msg=$1
-  echo -e "\e[0;33m$msg\e[0m" | tee -a $log_file 
-}
-log.error() {
-  log.init
-  local msg=$1
-  echo -e "\e[0;31m$msg\e[0m" | tee -a $log_file 
-}
-
 check_whois_error() {
   grep -q "$whois_error" $whois_file 2>&1 >/dev/null
   return $?
 }
 
 usage() {
-  cat << EOF
+cat << EOF
 
-  Usage: $my_name [options]
-     -d <domain> ---> domain to query whois db
-     -r          ---> print registrant contact [optional]
-     -a          ---> print adminstrative contact [optional]
-     -t          ---> print technical contact [optional]
-     -h          ---> print usage/help
+Usage: $my_name [options]
+  -d <domain> ---> domain to query whois db
+  -r          ---> print registrant contact [optional]
+  -a          ---> print adminstrative contact [optional]
+  -t          ---> print technical contact [optional]
+  -h          ---> print usage/help
 
-  example: $my_name -d selvansoft.com -r
+example: $my_name -d selvansoft.com -r
   
 EOF
   exit 0
@@ -147,8 +104,19 @@ print_optional_info() {
   echo "E-mail:" $email
 }
 
-# ----------  main --------------
-log.init
+# -------------------------------  main -------------------------------
+# First, make sure scripts root path is set, we need it to include files
+if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
+  # include logger, functions etc as needed 
+  source $scripts_github/utils/logger.sh
+else
+  echo "ERROR: SCRIPTS_GITHUB env variable is either not set or has invalid path!"
+  echo "The env variable should point to root dir of scripts i.e. $default_scripts_github"
+  exit 1
+fi
+# init logs
+log.init $my_logfile
+
 # parse commandline options
 while getopts $options opt ; do
   case $opt in
