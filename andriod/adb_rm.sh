@@ -56,7 +56,7 @@ check_device() {
       $device[:.]*)
         # must be a tcp device, attempt to connect
         log.info "This device ($device) is connected via TCP, attempting to connect ... "
-        adb connect $device 2>&1 | tee -a $log_file
+        adb connect $device 2>&1 | tee -a $my_logfile
         return
         ;;
       $device)
@@ -64,7 +64,7 @@ check_device() {
         # if TCP make connection otherwise do nothing
         if [[ $device == *":"* ]] ; then
           log.info "This device ($device) is connected via TCP, attempting to connect ... "
-          adb connect $device 2>&1 | tee -a $log_file
+          adb connect $device 2>&1 | tee -a $my_logfile
         else
           log.info "This device ($device) is connected via USB ... "
         fi
@@ -93,8 +93,8 @@ confirm_action() {
 
 remove_path() {
   confirm_action "Removing everything under this path: '$remove_location'"
-  adb $device shell rm -rf $remove_location  2>&1 | tee -a $log_file
-  adb $device shell sync 2>&1 | tee -a $log_file
+  adb $device shell rm -rf $remove_location  2>&1 | tee -a $my_logfile
+  adb $device shell sync 2>&1 | tee -a $my_logfile
 }
 
 # -------------------------------  main -------------------------------

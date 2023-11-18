@@ -60,7 +60,7 @@ check_device() {
       $device[:.]*)
         # must be a tcp device, attempt to connect
         log.info "This device ($device) is connected via TCP, attempting to connect ... "
-        adb connect $device 2>&1 | tee -a $log_file
+        adb connect $device 2>&1 | tee -a $my_logfile
         return
         ;;
       $device)
@@ -68,7 +68,7 @@ check_device() {
         # if TCP make connection otherwise do nothing
         if [[ $device == *":"* ]] ; then
           log.info "This device ($device) is connected via TCP, attempting to connect ... "
-          adb connect $device 2>&1 | tee -a $log_file
+          adb connect $device 2>&1 | tee -a $my_logfile
         else
           log.info "This device ($device) is connected via USB ... "
         fi
@@ -85,10 +85,10 @@ copy_path() {
   # if wild card, we have to do one by one
   if [ ! -z $wild_card ] ; then
     for f in `adb $device shell ls ${source_location}/$wild_card` ; do 
-      adb $device pull -a $f $dest_location 2>&1 | tee -a $log_file
+      adb $device pull -a $f $dest_location 2>&1 | tee -a $my_logfile
     done
   else
-    adb $device pull -a $source_location $dest_location 2>&1 | tee -a $log_file
+    adb $device pull -a $source_location $dest_location 2>&1 | tee -a $my_logfile
   fi
 }
 
