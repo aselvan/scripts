@@ -13,18 +13,18 @@
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
 
 # version format YY.MM.DD
-version=23.10.30
-my_name=`basename $0`
-my_version="$my_name v$version"
-options_list="s:f:d:vh"
-log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
-log_init=0
-verbose=0
-failure=0
-green=32
-red=31
-blue=34
+version=23.11.18
+my_name="`basename $0`"
+my_version="`basename $0` v$version"
+my_title="Sample script"
+my_dirname=`dirname $0`
+my_path=$(cd $my_dirname; pwd -P)
+my_logfile="/tmp/$(echo $my_name|cut -d. -f1).log"
+default_scripts_github=$HOME/src/scripts.github
+scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
+# commandline options
+options_list="s:f:d:vh"
 device=""
 default_dest_dir="/sdcard"
 dest_dir=""
@@ -37,62 +37,14 @@ $my_name --- simple wrapper over adb to copy files to phone.
 Usage: $my_name -s <device> -p <path> -d <dir> 
   -s <device> ---> andrioid device id of your phone paired with adb
   -f <path>   ---> file/path in computer to copy to phone
-  -d <dir>    ---> destination dir in phone to copy files to [Default: '$default_dest_dir'] 
-  -v          ---> verbose mode prints info messages, otherwise just errors/warnings are printed      
+  -d <dir>    ---> destination dir in phone to copy files [Default: '$default_dest_dir'] 
+  -v          ---> enable verbose, otherwise just errors/warnings are printed      
   -h help
   
   Examples: 
     $my_name -s pixel:5555 -f "/tmp/*.jpg" -d /sdcard/DCIM/Camera
 EOF
   exit
-}
-
-# -- Log functions ---
-log.init() {
-  if [ $log_init -eq 1 ] ; then
-    return
-  fi
-
-  log_init=1
-  if [ -f $log_file ] ; then
-    rm -f $log_file
-  fi
-  echo -e "\e[0;34m$my_version, `date +'%m/%d/%y %r'` \e[0m" | tee -a $log_file
-}
-log.info() {
-  if [ $verbose -eq 0 ] ; then
-    return;
-  fi
-  log.init
-  local msg=$1
-  echo -e "\e[0;32m$msg\e[0m" | tee -a $log_file 
-}
-log.debug() {
-  if [ $verbose -eq 0 ] ; then
-    return;
-  fi
-  log.init
-  local msg=$1
-  echo -e "\e[1;30m$msg\e[0m" | tee -a $log_file 
-}
-log.stat() {
-  log.init
-  local msg=$1
-  local color=$2
-  if [ -z $color ] ; then
-    color=$blue
-  fi
-  echo -e "\e[0;${color}m$msg\e[0m" | tee -a $log_file 
-}
-log.warn() {
-  log.init
-  local msg=$1
-  echo -e "\e[0;33m$msg\e[0m" | tee -a $log_file 
-}
-log.error() {
-  log.init
-  local msg=$1
-  echo -e "\e[0;31m$msg\e[0m" | tee -a $log_file 
 }
 
 check_device() {
@@ -138,9 +90,20 @@ push_path() {
   adb $device push $source_path ${dest_dir}/. 2>&1 | tee -a $log_file
 }
 
+# -------------------------------  main -------------------------------
+# First, make sure scripts root path is set, we need it to include files
+if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
+  # include logger, functions etc as needed 
+  source $scripts_github/utils/logger.sh
+  source $scripts_github/utils/functions.sh
+else
+  echo "ERROR: SCRIPTS_GITHUB env variable is either not set or has invalid path!"
+  echo "The env variable should point to root dir of scripts i.e. $default_scripts_github"
+  exit 1
+fi
+# init logs
+log.init $my_logfile
 
-# --------------- main ----------------------
-log.init
 # parse commandline
 while getopts "$options_list" opt ; do
   case $opt in 
