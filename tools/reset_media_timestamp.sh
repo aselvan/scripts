@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # reset_media_timestamp.sh --- add/change timestamp metadata on media files.
 #
@@ -21,27 +21,35 @@
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
 
 # version format YY.MM.DD
-version=22.09.14
-my_name=`basename $0`
-my_version="$my_name v$version"
-os_name=`uname -s`
+version=23.11.25
+my_version="`basename $0` v$version"
+my_title="reset a file timestamp using the 'createdate' from its metadata"
+my_dirname=`dirname $0`
+my_path=$(cd $my_dirname; pwd -P)
+my_logfile="/tmp/$(echo $my_name|cut -d. -f1).log"
+default_scripts_github=$HOME/src/scripts.github
+scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
+
+# commandline options
 options="p:t:h"
-log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 source_path=""
-exiftool_bin="/usr/bin/exiftool"
 exiftool_opt="-m"
 timestamp=`date +%Y%m%d%H%M`
 type_check=0
 
 usage() {
-  echo ""
-  echo "Usage: $my_name [options]"
-  echo "  -p <name>       ---> file/path for single file (or quoted for wildcard)"
-  echo "  -t <timestamp>  ---> timestamp YYYYMMDDHHMM. If not provided, defaults to 'now' [$timestamp]"
-  echo ""
-  echo "example: $my_name -p image.jpg -t 202209141800"
-  echo "example: $my_name -p \"/home/images/*.jpg\" -t 202209141800"
-  echo ""
+cat << EOF
+
+$my_name - $my_title
+
+Usage: $my_name [options]
+  -p <path>      ---> file/path for single file (or quoted for wildcarda)
+  -t <timestamp> ---> timestamp YYYYMMDDHHMM. If not provided, defaults to 'now' [$timestamp]
+  -v             ---> enable verbose, otherwise just errors are printed
+
+  example: $my_name -p image.jpg -t 202209141800
+  example: $my_name -p "/home/images/*.jpg" -t 202209141800
+EOF
   exit 0
 }
 
@@ -60,8 +68,19 @@ is_media() {
   esac
 }
 
-# ----------  main --------------
-# parse commandline options
+# -------------------------------  main -------------------------------
+# First, make sure scripts root path is set, we need it to include files
+if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
+  # include logger, functions etc as needed 
+  source $scripts_github/utils/logger.sh
+else
+  echo "ERROR: SCRIPTS_GITHUB env variable is either not set or has invalid path!"
+  echo "The env variable should point to root dir of scripts i.e. $default_scripts_github"
+  exit 1
+fi
+# init logs
+log.init $my_logfile
+
 while getopts $options opt; do
   case $opt in
     p)
@@ -79,23 +98,15 @@ while getopts $options opt; do
   esac
 done
 
-if [ -f $log_file ] ; then
-  rm $log_file
-fi
-echo "[INFO] $my_version" | tee -a $log_file
-
-if [ $os_name = "Darwin" ]; then
-  exiftool_bin=/usr/local/bin/exiftool
-fi
-
 # ensure exiftool is available
-if [ ! -e $exiftool_bin ] ; then
-  echo "[ERROR] $exiftool_bin is required for this script to work"
+which exiftool >/dev/null 2>&1
+if [ $? -ne 0 ] ; then
+  log.error "exiftool is required for this script to work, install it first [ex: brew install exiftool]."
   exit 1
 fi
 
 if [ -z "$source_path" ] ; then
-  echo "[ERROR] required argument i.e. path/name is missing!"
+  log.error "Required argument i.e. path/name is missing!"
   usage
 fi
 
@@ -111,10 +122,10 @@ fi
 for fname in ${file_list} ;  do
   is_media $fname
   if [ $? -ne 0 ] ; then
-    echo "[WARN] the file '$fname' is not known media type, skipping ..." | tee -a $log_file
+    log.warn "the file '$fname' is not known media type, skipping ..." | tee -a $my_logfile
     continue
   fi
-  echo "[INFO] change/add metadata & OS timestamp ($timestamp) to '$fname' ..." | tee -a $log_file
-  $exiftool_bin $exiftool_opt -d "%Y%m%d%H%M" -AllDates="$timestamp" -overwrite_original $fname 2>&1 >> $log_file
+  log.stat "change/add metadata & OS timestamp ($timestamp) to '$fname' ..." | tee -a $my_logfile
+  exiftool $exiftool_opt -d "%Y%m%d%H%M" -AllDates="$timestamp" -overwrite_original $fname 2>&1 >> $my_logfile
   touch -t $timestamp $fname
 done

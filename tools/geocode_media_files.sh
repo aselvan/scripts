@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # geocode_media_files.sh --- add lat/lon to media files.
 #
@@ -21,19 +21,23 @@
 # Author  : Arul Selvan
 # Version : Oct 11, 2022
 #
+version=23.11.25
+my_name="`basename $0`"
+my_version="`basename $0` v$version"
+my_title="Add lat/lon to media files"
+my_dirname=`dirname $0`
+my_path=$(cd $my_dirname; pwd -P)
+my_logfile="/tmp/$(echo $my_name|cut -d. -f1).log"
+default_scripts_github=$HOME/src/scripts.github
+scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
+
+# commandline options
+options="p:a:k:l:h"
 
 # ensure path for cron runs
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
 
-# version format YY.MM.DD
-version=22.10.11
-my_name=`basename $0`
-my_version="$my_name v$version"
-os_name=`uname -s`
-options="p:a:k:l:h"
-log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 source_path=""
-exiftool_bin="/usr/bin/exiftool"
 # exiftool opt to ignore minor errors
 exiftool_opt="-m"
 timestamp=`date +%Y%m%d%H%M`
@@ -48,16 +52,20 @@ lat=
 lon=
 
 usage() {
-  echo ""
-  echo "Usage: $my_name [options]"
-  echo "  -p <name>    ---> file/path for single file (or quoted for wildcard)"
-  echo "  -a <address> ---> Address (in quotes) to get lat/lon info to be added as metadata"
-  echo "  -k <api_key> ---> API key from positionstack.com for geocoding. If not provided, attempt to read from $api_key_file"
-  echo "  -l <lat,lon> ---> use this values in quotes separated by comma/space for lat/lon [note: -a arg will be ignored]"
-  echo ""
-  echo "example: $my_name -p photo.jpg -a \"1600 Amphitheatre Parkway Mountain View, CA 94043\""
-  echo "example: $my_name -p \"/data/photos/*.jpg\" -l \"37.422288,-122.085652\"" 
-  echo ""
+cat << EOF
+
+$my_name - $my_title
+
+Usage: $my_name [options]
+  -p <name>    ---> file/path for single file (or quoted for wildcard)
+  -a <address> ---> Address (in quotes) to get lat/lon info to be added as metadata
+  -k <api_key> ---> API key from positionstack.com for geocoding. If not provided, attempt to read from $api_key_file
+  -l <lat,lon> ---> use this values in quotes separated by comma/space for lat/lon [note: -a arg will be ignored]
+  -v           ---> enable verbose, otherwise just errors are printed
+
+example: $my_name -p photo.jpg -a "1600 Amphitheatre Parkway Mountain View, CA 94043"
+example: $my_name -p "/data/photos/*.jpg" -l "37.422288,-122.085652"
+EOF
   exit 0
 }
 
@@ -71,7 +79,7 @@ is_media() {
       return 0
       ;;
     *)
-    echo "[WARN] media type '$mtype' for file '$f' is unknown, skipping ..." | tee -a $log_file    
+    log.warn "media type '$mtype' for file '$f' is unknown, skipping ..." 
       return 1 
       ;;
   esac
@@ -89,16 +97,16 @@ check_http_status() {
         return
       fi
       error_msg=`cat $api_response | jq -r '.message'`      
-      echo "[ERROR] positionstack.com API returned error_code='$error_code'; error_message='$error_msg'" | tee -a $log_file
+      log.error "positionstack.com API returned error_code='$error_code'; error_message='$error_msg'" 
       ;;
     401)
-      echo "[ERROR] 401 unauthorized, expired token or bad user/password?" | tee -a $log_file
+      log.error "401 unauthorized, expired token or bad user/password?" 
       ;;
     422)
-      echo "[ERROR] 422 unprocessable entity, throttling?" | tee -a $log_file
+      log.error "422 unprocessable entity, throttling?" 
       ;;
     *)
-      echo "[ERROR] $http_code unknown error!" | tee -a $log_file
+      log.error "$http_code unknown error!"
       ;;
   esac
   exit 1
@@ -107,7 +115,7 @@ check_http_status() {
 get_latlon() {
   # ensure we have address to work w/
   if [ -z $address ] ; then
-    echo "[ERROR] address needed to get lat/lon, see usage below ..." | tee -a $log_file
+    log.error "address needed to get lat/lon, see usage below ..."
     usage
   fi
   
@@ -116,13 +124,13 @@ get_latlon() {
     if [ -f $api_key_file ] ; then
       api_key=`cat $api_key_file`
     else
-      echo "[ERROR] no api-key provided for getting lat/lon from address!" | tee -a $log_file
+      log.error "no api-key provided for getting lat/lon from address!"
       usage
     fi
   fi
   
   local uri="$api_url?access_key=$api_key&query=$address"
-  echo "[INFO] making API ($api_url) call to convert address to lat/lon ..." | tee -a $log_file  
+  log.stat "making API ($api_url) call to convert address to lat/lon ..."  
   local http_status=`curl -s -w "%{http_code}" -o $api_response "$uri"`
   check_http_status $http_status
 
@@ -130,13 +138,24 @@ get_latlon() {
   lon=`cat $api_response | jq '.data[0].longitude'`
 
   if [ -z $lat ] || [ -z $lon ] ; then
-    echo "[ERROR] address to lat/lon API failed to return geo cords!"
+    log.error "address to lat/lon API failed to return geo cords!"
     exit
   fi
 }
 
-# ----------  main --------------
-# parse commandline options
+# -------------------------------  main -------------------------------
+# First, make sure scripts root path is set, we need it to include files
+if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
+  # include logger, functions etc as needed 
+  source $scripts_github/utils/logger.sh
+else
+  echo "ERROR: SCRIPTS_GITHUB env variable is either not set or has invalid path!"
+  echo "The env variable should point to root dir of scripts i.e. $default_scripts_github"
+  exit 1
+fi
+# init logs
+log.init $my_logfile
+
 while getopts $options opt; do
   case $opt in
     p)
@@ -155,7 +174,7 @@ while getopts $options opt; do
       lat=${latlon[0]}
       lon=${latlon[1]}
       if [ -z $lat ] || [ -z $lon ] ; then
-        echo "[ERROR] unable to parse lat/lon from '$latlon', see usage below"
+        log.error "unable to parse lat/lon from '$latlon', see usage below"
         usage
       fi
       IFS="$prev_ifs"
@@ -169,30 +188,21 @@ while getopts $options opt; do
   esac
 done
 
-
-if [ -f $log_file ] ; then
-  rm $log_file
-fi
-echo "[INFO] $my_version" | tee -a $log_file
-
-if [ $os_name = "Darwin" ]; then
-  exiftool_bin=/usr/local/bin/exiftool
-fi
-
 # ensure exiftool is available
-if [ ! -e $exiftool_bin ] ; then
-  echo "[ERROR] $exiftool_bin is required for this script to work" | tee -a $log_file
+which exiftool >/dev/null 2>&1
+if [ $? -ne 0 ] ; then
+  log.error "exiftool is required for this script to work, install it first [ex: brew install exiftool]."
   exit 1
 fi
 
 if [ -z "$source_path" ] ; then
-  echo "[ERROR] required arguments missing i.e. path/name" | tee -a $log_file
+  log.error "Required arguments missing i.e. path/name"
   usage
 fi
 
 # if lat/lon provided via cmdline, use it otherwise make API call using address
 if [ -z $lat ] || [ -z $lon ] ; then
-  echo "[INFO] lat/lon ($lat/$lon) either empty or not provided, attempting to use address ..."| tee -a $log_file
+  log.stat "lat/lon ($lat/$lon) either empty or not provided, attempting to use address ..."
   get_latlon
 fi
 
@@ -212,9 +222,9 @@ for fname in ${file_list} ;  do
   fi
   # save create date (if present) so we can reset OS timestamp since adding GPS
   # data and overwriting original will wipe file's OS timestamp.
-  create_date=`$exiftool_bin $exiftool_opt -d "%Y%m%d%H%M.%S" -createdate $fname | awk -F: '{print $2;}'`  
-  echo "[INFO] adding GPS ($lat, $lon) to '$fname' ..." | tee -a $log_file
-  $exiftool_bin $exiftool_opt -GPSLatitude*=$lat -GPSLongitude*=$lon -overwrite_original $fname 2>&1 >> $log_file
+  create_date=`exiftool $exiftool_opt -d "%Y%m%d%H%M.%S" -createdate $fname | awk -F: '{print $2;}'`  
+  log.stat "adding GPS ($lat, $lon) to '$fname' ..." $green
+  exiftool $exiftool_opt -GPSLatitude*=$lat -GPSLongitude*=$lon -overwrite_original $fname 2>&1 >> $my_logfile
   if [ ! -z $create_date ] ; then
     touch -t $create_date $fname
   fi
