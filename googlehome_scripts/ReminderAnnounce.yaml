@@ -9,7 +9,7 @@ metadata:
 automations:
   - starters:
       - type: time.schedule
-        at: 8:30 PM
+        at: 7:00 PM
     actions:
       - type: device.command.SetVolume
         devices:
