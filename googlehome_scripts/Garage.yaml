@@ -2,7 +2,7 @@
 # selvans home automation
 #  Close garrage if open >10 min, also broadcase a message. Turn lights on/off on cond.
 # Author:  Arul Selvan
-# Version: Aug 29, 2023
+# Version: Nov 26, 2023
 #
 metadata:
   name: Garage
@@ -35,16 +35,23 @@ automations:
         message: The garage door just closed.
         devices:
           - kitchen - Kitchen
-    # Starter: When garage door closed, turn off kitchen light if it is day time.
+    # Starter: When garage door closed, turn off kitchen if both conditions are met.
   - starters:
       - type: device.state.OpenClose
         state: openPercent
         is: 0
         device: garage Door - Garage
+    # the & condition restricts closing between the time & home is away.
+    # in other words, if anyone is home, just dont turn it off.
     condition:
-      type: time.between
-      after: 7:00 AM
-      before: 5:00 PM
+      type: and
+      conditions:
+        - type: time.between
+          after: 7:00 AM
+          before: 5:00 PM
+        - type: home.state.HomePresence
+          state: homePresenceMode
+          is: AWAY
     actions:
       - type: device.command.OnOff
         on: false
