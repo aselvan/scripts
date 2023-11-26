@@ -1,7 +1,7 @@
 #
 # selvans home automation --- show doorbell on devices that can show video
 # Author:  Arul Selvan
-# Version: Jun 15, 2023
+# Version: Nov 26, 2023
 #
 metadata:
   name: Doorbell
@@ -15,20 +15,17 @@ automations:
       - type: assistant.event.OkGoogle
         eventData: query
         is: "show doorbell"
+    condition:
+      type: time.between
+      after: 7:00 AM
+      before: 10:00 PM
     actions:
       - type: assistant.command.OkGoogle
         devices: Homegen1 - Living Room
         okGoogle: "show my doorbell on Homegen1"
-      - type: assistant.command.OkGoogle
-        okGoogle: "show my doorbell on Homegen2"
-        devices: Homegen2 - Bedroom
-      # now, wait for 1 minute and tell it to stop showing doorbell
-      - type: time.delay
-        for: 1 min
-      - type: assistant.command.OkGoogle
-        devices: Homegen1 - Living Room
-        okGoogle: "stop"
-      - type: assistant.command.OkGoogle
-        devices: Homegen2 - Bedroom
-        okGoogle: "stop"
+      - type: assistant.command.Broadcast
+        message: Someone may be at the door, but I am not 100% sure.
+        devices:
+          - kitchen - Kitchen
+          - Homegen2
 
