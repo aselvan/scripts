@@ -1,7 +1,7 @@
 #
 # selvans home automation --- Livingroom lights on/off by voice & time of day
 # Author:  Arul Selvan
-# Version: Jun 24, 2023
+# Version: Nov 26, 2023
 #
 metadata:
   name: Livingroom Lights
@@ -11,7 +11,7 @@ automations:
       - type: time.schedule
         at: 7:00 AM
       - type: time.schedule
-        at: 5:45 PM
+        at: sunset-1hour
       - type: assistant.event.OkGoogle
         eventData: query
         is: "living room on"
@@ -39,4 +39,31 @@ automations:
           - lr2 - Living Room
           - lr3 - Living Room
           - lr4 - Living Room
+  # Both Living room & Kitchen
+  - starters:
+      - type: assistant.event.OkGoogle
+        eventData: query
+        is: "living room and kitchen on"
+    actions:
+      - type: device.command.OnOff # Turn the device on or off.
+        on: true
+        devices:
+          - lr1 - Living Room
+          - lr2 - Living Room
+          - lr3 - Living Room
+          - lr4 - Living Room
+          - kitchen light - Kitchen
+  - starters:
+      - type: assistant.event.OkGoogle
+        eventData: query
+        is: "living room and kitchen off"
+    actions:
+      - type: device.command.OnOff # Turn the device on or off.
+        on: false
+        devices:
+          - lr1 - Living Room
+          - lr2 - Living Room
+          - lr3 - Living Room
+          - lr4 - Living Room
+          - kitchen light - Kitchen
 
