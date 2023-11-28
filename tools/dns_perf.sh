@@ -1,26 +1,26 @@
 #!/usr/bin/env bash
 #
-# dns_perf.sh --- run dig on a large/random list of FQDNs to see resolution time.
+# dns_perf.sh --- DNS lookup of large, random hosts to measure DNS resolve time.
 #
 #
 # Author : Arul Selvan
 # Version: Oct 7, 2022
 
 # version format YY.MM.DD
-version=23.10.16
+version=23.11.28
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
-dir_name=`dirname $0`
-my_path=$(cd $dir_name; pwd -P)
+my_title="DNS lookup of large, random hosts to measure DNS resolve time."
+my_dirname=`dirname $0`
+my_path=$(cd $my_dirname; pwd -P)
+my_logfile="/tmp/$(echo $my_name|cut -d. -f1).log"
+default_scripts_github=$HOME/src/scripts.github
+scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
-log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
-default_host_list="/tmp/$(echo $my_name|cut -d. -f1).txt"
-log_init=0
+# commandline options
 options="s:l:d:vh?"
-verbose=0
-green=32
-red=31
-blue=34
+
+default_host_list="/tmp/$(echo $my_name|cut -d. -f1).txt"
 host_list=""
 dns_server=""
 single_host=""
@@ -29,69 +29,21 @@ single_host=""
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
 
 usage() {
-  cat << EOF
+cat << EOF
+$my_name - $my_title
 
-  Usage: $my_name [options]
-     -s <host>  ---> see how long it takes to query a single host
-     -l <list>  ---> see how long to query a bunch of hosts
-     -d <dns>   ---> DNS server to use instead of default
-     -v         ---> verbose mode prints info messages, otherwise just errors are printed.
-     -h         ---> print usage/help
+Usage: $my_name [options]
+  -s <host>  ---> see how long it takes to query a single host
+  -l <list>  ---> see how long to query a bunch of hosts
+  -d <dns>   ---> DNS server to use instead of default
+  -v         ---> enable verbose, otherwise just errors are printed
+  -h         ---> print usage/help
 
   example: $my_name -l myhostlist.txt
   example: $my_name -t yahoo.com
   
 EOF
   exit 0
-}
-
-log.init() {
-  if [ $log_init -eq 1 ] ; then
-    return
-  fi
-
-  log_init=1
-  if [ -f $log_file ] ; then
-    rm -f $log_file
-  fi
-  echo -e "\e[0;34m$my_version, `date +'%m/%d/%y %r'` \e[0m" | tee -a $log_file
-}
-
-log.info() {
-  if [ $verbose -eq 0 ] ; then
-    return;
-  fi
-  log.init
-  local msg=$1
-  echo -e "\e[0;32m$msg\e[0m" | tee -a $log_file 
-}
-log.debug() {
-  if [ $verbose -eq 0 ] ; then
-    return;
-  fi
-  log.init
-  local msg=$1
-  echo -e "\e[1;30m$msg\e[0m" | tee -a $log_file 
-}
-log.stat() {
-  log.init
-  local msg=$1
-  local color=$2  
-  if [ -z $color ] ; then
-    color=$blue
-  fi
-  echo -e "\e[0;${color}m$msg\e[0m" | tee -a $log_file 
-}
-
-log.warn() {
-  log.init
-  local msg=$1
-  echo -e "\e[0;33m$msg\e[0m" | tee -a $log_file 
-}
-log.error() {
-  log.init
-  local msg=$1
-  echo -e "\e[0;31m$msg\e[0m" | tee -a $log_file 
 }
 
 create_default_host_list() {
@@ -531,8 +483,35 @@ do_single_host() {
   dig $host +noall +answer +stats $dns_server | awk '$3 == "IN" && $4 == "A"{ip=$5}/Query time:/{t=$4 " " $5}END{print ip, t}'
 }
 
-# ----------  main --------------
-log.init
+get_default_dns() {
+  local ds=""
+  # figure out default DNS on different OS
+  if [ $os_name == "Darwin" ] ; then
+    ds=$(scutil --dns |grep nameserver|awk -F: 'FNR == 1 {print $2}'|tr -d ' ')
+  elif [ $os_name == "Linux" ] ; then
+    # figure out for linux, for now just empty line.
+    ds=""
+  fi
+  
+  if [ ! -z $ds ] ; then
+    dns_server="@$ds" 
+    log.stat "Using default DNS server: $dns_server"
+  fi
+}
+
+# -------------------------------  main -------------------------------
+# First, make sure scripts root path is set, we need it to include files
+if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
+  # include logger, functions etc as needed 
+  source $scripts_github/utils/logger.sh
+  source $scripts_github/utils/functions.sh
+else
+  echo "ERROR: SCRIPTS_GITHUB env variable is either not set or has invalid path!"
+  echo "The env variable should point to root dir of scripts i.e. $default_scripts_github"
+  exit 1
+fi
+# init logs
+log.init $my_logfile
 
 # parse commandline options
 while getopts $options opt ; do
@@ -556,13 +535,17 @@ while getopts $options opt ; do
   esac
 done
 
+if [ -z $dns_server ] ; then
+  get_default_dns
+fi
+
 if [ ! -z $single_host ] ; then
-  log.stat "DNS performance test for single host: $single_host"
+  log.stat "DNS performance test for single host: $single_host" $green
   do_single_host
   exit 0
 fi
 
-log.stat "DNS perforamce test for list of hosts"
+log.stat "DNS perforamce test for list of hosts" $green
 if [ ! -z $host_list ] ; then
   log.stat "Using host list file: $host_list"
   time -p dig -f $host_list +noall +answer $dns_server  >/dev/null
