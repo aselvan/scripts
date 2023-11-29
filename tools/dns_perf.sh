@@ -490,7 +490,7 @@ get_default_dns() {
     ds=$(scutil --dns |grep nameserver|awk -F: 'FNR == 1 {print $2}'|tr -d ' ')
   elif [ $os_name == "Linux" ] ; then
     # figure out for linux, for now just empty line.
-    ds=""
+    ds=$(host -v foo.bar | awk -F "[ #]" '/Received /{print$5}' | uniq)
   fi
   
   if [ ! -z $ds ] ; then
