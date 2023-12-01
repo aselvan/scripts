@@ -87,3 +87,4 @@ log.debug "Response: $response"
 IFS='|' read -r starthex endhex startdec enddec company address1 address2 address2 country dtype <<< $response
 log.stat "  Vendor:  $company" $green
 log.stat "  Address: ${address1}, ${address2} ${country}" $green
+log.stat "  Range:   $starthex to $endhex" $green
