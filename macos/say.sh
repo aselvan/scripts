@@ -2,6 +2,7 @@
 #
 # say.sh --- simple wrapper over say
 #
+# --- DEPRICATED: Please use txt2mp3.sh instead ---
 #
 # Author:  Arul Selvan
 # Created: May 18, 2023
@@ -36,6 +37,8 @@ EOF
 }
 
 # ----------  main --------------
+echo "This script is DEPRICATED, please use txt2mp3.sh in the same directory"
+exit 0
 
 # parse commandline options
 while getopts $options opt ; do
