@@ -117,7 +117,7 @@ set_volume
 
 log.stat "Converting text to mp3..."
 # if lame utility is there, convert to mp3 otherwise default to mp4 (audio only)
-which lame2 2>&1 >/dev/null
+which lame 2>&1 >/dev/null
 if [ $? -eq 0 ] ; then
   temp_file=$(mktemp /tmp/${my_name}.${my_pid})
   echo "$text" | say -v "$model" -o $temp_file 2>&1 >> $my_logfile
@@ -128,7 +128,7 @@ if [ $? -eq 0 ] ; then
     exit 2
   fi
 
-  lame $temp_file $out_file 2>&1 >> $my_logfile
+  lame --quiet $temp_file $out_file 2>&1 >> $my_logfile
   if [ $? -ne 0 ] ; then
     log.error "Converting to MP3 failed!"
     rm $temp_file
@@ -143,3 +143,5 @@ else
 fi
 
 restore_volume
+log.stat "The audio file is at: $out_file" $green
+
