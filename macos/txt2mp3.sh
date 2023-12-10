@@ -26,7 +26,7 @@ default_scripts_github=$HOME/src/scripts.github
 scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
 # commandline options
-options="t:o:l:vh?"
+options="t:o:l:m:vh?"
 
 my_pid=$$
 text=""
