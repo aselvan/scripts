@@ -26,6 +26,11 @@ check_root() {
   fi
 }
 
+get_current_user() {
+  # correctly return user if elevated run
+  echo `who -m | awk '{print $1;}'`
+}
+
 check_installed() {
   local app=$1
   if [ ! `which $app` ]; then
