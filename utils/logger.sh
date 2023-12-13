@@ -17,11 +17,12 @@ blue=34
 
 # -- Log functions ---
 log.init() {
-  logger_file=$1
+  # first check if we are called already, then do nothing
   if [ $logger_init -eq 1 ] ; then
     return
   fi
   logger_init=1
+  logger_file=$1
   if [ -f "$logger_file" ] ; then
     rm -f $logger_file
   fi
@@ -65,7 +66,7 @@ log.stat() {
   if [ -z $color ] ; then
     color=$blue
   fi
-  if [ ! -z "$logger_file" ] ; then 
+  if [ ! -z "$logger_file" ] ; then
     echo -e "\e[0;${color}m$msg\e[0m" | tee -a $logger_file 
   else
     echo -e "\e[0;${color}m$msg\e[0m"
