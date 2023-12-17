@@ -9,8 +9,10 @@ logger_file=""
 logger_init=0
 verbose=0
 failure=0
-green=32
+grey=30
 red=31
+green=32
+yellow=33
 blue=34
 
 # note: if logger filename is not provided on log.init by caller, just log to console
@@ -27,9 +29,9 @@ log.init() {
     rm -f $logger_file
   fi
   if [ ! -z "$logger_file" ] ; then
-    echo -e "\e[0;34m$my_version, `date +'%m/%d/%y %r'` \e[0m" | tee -a $logger_file
+    echo -e "\e[0;${blue}m$my_version, `date +'%m/%d/%y %r'` \e[0m" | tee -a $logger_file
   else
-    echo -e "\e[0;34m$my_version, `date +'%m/%d/%y %r'` \e[0m" 
+    echo -e "\e[0;${blue}m$my_version, `date +'%m/%d/%y %r'` \e[0m" 
   fi
 }
 
@@ -40,9 +42,9 @@ log.info() {
   log.init
   local msg=$1
   if [ ! -z "$logger_file" ] ; then  
-    echo -e "\e[0;32m$msg\e[0m" | tee -a $logger_file
+    echo -e "\e[0;${green}m$msg\e[0m" | tee -a $logger_file
   else
-    echo -e "\e[0;32m$msg\e[0m" 
+    echo -e "\e[0;${green}m$msg\e[0m" 
   fi
 }
 
@@ -53,9 +55,9 @@ log.debug() {
   log.init
   local msg=$1
   if [ ! -z "$logger_file" ] ; then  
-    echo -e "\e[1;30m$msg\e[0m" | tee -a $logger_file
+    echo -e "\e[1;${grey}m$msg\e[0m" | tee -a $logger_file
   else
-    echo -e "\e[1;30m$msg\e[0m"
+    echo -e "\e[1;${grey}m$msg\e[0m"
   fi
 }
 
@@ -77,9 +79,9 @@ log.warn() {
   log.init
   local msg=$1
   if [ ! -z "$logger_file" ] ; then  
-    echo -e "\e[0;33m$msg\e[0m" | tee -a $logger_file
+    echo -e "\e[0;${yellow}m$msg\e[0m" | tee -a $logger_file
   else
-    echo -e "\e[0;33m$msg\e[0m"
+    echo -e "\e[0;${yellow}m$msg\e[0m"
   fi
 }
 
@@ -87,8 +89,8 @@ log.error() {
   log.init
   local msg=$1
   if [ ! -z "$logger_file" ] ; then  
-    echo -e "\e[0;31m$msg\e[0m" | tee -a $logger_file
+    echo -e "\e[0;${red}m$msg\e[0m" | tee -a $logger_file
   else
-    echo -e "\e[0;31m$msg\e[0m"
+    echo -e "\e[0;${red}m$msg\e[0m"
   fi
 }
