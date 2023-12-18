@@ -75,19 +75,21 @@ wget http://bin.entware.net/aarch64-k3.10/installer/generic.sh
    there to completely isolate this from your main network. In my case 192.168.1.0/24.
 
    /tmp/home/root# LD_LIBRARY_PATH=/usr/lib:/lib:/lib/aarch64 ebtables -t broute -L
-Bridge table: broute
+        Bridge table: broute
 
-Bridge chain: BROUTING, entries: 3, policy: ACCEPT
--p IPv4 -i wl0.2 --ip-dst 192.168.1.1 --ip-proto icmp -j ACCEPT 
--p IPv4 -i wl0.2 --ip-dst 192.168.1.0/24 --ip-proto icmp -j DROP 
--p IPv4 -i wl0.2 --ip-dst 192.168.1.0/24 --ip-proto tcp -j DROP 
+        Bridge chain: BROUTING, entries: 4, policy: ACCEPT
+        -p IPv4 -i wl0.2 --ip-dst 192.168.1.1 --ip-proto icmp -j ACCEPT 
+        -p IPv4 -i wl0.2 --ip-dst 192.168.1.0/24 --ip-proto icmp -j DROP 
+        -p IPv4 -i wl0.2 --ip-dst 192.168.1.0/24 --ip-proto tcp --ip-dport 53 -j ACCEPT 
+        -p IPv4 -i wl0.2 --ip-dst 192.168.1.0/24 --ip-proto tcp -j DROP 
 
 2. Reserve a small block of IP in your main routers DHCP service. For example, I blocked 192.168.1.200 
    to 192.168.1.254 so your main router does not assign any STAs in your main network within this range. 
    so this can be used by the repeater which we are going to setup in the next steps.
 
-3. Buy TP-Link AC750 WiFi Extender (really cheap $29 in Amazon) 
-    https://www.amazon.com/gp/product/B07N1WW638/ref=ox_sc_act_title_1?smid=ATVPDKIKX0DER&psc=1
+3. Buy a cheap extender. For example: TP-Link RE220 WiFi Extender (~$16 at https://www.amazon.com/dp/B07N1WW638)
+    CAUTION: since this is a chepo extender, it is hardcoded with max 16 devices. So if there are more
+    buy 2 of these and split them evenly. 
 
 4. Setup this device and assign a static IP for this router, choose 192.168.1.200 and default 
    gateway of 191.168.1.1 (your router).
