@@ -1,46 +1,48 @@
-#
 ##############################################################################################
 # HOWTO:
 # 
 # This is a collection of various random things for the router ASUS GT-AX11000. Many of this 
 # would work for other routers as well.
 #
+# NOTE: All of these assumes that you have ssh access to the router and able to ssh 
+#
 # Author:  Arul Selvan
-# Version: May 23, 2020
 #
-# NOTE: All of these assume that you have ssh access to the router and logged in to the router
-# via ssh.
-##############################################################################################
+# Version History:
+#   May 23, 2020 --- Initial version
+#   Dec 19, 2023 --- Updated documentation
 #
+#############################################################################################
 
 ----------------------------------------------------------------------------------
-# How to run cron
+# HOWTO: run cron
 The cron is available with a utility named 'cru' (why can they call it cron?)
 The following is the syntax for setting up a cron to run at 6.30am everyday
 
 /usr/sbin/cru a Run_Whatever "30 6 * * * /bin/whatever"
 
-----------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 # How to setup loglevel
 Log level defaults to 6 but 7 provides more details; do the following.
 nvram set log_level=7
 nvram commit
 reboot
 
-----------------------------------------------------------------------------------
-# How to run stuff on startup
+---------------------------------------------------------------------------------------------------
+# HOWTO: run stuff on startup
 There is a writable filesystem mounted on boot at /jffs where you can store the
 scripts that you can run on startup. Create a script (see asus_usbmount.sh in this
 directory which is the one I use to run some custom setup). You can setup the 
 script to run on startup as shown below
 
-1. cp myscript.sh /jffs/myscipt.sh
-2. nvram set script_usbmount="/jffs/myscript.sh"
-3. nvram commit
-4. reboot (use your UI as it does other stuff as well)
+1.  cp asus_usbmount.sh /jffs/asus_usbmount.sh
+2.  nvram set script_usbmount="/jffs/asus_usbmount.sh"
+3.  nvram commit
+3a. read back with nvram get script_usbmount
+4.  reboot (use your UI as it does other stuff as well)
 
-----------------------------------------------------------------------------------
-# How to install entware (this provides all the tools that are missing on your stock firmware)
+---------------------------------------------------------------------------------------------------
+# HOWTO: install entware (this provides all the tools that are missing on your stock firmware)
 
 Download the install script from below
 1. find the kernel version of your router with the command below. In my case the version is aarch64
@@ -63,9 +65,10 @@ wget http://bin.entware.net/aarch64-k3.10/installer/generic.sh
 
 5. Read the documentation here: https://github.com/Entware/Entware/wiki/Install-on-Asus-stock-firmware
 
-----------------------------------------------------------------------------------
+6. Update as often as you like with: opkg update; opkg upgrade
 
-# How to isolate IoT devices --- this is not really specific to this router, so any router would work
+---------------------------------------------------------------------------------------------------
+# HOWTO isolate IoT devices --- this is not really specific to this router, so any router would work
 
 1. Setup a guest network on your router. Ensure you "disable Access to inTRAnet" or whatever your router is 
    calling it on the UI. This, under the hood, essentially makes any STAs (your devices) connect to this 
@@ -110,6 +113,4 @@ All the IoT crap now is totally isolated from your main network. Enjoy.
 Note: If you have devices that needs to talk to others like google cast to stream music or video on other
 devices in home, don't move them to this network as they will not be able to talk to your TV or sound bar etc.
 You just going to have to live with them inside your network if you want that. 
-
-----------------------------------------------------------------------------------
 
