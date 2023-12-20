@@ -26,7 +26,7 @@ export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
 
 mseconds=""
 seconds=""
-from_now=""
+from_now="0"
 
 usage() {
   cat << EOF
@@ -46,30 +46,6 @@ EOF
   exit 0
 }
 
-seconds_to_date() {
-  if [ $os_name = "Darwin" ] ; then
-    echo "Timestamp: `date -r $seconds +'%m/%d/%Y %H:%M:%S'`"
-  else
-    echo "Timestamp: `date -d@${seconds} +'%m/%d/%Y %H:%M:%S'`"
-  fi
-}
-
-convert_seconds() {
-  if [ ! -z $from_now ] ; then
-    seconds=$(($seconds + $from_now))
-  fi
-  log.stat "$(seconds_to_date)"
-}
-
-convert_mseconds() {
-  # convert to seconds
-  seconds=$(($mseconds / 1000))
-
-  if [ ! -z $from_now ] ; then
-    seconds=$(($seconds + $from_now))
-  fi
-  log.stat "$(seconds_to_date)"
-}
 
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
@@ -89,7 +65,7 @@ log.init $my_logfile
 while getopts $options opt ; do
   case $opt in
     n)
-      from_now=`date +%s`
+      from_now=1
       ;;
     s)
       seconds="$OPTARG"
@@ -117,7 +93,7 @@ if [ -z $seconds ] && [ -z $mseconds ] ; then
 fi
 
 if [ ! -z $seconds ] ; then
-  convert_seconds
+  log.stat "Timestamp $seconds (secs) translate to: $(convert_seconds $seconds $from_now)"
 else
-  convert_mseconds
+  log.stat "Timestamp $mseconds (msec) translate to: $(convert_mseconds $mseconds $from_now)"
 fi
