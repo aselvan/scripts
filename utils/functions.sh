@@ -11,6 +11,7 @@ os_name=`uname -s`
 host_name=`hostname`
 os_name=`uname -s`
 cmdline_args=`printf "%s " $@`
+current_timestamp=`date +%s`
 
 # email variables
 email_address=""
@@ -18,7 +19,7 @@ email_status=0
 email_subject_success="$host_name: SUCCESS"
 email_subject_failed="$host_name: FAILED"
 
-# -- reusable functions ---
+#--- user related utilities ---
 check_root() {
   if [ `id -u` -ne 0 ] ; then
     log.error "root access needed to run this script, run with 'sudo $my_name' ... exiting."
@@ -39,6 +40,7 @@ check_installed() {
   fi
 }
 
+#--- mail utilities ---
 send_mail() {
   if [ -z $email_address ] ; then
     log.warn "required email address is missing to sendmail, continueing w/ out email..."
@@ -54,6 +56,7 @@ send_mail() {
 
 }
 
+#--- general utilities ---
 # returns 1 for YES, 0 for NO
 confirm_action() {
   local msg=$1
@@ -69,6 +72,7 @@ confirm_action() {
   fi
 }
 
+#--- network connectivity utilities ---
 check_connectivity() {
   # google dns for validating connectivity
   local gdns=8.8.8.8
@@ -87,6 +91,7 @@ check_connectivity() {
   return 1
 }
 
+# --- path utillities ---
 path_separate() {
   local path=$1
   local base_part=${path##*/}
@@ -98,9 +103,35 @@ path_separate() {
   echo "Ext:  $ext"
 }
 
-msec_to_date() {
-  local msec=$1
-  human_readable_date=$(date -r $(( ($msec + 500) / 1000 )) +"%m/%d/%Y %H:%M:%S")
-  echo $human_readable_date
+# --- timestamp utilities ---
+seconds_to_date() {
+  local seconds=$1
+  if [ $os_name = "Darwin" ] ; then
+    echo "`date -r $seconds +'%m/%d/%Y %H:%M:%S'`"
+  else
+    echo "`date -d@${seconds} +'%m/%d/%Y %H:%M:%S'`"
+  fi
 }
 
+convert_seconds() {
+  local seconds=$1
+  local offset=$2
+
+  if [ $from_now -eq 1 ] ; then
+    seconds=$(($seconds + $current_timestamp))
+  fi
+  echo "$(seconds_to_date $seconds)"
+}
+
+convert_mseconds() {
+  local msec=$1
+  local offset=$2
+
+  # convert to seconds
+  local seconds=$(( ($msec + 500) / 1000 ))
+
+  if [ $from_now -eq 1 ] ; then
+    seconds=$(($seconds + $current_timestamp))
+  fi
+  echo "$(seconds_to_date $seconds)"
+}
