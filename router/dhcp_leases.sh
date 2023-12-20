@@ -27,7 +27,8 @@ scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
 # commandline options
 options="f:n:m:i:vh?"
-leases_file="/dev/stdin"
+leases_file_stdin="/dev/stdin"
+leases_file=""
 search_host=""
 search_mac=""
 search_ip=""
@@ -133,6 +134,16 @@ while getopts $options opt ; do
       ;;
   esac
 done
+
+if [ -z $leases_file ] ; then
+  leases_file=$leases_file_stdin
+  log.stat "  Using stdin for reading leases file ..."
+elif [ ! -f $leases_file ] ; then
+  log.error "  Leases file '$leases_file' does not exists!"
+  usage
+else
+  log.stat "  Using leases file: $leases_file"
+fi
 
 parse_leases_file
 
