@@ -115,9 +115,9 @@ seconds_to_date() {
 
 convert_seconds() {
   local seconds=$1
-  local offset=$2
+  local from_now=$2
 
-  if [ $from_now -eq 1 ] ; then
+  if [ "$from_now" -eq 1 ] ; then
     seconds=$(($seconds + $current_timestamp))
   fi
   echo "$(seconds_to_date $seconds)"
@@ -125,12 +125,12 @@ convert_seconds() {
 
 convert_mseconds() {
   local msec=$1
-  local offset=$2
+  local from_now=$2
 
   # convert to seconds
   local seconds=$(( ($msec + 500) / 1000 ))
 
-  if [ $from_now -eq 1 ] ; then
+  if [ "$from_now" -eq 1 ] ; then
     seconds=$(($seconds + $current_timestamp))
   fi
   echo "$(seconds_to_date $seconds)"
