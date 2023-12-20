@@ -114,3 +114,13 @@ Note: If you have devices that needs to talk to others like google cast to strea
 devices in home, don't move them to this network as they will not be able to talk to your TV or sound bar etc.
 You just going to have to live with them inside your network if you want that. 
 
+---------------------------------------------------------------------------------------------------
+HOWTO: Misl file locations in the firmware
+
+DNSMASQ/DHCP
+  1. DHCP reservations settings from UI are written to /etc/dnsmasq.conf
+  2. Leases files are at /var/lib/misc/dnsmasq.leases (not uptodate for many hours since restart, eventually updated)
+
+SYSTEM LOG
+  1. LOG file is at /tmp/system.log
+
