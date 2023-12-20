@@ -50,7 +50,7 @@ seconds_to_date() {
   if [ $os_name = "Darwin" ] ; then
     echo "Timestamp: `date -r $seconds +'%m/%d/%Y %H:%M:%S'`"
   else
-    echo "Timestamp: `date -s \"${seconds} seconds\" +'%m/%d/%Y %H:%M:%S'`"
+    echo "Timestamp: `date -d@${seconds} +'%m/%d/%Y %H:%M:%S'`"
   fi
 }
 
