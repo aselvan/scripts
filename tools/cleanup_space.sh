@@ -108,12 +108,14 @@ write_std_readme() {
   cat << EOF > $dir/README.txt
   selvans.net --- file/directory cleanup
 
-  This directory is wiped periodically to avoid log and other files piling up since
-  it is not part of system logrotate daemon ... so anything here will be removed after 
-  specific time to conserve space.
+  This directory is wiped periodically to avoid log and other files piling up 
+  since it is not part of system logrotate daemon ... so anything here will be 
+  removed after specific time to conserve space.
 
   Last cleanup run: `date`
 EOF
+  # relink the php files (for now just the top level until figout how to recurse)
+  ln -s ../../php/public_share.php $dir/index.php
 }
 
 write_download_readme() {
@@ -127,14 +129,15 @@ write_download_readme() {
 
   DISCLAIMER:
   ----------
-  Though this storage area protected w/ basic HTTP authentication, by no means it is 
-  secure so do not upload anything that may contain information you may not want to share. 
-  I take no responsibility whatsoever on the security of the file and its contents.
+  Though this storage area protected w/ basic HTTP authentication, by no means it 
+  is secure so do not upload anything that may contain information you may not want 
+  to share. I take no responsibility whatsoever on the security of the file and 
+  its contents.
 
   NOTE:
   -----
-  This directory is wiped periodically (every 30 days) so anything you upload to this 
-  directory via the URL https://upload.selvans.net does not stay here forever.
+  This directory is wiped periodically (every 30 days) so anything you upload to 
+  this directory via the URL https://upload.selvans.net does not stay here forever.
 
   Last cleanup run: `date`
 EOF
@@ -149,13 +152,14 @@ do_cleanup() {
   fi
   log.debug "\tfind $dir -mindepth 1 -name \*$ext -type f -mtime +$days -delete"
   find $dir -mindepth 1 -name \*$ext -type f -mtime +$days -delete 2>&1 >> $my_logfile
-  # write a readme file
+  find $dir -mindepth 1 -type d -empty -delete 2>&1 >> $my_logfile
+
+  # write a readme fresh readme file
   if [ $dir = "$download_dir" ] ; then
     write_download_readme
   else
     write_std_readme
   fi
-  find $dir -mindepth 1 -type d -empty -delete 2>&1 >> $my_logfile
 }
 
 create_html_log() {
