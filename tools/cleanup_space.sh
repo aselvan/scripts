@@ -117,7 +117,7 @@ write_std_readme() {
 EOF
   # relink the php files on $share_dir 
   # (for now just the top level until figout how to recurse)
-  if $dir = "$share_dir" ] ; then
+  if [ $dir = "$share_dir" ] ; then
     ln -s ../../php/public_share.php $dir/index.php
   fi
 }
