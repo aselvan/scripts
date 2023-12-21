@@ -9,11 +9,16 @@ logger_file=""
 logger_init=0
 verbose=0
 failure=0
+# foreground colors (add +10 for background)
 grey=30
 red=31
 green=32
 yellow=33
 blue=34
+magenta=55
+cyan=36
+white=37
+default=39
 
 # note: if logger filename is not provided on log.init by caller, just log to console
 
