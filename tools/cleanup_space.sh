@@ -34,9 +34,10 @@ dir=""
 days=""
 ext=""
 download_dir="/var/www/download/files"
+share_dir="/var/www/public/share"
 
 # cleanup list is list of "path,#days,.ext" array separated by space
-cleanup_list=("/var/www/tmp,7," "/var/lib/tripwire/report,7,.html" "/var/lib/tripwire/report,30,.twr" "/var/lib/amavis/virusmails,30," "/var/www/public/share,30," "$download_dir,30,")
+cleanup_list=("/var/www/tmp,7," "/var/lib/tripwire/report,7,.html" "/var/lib/tripwire/report,30,.twr" "/var/lib/amavis/virusmails,30," "$share_dir,30," "$download_dir,30,")
 
 usage() {
   cat << EOF
@@ -114,8 +115,11 @@ write_std_readme() {
 
   Last cleanup run: `date`
 EOF
-  # relink the php files (for now just the top level until figout how to recurse)
-  ln -s ../../php/public_share.php $dir/index.php
+  # relink the php files on $share_dir 
+  # (for now just the top level until figout how to recurse)
+  if $dir = "$share_dir" ] ; then
+    ln -s ../../php/public_share.php $dir/index.php
+  fi
 }
 
 write_download_readme() {
