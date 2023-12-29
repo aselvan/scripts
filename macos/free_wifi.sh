@@ -42,7 +42,8 @@ options_list="i:a:h"
 my_name=`basename $0`
 airport_bin="/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport"
 link_local="169.254"
-ap_ssid="AA-Inflight"
+#ap_ssid="AA-Inflight"
+ap_ssid="aainflight.com"
 
 # ensure path for cron runs
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
