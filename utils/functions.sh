@@ -7,7 +7,6 @@
 #
 
 # os and other vars
-os_name=`uname -s`
 host_name=`hostname`
 os_name=`uname -s`
 cmdline_args=`printf "%s " $@`
