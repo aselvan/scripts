@@ -220,12 +220,12 @@ done
 # mail good if all backup devices are successful, otherwise even if one fails send bad mail
 echo "" >> $my_logfile
 if [ $backup_failed -eq 0 ] ; then
-    echo "Backup Result: <b><font color=\"blue\">SUCCESS</font></b> on all devices" >> $my_logfile
+    echo "<b>Backup Result:</b> <b><font color=\"blue\">SUCCESS</font></b> on all devices" >> $my_logfile
     if [ ! -z $email_address ] ; then
       /bin/cat $my_logfile | /usr/bin/mail -s "$subject" $email_address
     fi
 else
-    echo "Backup Result: <b><font color=\"red\">FAILED</font></b> on one or more devices" >> $my_logfile
+    echo "<b>Backup Result:</b> <b><font color=\"red\">FAILED</font></b> on one or more devices" >> $my_logfile
     if [ ! -z $email_address ] ; then    
       /bin/cat $my_logfile | /usr/bin/mail -s "$subject_failed" $email_address
     fi
