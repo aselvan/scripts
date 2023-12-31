@@ -13,6 +13,9 @@ os_name=`uname -s`
 cmdline_args=`printf "%s " $@`
 current_timestamp=`date +%s`
 
+# calculate the elapsed time (shell automatically increments the var SECONDS magically)
+SECONDS=0
+
 # email variables
 email_address=""
 email_status=0
@@ -57,6 +60,25 @@ send_mail() {
 }
 
 #--- general utilities ---
+
+# returns a string of elapsed time since start. Bash magically advances $SECONDS variable!
+elapsed_time() {
+  local duration=$SECONDS
+  echo "$(($duration / (60*60))) hour(s), $(($duration / 60)) minute(s) and $(($duration % 60)) second(s)"
+}
+
+# Strip ansi codes from input file (note: this creates a temp file)
+strip_ansi_codes() {
+  local in_file=$1
+  local tmp_file=$(mktemp)
+  if [ -z $in_file ] || [ ! -f $in_file ] ; then
+    log.error "Input file '$in_file' does not exists!"
+    return
+  fi
+  cat $in_file | sed 's/\x1b\[[0-9;]*m//g'  > $tmp_file
+  mv $tmp_file $in_file
+}
+
 # returns 1 for YES, 0 for NO
 confirm_action() {
   local msg=$1
