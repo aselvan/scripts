@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
-# kasa.sh
+# kasa.sh --- Turn on/off kasa devices using kasa API
 #
 # Simple wrapper script for kasa (TPlink) IoT devices using tplink interface APIs 
 # This macOS and Linux, if you are on winblows, it might work w/ Cygwin but good 
@@ -34,14 +34,28 @@
 # Author:  Arul Selvan
 # Version: Jun 21, 2022
 #
-my_name=`basename $0`
+
+# version format YY.MM.DD
+version=23.12.31
+my_name="`basename $0`"
+my_version="`basename $0` v$version"
+my_title="Turn on/off kasa devices using kasa API"
+my_dirname=`dirname $0`
+my_path=$(cd $my_dirname; pwd -P)
+my_logfile="/tmp/$(echo $my_name|cut -d. -f1).log"
+default_scripts_github=$HOME/src/scripts.github
+scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
+
+# commandline options
+options="a:e:lsvh"
+
+# ensure path for cron runs
+export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
+
 os_name=`uname -s`
 # token expiration secs i.e. 24hrs, although the token seem to work more than a day
 token_expiry=86400
 device_list_expiry=864000 # 10 days
-options="a:e:lsdh"
-log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
-jq_bin=/usr/local/bin/jq
 stat_cmd="stat -f %m"
 KASA_HOME=${KASA_HOME:=$HOME/kasa}
 kasa_api_ep="https://wap.tplinkcloud.com"
@@ -61,32 +75,23 @@ state=""
 device_status=0
 device_alias=""
 device_alias_list=""
-debug=0
+verbose=0
 
 usage() {
-  echo ""
-  echo "Usage: $my_name [options]"
-  echo "  -a <device_alias_list> ---> one or more comma separated alias name of the device(s) to enable [ex: bulb1,bulb2]"
-  echo "  -e <1|0>               ---> enable 1=on, 0=off"
-  echo "  -s                     ---> status"
-  echo "  -l                     ---> list all the Kasa IoT device alias names in your account"
-  echo "  -d                     ---> enable debugging output"
-  echo ""
-  echo "example: $my_name -a \"bulb1, bulb2\" -e 1"
-  echo ""
+  cat << EOF
+$my_name - $my_title
+Usage: $my_name [options]
+  -a <list> ---> one or more comma separated alias name of the device(s) to enable [ex: bulb1,bulb2]
+  -e <1|0>  ---> enable 1=on, 0=off
+  -s        ---> status
+  -l        ---> list all the Kasa IoT device alias names in your account
+  -v        ---> enable verbose, otherwise just errors are printed
+  -h        ---> print usage/help
+  
+  example: $my_name -a "bulb1, bulb2" -e 1
+
+EOF
   exit 0
-}
-
-log() {
-  local message_type=$1
-  local message=$2
-
-  # log info type only when debug flag is set
-  if [ "$message_type" == "[INFO]" ] && [ $debug -eq 0 ] ; then
-    return
-  fi
-
-  echo "$message_type $message" | tee -a $log_file
 }
 
 check_http_status() {
@@ -96,18 +101,18 @@ check_http_status() {
   case $http_code in 
     200)
       # kasa API is dumb, returns 200 for failures @#~!
-      error_code=`cat $curl_resp_file | $jq_bin -r '.error_code'`
+      error_code=`cat $curl_resp_file | jq -r '.error_code'`
       if [ $error_code -eq 0 ] ; then
         return
       fi
-      error_msg=`cat $curl_resp_file | $jq_bin -r '.msg'`      
-      log "[ERROR]" "Kasa API returned error_code='$error_code' for device='$device_alias'; error_message='$error_msg'"
+      error_msg=`cat $curl_resp_file | jq -r '.msg'`      
+      log.error "Kasa API returned error_code='$error_code' for device='$device_alias'; error_message='$error_msg'"
       ;;
     401)
-      log "[ERROR]" "http 401 unauthorized, expired token or bad user/password?"
+      log.error "http 401 unauthorized, expired token or bad user/password?"
       ;;
     *)
-      log "[ERROR]" "http $http_code unknown error!"
+      log.error "http $http_code unknown error!"
       ;;
   esac
   exit 1
@@ -117,11 +122,11 @@ check_parms() {
   if [ -f $kasa_rc ]; then
     source $kasa_rc
     if [ -z $user ] || [ -z $password ] ; then
-      log "[ERROR]" "File \"$kasa_rc\" is missing required user, password variables!"
+      log.error "File \"$kasa_rc\" is missing required user, password variables!"
       usage
     fi
   else
-    log "[ERROR]" "no $kasa_rc file found! Create it manually with the two lines as shown below ..."
+    log.error "no $kasa_rc file found! Create it manually with the two lines as shown below ..."
 cat <<EOF
 user="username"
 kasa_password="password"
@@ -188,11 +193,11 @@ EOF
 }
 
 get_status() {
-  log "[INFO]" "get status for device ($device_alias) ..."
+  log.info "get status for device ($device_alias) ..."
   
   # find the deviceId
   query=".result.deviceList[] | select(.alias == \"$device_alias\").deviceId"
-  device_id=`cat $kasa_devices_file | $jq_bin "$query"`
+  device_id=`cat $kasa_devices_file | jq "$query"`
 
   http_status=`curl -s -H "Content-Type:application/json" -X POST \
     --data "$(get_status_request)" \
@@ -202,25 +207,25 @@ get_status() {
 
   check_http_status $http_status
 
-  cat $curl_resp_file | $jq_bin '.result.responseData | fromjson' >  ${KASA_HOME}/$device_alias.json
+  cat $curl_resp_file | jq '.result.responseData | fromjson' >  ${KASA_HOME}/$device_alias.json
   echo "Device '$device_alias' status is written to the file '${KASA_HOME}/$device_alias.json'"
 }
 
 set_state() {
   # find the deviceId
   query=".result.deviceList[] | select(.alias == \"$device_alias\").deviceId"
-  device_id=`cat $kasa_devices_file | $jq_bin "$query"`
+  device_id=`cat $kasa_devices_file | jq "$query"`
   if [ -z $device_id ] ; then
-    log "[ERROR]" "device alias '$device_alias' is invalid or non-existent!"
+    log.error "device alias '$device_alias' is invalid or non-existent!"
     exit 3
   fi
 
   # note: the generic API $kasa_api_ep seem to work just, not sure why a specicic 
   # API EP for now we simply use single EP for all
   #query=".result.deviceList[] | select(.alias == \"$device_alias\").appServerUrl"
-  #device_api_ep=`cat $kasa_devices_file | $jq_bin "$query"`
+  #device_api_ep=`cat $kasa_devices_file | jq "$query"`
 
-  log "[INFO]" "seting device ($device_alias) to state: $state ..."
+  log.info "seting device ($device_alias) to state: $state ..."
   
   http_status=`curl -s -H "Content-Type:application/json" -X POST \
     --data "$(get_state_request)" \
@@ -229,16 +234,16 @@ set_state() {
     "$kasa_api_ep"`
 
   check_http_status $http_status
-  if [ $debug -eq 1 ] ; then
-    cat $curl_resp_file | $jq_bin '.result.responseData | fromjson'
+  if [ $verbose -eq 1 ] ; then
+    cat $curl_resp_file | jq '.result.responseData | fromjson'
   fi
-  log "[INFO]" "successfully set the state to $state on device '$device_alias'!"
+  log.info "successfully set the state to $state on device '$device_alias'!"
 }
 
 get_devicelist() {
 
   # read if there is existing devicelist and check if it is not stale i.e. >10 days
-  log "[INFO]" "retrieve device list ..."
+  log.info "retrieve device list ..."
   if [ -f $kasa_devices_file ] ; then
     device_list_duration=$(( `date +'%s'` - `$stat_cmd $kasa_devices_file` ))
     if [ $device_list_duration -lt $device_list_expiry ]; then
@@ -246,7 +251,7 @@ get_devicelist() {
     fi
   fi
 
-  log "[INFO]" "existing deviceList file is too old or does not exist, so getting a new list ..."
+  log.info "existing deviceList file is too old or does not exist, so getting a new list ..."
   http_status=`curl -s -H "Content-Type:application/json" -X POST \
     --data "$(get_devicelist_request)" \
     -w "%{http_code}" \
@@ -255,11 +260,11 @@ get_devicelist() {
 
   check_http_status $http_status
   
-  cat $curl_resp_file |  $jq_bin -S  > $kasa_devices_file
+  cat $curl_resp_file |  jq -S  > $kasa_devices_file
 }
 
 get_new_token() {
-  log "[INFO]" "kasa token is not present or expired, getting fresh token ..."
+  log.info "kasa token is not present or expired, getting fresh token ..."
   
   http_status=`curl -s -H "Content-Type:application/json" -X POST \
     --data "$(get_token_request)" \
@@ -269,7 +274,7 @@ get_new_token() {
 
   check_http_status $http_status
   
-  kasa_token=`cat $curl_resp_file | $jq_bin -r '.result.token'`
+  kasa_token=`cat $curl_resp_file | jq -r '.result.token'`
   echo $kasa_token > $kasa_token_file
 }
 
@@ -288,10 +293,10 @@ get_token() {
 }
 
 get_device_list() {
-  echo "[INFO] List of Kasa IoT devices found listed below:"
-  cat $kasa_devices_file | $jq_bin -r '.result.deviceList[] | .alias, .deviceId, .deviceModel' | while 
+  log.stat "Kasa IoT devices found on your account are listed below..."
+  cat $kasa_devices_file | jq -r '.result.deviceList[] | .alias, .deviceId, .deviceModel' | while 
     read -r a; read -r i; read -r m; do 
-      echo -e "\talias: $a; Model: $m; Id: $i"
+      log.stat "  alias: $a; Model: $m; Id: $i" $grey
     done
   exit 0
 }
@@ -307,11 +312,21 @@ init() {
   get_devicelist
 }
 
+# -------------------------------  main -------------------------------
+# First, make sure scripts root path is set, we need it to include files
+if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
+  # include logger, functions etc as needed 
+  source $scripts_github/utils/logger.sh
+  source $scripts_github/utils/functions.sh
+else
+  echo "ERROR: SCRIPTS_GITHUB env variable is either not set or has invalid path!"
+  echo "The env variable should point to root dir of scripts i.e. $default_scripts_github"
+  exit 1
+fi
+# init logs
+log.init $my_logfile
 
-# ----------  main --------------
-echo "[INFO] `date`: Starting $my_name ..." > $log_file
 if [ $os_name != "Darwin" ]; then
-  jq_bin=/usr/bin/jq
   stat_cmd="stat -c %Y"
 fi
 
@@ -333,25 +348,22 @@ while getopts $options opt; do
     e)
       state=$OPTARG
       if [ $state -ne 1 ] && [ $state -ne 0 ] ; then
-        log "[ERROR]" "invalid state '$state', state must be either 0 or 1 "
+        log.error "invalid state '$state', state must be either 0 or 1 "
         usage
       fi
       ;;
-    d)
-      debug=1
+    v)
+      verbose=1
       ;;
-    ?)
+    ?|h|*)
       usage
       ;;
-    h)
-      usage
-      ;;
-    esac
+  esac
 done
 
 
-if [ -z $device_alias_list ] ; then
-  log "[ERROR}" "missing device alias name!"
+if [ -z "$device_alias_list" ] ; then
+  log.error "missing device alias name!"
   usage
 fi
 
@@ -367,7 +379,7 @@ fi
 
 # set state?
 if [ -z $state ] ; then
-  log "[ERROR]" "required argument for enable missing!"
+  log.error "required argument for enable missing!"
   usage
 fi
 
