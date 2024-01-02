@@ -18,12 +18,15 @@ default_scripts_github=$HOME/src/scripts.github
 scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
 # commandline options
-options="s:l:d:vh?"
+options="s:f:u:d:vh?"
 
 default_host_list="/tmp/$(echo $my_name|cut -d. -f1).txt"
 host_list=""
 dns_server=""
 single_host=""
+#url_host_list="https://raw.githubusercontent.com/aselvan/public-domain-lists/master/opendns-top-domains.txt"
+url_host_list=""
+
 
 # ensure path for cron runs
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
@@ -33,13 +36,15 @@ cat << EOF
 $my_name - $my_title
 
 Usage: $my_name [options]
-  -s <host>  ---> see how long it takes to query a single host
-  -l <list>  ---> see how long to query a bunch of hosts
-  -d <dns>   ---> DNS server to use instead of default
+  -s <host>  ---> single host to use for test
+  -f <list>  ---> file contains list of hosts for testing
+  -u <url>   ---> url returns a list of hosts for testing [note: url should return a file w/ one FQDN per line]
+  -d <dns>   ---> DNS server to use instead of default 
   -v         ---> enable verbose, otherwise just errors are printed
   -h         ---> print usage/help
 
   example: $my_name -l myhostlist.txt
+  example: $my_name -u https://raw.githubusercontent.com/aselvan/public-domain-lists/master/opendns-top-domains.txt 
   example: $my_name -t yahoo.com
   
 EOF
@@ -516,8 +521,11 @@ log.init $my_logfile
 # parse commandline options
 while getopts $options opt ; do
   case $opt in
-    l)
+    f)
       host_list="${OPTARG}"
+      ;;
+    u)
+      url_host_list="${OPTARG}"
       ;;
     s)
       single_host=${OPTARG}
@@ -549,6 +557,11 @@ log.stat "DNS perforamce test for list of hosts" $green
 if [ ! -z $host_list ] ; then
   log.stat "Using host list file: $host_list"
   time -p dig -f $host_list +noall +answer $dns_server  >/dev/null
+elif [ ! -z $url_host_list ] ; then
+  # download the file first
+  log.stat "Downloading host list from: $url_host_list"
+  curl -s $url_host_list --output $default_host_list
+  time -p dig -f $default_host_list +noall +answer $dns_server >/dev/null
 else
   # no host list, use the built-in/hardcoded list
   create_default_host_list
