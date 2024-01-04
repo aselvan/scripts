@@ -60,6 +60,31 @@ send_mail() {
 
 #--- general utilities ---
 
+# convert sec to msec
+sec2msec() {
+  local sec=$1
+  echo $( echo "$sec*1000/1"|bc )
+}
+
+# convert bytes kbytes
+byte2kb() {
+  local byte=$1
+  echo $( echo "scale=2; $byte/1024"|bc -l )
+}
+
+# convert bytes megabyte
+byte2mb() {
+  local byte=$1
+  echo $( echo "scale=2; $byte/(1024*1024)" | bc -l )
+}
+
+# convert bytes gigabyte
+byte2gb() {
+  local byte=$1
+  echo $( echo "scale=2; $byte/(1024*1024*1024)" | bc -l )
+}
+
+
 # returns a string of elapsed time since start. Bash magically advances $SECONDS variable!
 elapsed_time() {
   local duration=$SECONDS
