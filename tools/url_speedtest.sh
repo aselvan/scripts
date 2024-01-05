@@ -33,11 +33,11 @@ $my_name - $my_title
 
 Usage: $my_name [options]
   -u <url>  ---> URL to use for measuring speed
-  -a        ---> Shows all measures () [Default: only total elapsed time reported]
+  -a        ---> Shows all timinings (total,size,dns,connect,pretrans & redirect) [Default: total]
   -v        ---> enable verbose, otherwise just errors are printed
   -h        ---> print usage/help
 
-example: $my_name -h -v
+example: $my_name -u "http://ipv4.download.thinkbroadband.com/100MB.zip"
   
 EOF
   exit 0
@@ -85,7 +85,7 @@ read -r total size dns connect pretrans redirect <<< $stats
 
 if [ $all -eq 1 ] ; then
   log.stat "  Total:    $total/$(sec2msec $total) (sec/msec)"
-  log.stat "  Size:     $size/$(byte2mb $size)  (bytes/KB)"
+  log.stat "  Size:     $size/$(byte2mb $size)  (bytes/MB)"
   log.stat "  DNS:      $dns/$(sec2msec $dns) (sec/msec)"
   log.stat "  Connect:  $connect/$(sec2msec $connect) (sec/msec)"
   log.stat "  Pretrans: $pretrans/$(sec2msec $pretrans) (sec/msec)"
