@@ -18,7 +18,8 @@ blue=34
 magenta=55
 cyan=36
 white=37
-default=39
+black=39
+default=$black
 
 # note: if logger filename is not provided on log.init by caller, just log to console
 
