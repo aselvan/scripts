@@ -84,6 +84,22 @@ byte2gb() {
   echo $( echo "scale=2; $byte/(1024*1024*1024)" | bc -l )
 }
 
+# ---  string functions ---
+# check to see if the string1 contains string2. It can be used with if statement as shown below
+# if string_contains "$string1" "$string2" ; then
+#   echo "contains"
+# else
+#   echo "does not contain"
+# fi
+string_contains() {
+  local string1="$1"
+  local string2="$2"
+  if [ -z "$string1" ] || [ -z "$string2" ] ; then
+    return 1
+  fi
+  echo "$string1" | egrep "$string2" 2>&1 > /dev/null
+  return $?
+}
 
 # returns a string of elapsed time since start. Bash magically advances $SECONDS variable!
 elapsed_time() {
