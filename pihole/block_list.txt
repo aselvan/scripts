@@ -1,0 +1,19 @@
+#
+# selvans.net --- pihole block list
+# 
+#  A tiny block list for pihole (https://github.com/pi-hole) This can be used 
+#  in pihole "Adlists" configuration in addition to the standard lists to block
+#  specific hosts.
+#
+# Author:  Arul Selvan
+# Version History: 
+#   Feb 16, 2023 --- Original version
+#   Jan 11, 2024 --- Moved to my gitrepo https://raw.githubusercontent.com/aselvan/scripts/master/pihole/block_list.txt
+#
+
+# double click
+0.0.0.0 pubads.g.doubleclick.net
+0.0.0.0 securepubads.g.doubleclick.net
+
+# Free online game
+0.0.0.0 yad.com
