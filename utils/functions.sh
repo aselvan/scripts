@@ -16,10 +16,24 @@ current_timestamp=`date +%s`
 SECONDS=0
 
 # email variables
-email_address=""
 email_status=0
-email_subject_success="$host_name: SUCCESS"
-email_subject_failed="$host_name: FAILED"
+email_address=""
+email_subject_success="$my_version on $host_name: SUCCESS"
+email_subject_failed="$my_version on $host_name: FAILED"
+
+# --- file utils ---
+
+# Strip ansi codes from input file (note: this creates a temp file)
+strip_ansi_codes() {
+  local in_file=$1
+  local tmp_file=$(mktemp)
+  if [ -z $in_file ] || [ ! -f $in_file ] ; then
+    log.error "Input file '$in_file' does not exists!"
+    return
+  fi
+  cat $in_file | sed 's/\x1b\[[0-9;]*m//g'  > $tmp_file
+  mv $tmp_file $in_file
+}
 
 #--- user related utilities ---
 check_root() {
@@ -43,19 +57,39 @@ check_installed() {
 }
 
 #--- mail utilities ---
+# Function takes 2 arguments email status, file data to email. If none
+# provided the global variable $email_status & $logger_file used.
+#
+# NOTE: uses global variables above (see variables email_XXXX) that caller need 
+# to set before calling this function. It also uses logger_file from logger.sh
+# 
 send_mail() {
+  local status="$1"
+  local data_file="$2"
+
   if [ -z $email_address ] ; then
-    log.warn "required email address is missing to sendmail, continueing w/ out email..."
+    log.warn "Required email address is missing, skipping email ..."
     return;
   fi
 
-  log.info "Sending mail ..."
-  if [ $email_status -ne 0 ] ; then
-    /bin/cat $log_file | /usr/bin/mail -s "$email_subject_failed" $email_address
-  else
-    /bin/cat $log_file | /usr/bin/mail -s "$email_subject_success" $email_address
+  if [ -z "$status" ] ; then
+    status=$email_status
+  fi
+  if [ -z "$data_file" ] ; then
+    data_file=$logger_file
   fi
 
+  # strip any ansi chars
+  strip_ansi_codes $data_file
+  
+  log.stat "Sending mail ..."
+  if [ $status -ne 0 ] ; then
+    log.debug "Sending failure mail ..."
+    /bin/cat $data_file | /usr/bin/mail -s "$email_subject_failed" $email_address
+  else
+    log.debug "Sending success mail ..."
+    /bin/cat $data_file | /usr/bin/mail -s "$email_subject_success" $email_address
+  fi
 }
 
 #--- general utilities ---
@@ -107,17 +141,6 @@ elapsed_time() {
   echo "$(($duration / (60*60))) hour(s), $(($duration / 60)) minute(s) and $(($duration % 60)) second(s)"
 }
 
-# Strip ansi codes from input file (note: this creates a temp file)
-strip_ansi_codes() {
-  local in_file=$1
-  local tmp_file=$(mktemp)
-  if [ -z $in_file ] || [ ! -f $in_file ] ; then
-    log.error "Input file '$in_file' does not exists!"
-    return
-  fi
-  cat $in_file | sed 's/\x1b\[[0-9;]*m//g'  > $tmp_file
-  mv $tmp_file $in_file
-}
 
 # returns 1 for YES, 0 for NO
 confirm_action() {
