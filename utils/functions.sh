@@ -79,15 +79,17 @@ send_mail() {
     data_file=$logger_file
   fi
 
-  # strip any ansi chars
-  strip_ansi_codes $data_file
   
   log.stat "Sending mail ..."
   if [ $status -ne 0 ] ; then
     log.debug "Sending failure mail ..."
+    # strip any ansi chars
+    strip_ansi_codes $data_file
     /bin/cat $data_file | /usr/bin/mail -s "$email_subject_failed" $email_address
   else
     log.debug "Sending success mail ..."
+    # strip any ansi chars
+    strip_ansi_codes $data_file
     /bin/cat $data_file | /usr/bin/mail -s "$email_subject_success" $email_address
   fi
 }
