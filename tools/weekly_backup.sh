@@ -42,6 +42,9 @@ space_limit_percent=90
 backup_status=0
 offsite_device="/media/usb-ssd-500g"
 IFS_old=$IFS
+current_device="N/A"
+current_device_vendor="N/A"
+current_device_model="N/A"
 
 # list of devices: descriptive name and mount points. NOTE: the /etc/fstab
 # entry should be setup to right device for each of the mount point specified.
@@ -77,17 +80,24 @@ do_backup() {
   # for use in calculating elapsed time for each step in this
   local start_time=$SECONDS
 
-  echo "Checking backup device: $usb_mount" >> $my_logfile
+  echo "Checking mount status for: $usb_mount" >> $my_logfile
   # mount the usb if it is not mounted already
   if [ ! -d $usb_mount/backup ];  then
-    echo "    Backup device (${usb_mount}) is not mounted, attempting to mount ..." >> $my_logfile
+    echo "    ${usb_mount} is not mounted, attempting to mount ..." >> $my_logfile
     /bin/mount $usb_mount >> $my_logfile 2>&1
     status=$?
     if [ $status -eq 0 ]; then
-       echo "    Device: '$usb_mount' is successfully mounted" >>  $my_logfile
+      echo "    Mountpoint:    $usb_mount is successfully mounted" >>  $my_logfile
+      # now that it is mounted, get device, vendor, model etc
+      current_device=`findmnt -o SOURCE -n ${usb_mount}`
+      current_device_vendor=`udevadm info --query=property --name=$current_device | grep ID_VENDOR= | awk -F= '{print $2}'`
+      current_device_model=`udevadm info  --query=property --name=$current_device | grep ID_MODEL=  | awk -F= '{print $2}'`
+      echo "    Device ID:     $current_device" >> $my_logfile
+      echo "    Device Vendor: $current_device_vendor" >> $my_logfile
+      echo "    Device Model:  $current_device_model" >> $my_logfile
     else
-       echo "    Device: '$usb_mount' failed!, bailing out..." >> $my_logfile
-       return 1
+      echo "    Device: '$usb_mount' failed!, bailing out..." >> $my_logfile
+      return 1
     fi
   fi
   # print device info and also check space left and mail if we are low
@@ -95,7 +105,6 @@ do_backup() {
   free_space=`df -h $usb_mount|awk '$5 ~ /[0-9]/ {print $4}'`
   used_percent=`df -h $usb_mount|awk '$5 ~ /[0-9]/ {print $5}'|sed 's/%//g'`
   echo "Free space left in device: <b><font color=\"blue\">$free_space</font></b>" >> $my_logfile
-  echo "" >> $my_logfile
   if [ $used_percent -gt $space_limit_percent ] ; then
     free_percent=`expr 100 - $used_percent`
     echo "<b><font color=\"red\">WARNING: low on space, only ${free_percent}% left on device</font></b>" >> $my_logfile
