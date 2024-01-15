@@ -9,7 +9,7 @@ This repo contains a large collection of random scripts that I have written over
 While many of these can run standalone, I started requiring common functions located in util/logger.sh & util/functions.sh as includes. So the best way to use them is to clone the entire repository instead of cherry picking one or more scripts. You can clone the repo exactly as shown (option#1) below or set environment variable SCRIPTS_GITHUB (option#2) to point to where you cloned. Enjoy!
 
 - Clone to your HOME directory like so $HOME/src/scripts.github (or)
-- Clone to ther directory as long as you set a bash env variable SCRIPTS_GITHUB to point to the toplevel directory
+- Clone to any other directory as long as you set a bash env variable SCRIPTS_GITHUB to point to the toplevel directory
 
 
 ### Toplevel directories
