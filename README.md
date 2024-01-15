@@ -20,6 +20,12 @@ While many of these can run standalone, I started requiring common functions loc
 - #### /car/tesla
   Wrapper script to call tesla API to do various things like lock/unlock door, honk, location, enable keyless drive, etc.
 
+- #### /tools
+  Lot of useful/generic wrapper scripts here for file/directory/media manipulation etc.
+
+- #### /macos
+  MacOS only scripts to manupilate things under MacOS like cache cleanup, free wifi, network, launchctl cleanup etc.
+
 - #### /raspberrypi
   Various tools/scripts/howtos to build a image for RaspberryPI to be used as IoT device or pentest device
 
@@ -47,9 +53,6 @@ While many of these can run standalone, I started requiring common functions loc
 - #### /linux
   Linux related scripts
   
-- #### /macos
-  MacOS only random scripts.
-
 - #### /misl
   Misl scripts 
 
