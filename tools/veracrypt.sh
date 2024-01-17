@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # veracrypt.sh --- simple wrapper over veracrypt to mount/unmount encrypted volumes
 #
@@ -8,24 +8,32 @@
 # PreReq: veracrypt software must be installed (https://www.veracrypt.fr/en/Downloads.html)
 #
 # Author:  Arul Selvan
-# Created: Mar 18, 2023
+#
+# Version History
+#   Mar 18, 2023 --- original version
+#   Jan 17, 2024 --- modified to use logger and function includes
 #
 
 # version format YY.MM.DD
-version=23.03.18
+version=24.01.17
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
-host_name=`hostname`
-os_name=`uname -s`
-cmdline_args=`printf "%s " $@`
+my_title="Wrapper over veracrypt to mount/unmount encrypted volumes."
+my_dirname=`dirname $0`
+my_path=$(cd $my_dirname; pwd -P)
+my_logfile="/tmp/$(echo $my_name|cut -d. -f1).log"
+default_scripts_github=$HOME/src/scripts.github
+scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
-log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
+# commandline options
 options="c:p:m:u:lvh?"
+
 verbose=1
 password="${VERACRYPT_PASSWORD:-}"
 # volume will be mounted at $mount_point/$container_file 
 container_file=""
 mount_point="/mnt/veracrypt"
+container_file="$HOME/data/encrypted/vc56g_exfat.hc"
 veracrypt_bin="/usr/bin/veracrypt"
 
 # ensure path for cron runs
@@ -33,46 +41,23 @@ export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
 
 usage() {
   cat << EOF
+$my_name - $my_title
 
-  Usage: $my_name [options]
-     -m <mountpoint>     ---> verbose mode prints info messages, otherwise just errors are printed
-     -c <container_file> ---> encrypted container file to mount as volume
-     -p <password>       ---> mount password for the encrypted container
-     -u <mountpoint>     ---> unmount the currently mounted volume
-     -l                  ---> list all veracrypt volumes
-     -v                  ---> verbose mode prints info messages, otherwise just errors are printed
-     -h                  ---> print usage/help
+Usage: $my_name [options]
+  -m <path>      ---> Mount point path [default: $mount_point]
+  -c <container> ---> encrypted container file to mount as volume [default: $container_file]
+  -p <password>  ---> mount password for the encrypted container
+  -u <path>      ---> unmount the currently mounted volume
+  -l             ---> list all veracrypt volumes
+  -v             ---> enable verbose, otherwise just errors are printed
+  -h             ---> print usage/help
 
-  example: $my_name -m $mount_point -c $HOME/veracrypt.hc -p "password123"
+  example: 
+  $my_name -m $mount_point -c $container_file -p "password123"
+  $my_name -u $mount_point
   
 EOF
-  exit 0
-}
-
-write_log() {
-  local msg_type=$1
-  local msg=$2
-
-  # log info type only when verbose flag is set
-  if [ "$msg_type" == "[INFO]" ] && [ $verbose -eq 0 ] ; then
-    return
-  fi
-  echo "$msg_type $msg" | tee -a $log_file
-}
-
-init_log() {
-  if [ -f $log_file ] ; then
-    rm -f $log_file
-  fi
-  write_log "[STAT]" "$my_version"
-  write_log "[STAT]" "starting at `date +'%m/%d/%y %r'` ..."
-}
-
-check_root() {
-  if [ `id -u` -ne 0 ] ; then
-    write_log "[ERROR]" "root access needed to run this script, run with 'sudo $my_name' ... exiting."
-    exit 1
-  fi
+  exit 1
 }
 
 init_osenv() {
@@ -85,26 +70,37 @@ init_osenv() {
 }
 
 umount_veracrypt() {
-  write_log "[INFO]" "Unmounting $mount_point volume ..."
+  log.stat "Unmounting $mount_point volume ..."
   $veracrypt_bin -t -d $mount_point
   if [ $? -eq 0 ] ; then
-    write_log "[INFO]" "Successfully umounted volume at $mount_point"
+    log.stat "Successfully umounted volume at $mount_point"
     exit 0
   else
-    write_log "[ERROR]" "Failed to mount container '$container_file'"
+    log.error "Failed to umount container '$container_file'"
     exit 1
   fi
 }
 
 list_volumes() {
-  write_log "[INFO]" "list of volumes mounted in this host below"
+  log.stat "list of volumes mounted in this host below"
   $veracrypt_bin -t -l
   exit 0
 }
 
-# ----------  main --------------
-init_log
+# First, make sure scripts root path is set, we need it to include files
+if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
+  # include logger, functions etc as needed 
+  source $scripts_github/utils/logger.sh
+  source $scripts_github/utils/functions.sh
+else
+  echo "ERROR: SCRIPTS_GITHUB env variable is either not set or has invalid path!"
+  echo "The env variable should point to root dir of scripts i.e. $default_scripts_github"
+  exit 1
+fi
+# init logs
+log.init $my_logfile
 init_osenv
+
 # parse commandline options
 while getopts $options opt; do
   case $opt in
@@ -127,33 +123,36 @@ while getopts $options opt; do
     v)
       verbose=1
       ;;
-    ?)
-      usage
-      ;;
-    *)
+    ?|h|*)
       usage
       ;;
   esac
 done
 
 # check for password
-if [[ -z $password || -z $container_file ]] ; then
-  write_log "[ERROR]" "required arguments missing! See the usage below"
+if [ -z "$password" ] ; then
+  log.error "No password found or provided, See the usage below ..."
   usage
 fi
 
-if [ ! -d $mount_point ] ; then
-  write_log "[ERROR]" "mount point '$mount_point' does not exist"
+# check for container file
+if [ -z "$container_file" ] ; then
+  log.error "Container file is empty. See the usage below ..."
+  usage
+fi
+
+if [ ! -d "$mount_point" ] ; then
+  log.error "Mount point path '$mount_point' does not exist..."
   usage
 fi
 
 # mount the volume
-write_log "[INFO]" "Mounting $container_file at mount point $mount_point ..."
+log.stat "Mounting $container_file at mount point $mount_point ..."
 $veracrypt_bin -t -k "" --pim=0 --protect-hidden=no --slot 1 --password "$password" --mount-options=timestamp --mount $container_file $mount_point
 if [ $? -eq 0 ] ; then
-  write_log "[INFO]" "Successfully mounted volume at $mount_point"
+  log.stat "Successfully mounted volume at $mount_point"
   exit 0
 else
-  write_log "[ERROR]" "Failed to mount container '$container_file'"
+  log.error "Failed to mount container '$container_file'"
   exit 1
 fi
