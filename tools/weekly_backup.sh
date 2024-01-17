@@ -1,16 +1,20 @@
 #!/bin/bash
 #
+###########################################################################################
 # weekly_backup.sh --- script to do weekly back up of selvans.net 
 #
 # Note: this is hardcoded specifically for my server so probably needs to change
 # quite a bit to use anywhere else but feel free to modify to fit your needs.
 #
 # Author:  Arul Selvan
-# Version: May 25, 2013
-#
+# Version History:
+#    May 25, 2013 --- Original version
+#    Jan 14, 2024 --- Updated to use logger and function utilities
+#    Jan 17, 2024 --- Updated to use rsync log, disabled special case handling for offsite
+###########################################################################################
 
 # version format YY.MM.DD
-version=24.01.14
+version=24.01.17
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Weekly backup of selvans.net"
@@ -35,8 +39,12 @@ std_footer=${www_root}/std_footer.html
 html_file=${www_root}/weekly_backup_log.html
 usb_mount=/media/usb-portable
 backup_dir=$usb_mount/backup
-rsync_opts="-rlptgoq --ignore-errors --delete --cvs-exclude --temp-dir=/data/tmp --exclude \"*.vmdk\" --exclude=/root/gdrive"
+
+# rsync options
+rsync_log_file="/tmp/$(echo $my_name|cut -d. -f1)_rsync.log"
+rsync_opts="-rlptgoq --ignore-errors --no-specials --no-devices --delete-after --cvs-exclude --log-file=$rsync_log_file --temp-dir=/data/tmp --exclude \"*.vmdk\" --exclude=/root/gdrive"
 rsync_bin="/usr/bin/rsync"
+
 # when a device is 90% full, send a nag email
 space_limit_percent=90
 backup_status=0
@@ -142,16 +150,25 @@ do_backup() {
   nice -19 $rsync_bin $rsync_opts /data/debbie-backup $backup_dir
   echo "$(($SECONDS - $start_time)) second(s)." >> $my_logfile
 
-  # Skip this for offsite storage as we may have sensitive information
-  # For off-site device copy just the encrypted container.
+  #
+  # NOTE: 
+  #   Skip this for offsite storage as we may have sensitive information
+  #   For off-site device so copy just the encrypted container.
+  #
+  # UPDATE: We no longer need to do this special case anymore since we 
+  #   we validated there is no PII included so its ok to copy everything.
+  #   Leaving code here commented, in case we need it later.
+  #
+  # - Jan 17, 2024 (Arul)
+  #         
   start_time=$SECONDS
-  if [ "$usb_mount" != "$offsite_device" ] ; then
+  #if [ "$usb_mount" != "$offsite_device" ] ; then
     echo -n "    Backup of /data/transfer ... " >> $my_logfile
     nice -19 $rsync_bin $rsync_opts /data/transfer $backup_dir
-  else
-    echo -n "    Off-site backup /data/transfer/arul-backup/data/encrypted" >> $my_logfile
-    nice -19 $rsync_bin $rsync_opts /data/transfer/arul-backup/data/encrypted $backup_dir
-  fi
+  #else
+  #  echo -n "    Off-site backup /data/transfer/arul-backup/data/encrypted" >> $my_logfile
+  #  nice -19 $rsync_bin $rsync_opts /data/transfer/arul-backup/data/encrypted $backup_dir
+  #fi
   echo "$(($SECONDS - $start_time)) second(s)." >> $my_logfile
 
   start_time=$SECONDS
@@ -209,6 +226,11 @@ while getopts "$options_list" opt; do
       ;;
    esac
 done
+
+# remove rsync logfile if present so it doesn't grow as rsync just appends
+if [ -f $rsync_log_file ] ; then
+  rm -f $rsync_log_file
+fi
 
 # reset the list in case offsite_device is provided as cmdline option
 device_names=("PRIMARY,/media/usb-1tb-2" "SECONDARY,/media/usb-1tb-3" "TERTIARY eSATA-RAID,/media/sata-3tb" "OFFSITE SSD,$offsite_device" )
