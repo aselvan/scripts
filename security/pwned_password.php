@@ -1,20 +1,26 @@
-#!/usr/bin/php
+#!/usr/bin/env php
 <?php
 /**
 * Simple method to use the API from  
-* https://www.troyhunt.com/ive-just-launched-pwned-passwords-version-2/
+*  https://haveibeenpwned.com/API/v3#PwnedPasswords
 * 
 * Jim Westergren --- original author
 * Arul Selvan    --- added main driver, and additional details -- Feb 25, 2018
 *
-* how to run: 
-*   php pwned_password.php
+* PreReq: Need php to run this script. MacOS and Linux natively includes php but if you 
+*         are using windows, install php)
+*
+* How to run:
+*   Open a command shell and execute the following (on MacOS or Linux no need for php in front)
+*
+*   php pwned_password.php 
 */
+$version="v2018.02.25";
 
 function checkPawnedPasswords(string $password) : int {
     $sha1 = strtoupper(sha1($password));
     $first_five_digit=substr($sha1,0,5);
-    echo "[INFO] sending partial hash ($first_five_digit) of your full hash ($sha1) to troyhunt.com to check\n";
+    echo "Sending partial hash ($first_five_digit) of your full hash ($sha1) to pwnedpasswords.com ...\n";
     $data = file_get_contents('https://api.pwnedpasswords.com/range/'.$first_five_digit);
 
     if (strpos($data, substr($sha1, 5))) {
@@ -25,17 +31,20 @@ function checkPawnedPasswords(string $password) : int {
 }
 
 # prompt for password, hide screen.
+$name=basename($argv[0], '.php');
+echo "$name $version\n";
+echo "Don't panic, sending ONLY first 5 char of your password hash (not password itself) to pwnedpasswords.com\n";
 echo "Enter your password to check: ";
 system('stty -echo');
 trim(fscanf(STDIN, "%s\n", $password));
 system('stty echo');
-echo "\n[INFO] don't worry, will only use first 5 char of your password hash\n";
 
 # check the password against Troy's DB
+echo "\nChecking your password ...\n";
 $count = checkPawnedPasswords($password);
 if ($count > 0) {
-  echo "[WARN] Oops, your password is found $count times!\n";
+  echo "### WARNING ### Your password is FOUND $count times!\n";
 }
 else {
-  echo "[INFO] Good news, your password is not found\n";
+  echo "### CONGRATS ### your password is NOT found!\n";
 }
