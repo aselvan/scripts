@@ -164,7 +164,7 @@ fi
 log.stat "Checking remote server '$remote_host3' is available to backup ..."
 /sbin/ping -t30 -c1 -qo $remote_host3 >/dev/null 2>&1
 if [ $? -eq 0 ]; then
-  log.stat "backing up to remote host at '$remote_scp_path3'"
+  log.stat "Backing up to remote host at '$remote_scp_path3'"
   scp -P55522 $encFileName $encFileName.backup $encFileNameYubi $encFileNameYubi.backup $encFileNameGpg $encFileNameGpg.backup $remote_scp_path3/.
 else
   log.warn "$remote_host3 not available, skipping ..."
@@ -174,16 +174,17 @@ fi
 log.stat "Checking for veracrypt volume mounted, if copy there including plaintext file ..."
 $veracrypt_bin -t -l 2>&1 > /dev/null
 if [ $? -eq 0 ]; then
-  log.stat "backing up to '$veracrypt_mount'"
+  log.stat "Backing up to '$veracrypt_mount'"
   cp $plainFile $encFileName $encFileName.backup $encFileNameYubi $encFileNameYubi.backup $encFileNameGpg $encFileNameGpg.backup $veracrypt_mount/.
 else
   log.warn "$veracrypt_mount not available, skipping ..."  
 fi
 
 # finally, if we have the arulspixel7 phone connected to adb, push it there as well
+log.stat "Checking for $aruls_phone ..."
 adb devices|awk 'NR>1 {print $1}'|grep $aruls_phone
 if [ $? -eq 0 ]; then
-  log.stat "backing up to $aruls_phone ..."
+  log.stat "Backing up to $aruls_phone ..."
   $scripts_github/andriod/adb_push.sh -s $aruls_phone -f $encFileName -d /sdcard/data/docs
 else
   log.warn "$aruls_phone is not available, skipping ..."
