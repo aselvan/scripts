@@ -21,7 +21,7 @@ log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 encFileBaseName="kanakku.txt"
 search_string=""
 gpg_opt="-qd"
-openssl_opt="enc -d -aes-256-cbc -a -in"
+openssl_opt="-pbkdf2 -md md5 -aes-256-cbc -a -salt"
 egrep_opt=""
 
 # ensure paths so we don't need to deal with location of tools
@@ -82,7 +82,7 @@ do_view() {
     gpg $gpg_opt $encFileBaseName.gpg | view -
   else
     log "[INFO] decrypting $encFileBaseName.enc for view ..."
-    openssl $openssl_opt $encFileBaseName.enc | view -
+    openssl enc -d $openssl_opt -in $encFileBaseName.enc | view -
   fi
   exit
 }
@@ -100,7 +100,7 @@ do_search() {
   else
     echo
     log "[INFO] decrypting $encFileBaseName.enc for search ..."
-    openssl $openssl_opt $encFileBaseName.enc | egrep $egrep_opt $search_string
+    openssl enc -d $openssl_opt -in $encFileBaseName.enc | egrep $egrep_opt $search_string
   fi
   exit
 }
