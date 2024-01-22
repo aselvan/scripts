@@ -14,7 +14,7 @@
 version=23.11.18
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
-my_title="Sample script"
+my_title="Wrapper over adb to delete files/directory"
 my_dirname=`dirname $0`
 my_path=$(cd $my_dirname; pwd -P)
 my_logfile="/tmp/$(echo $my_name|cut -d. -f1).log"
