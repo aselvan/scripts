@@ -27,7 +27,7 @@ automations:
       - type: time.schedule
         at: 11:00 PM
       - type: time.schedule
-        at: 02:00 PM
+        at: 02:30 PM
       - type: assistant.event.OkGoogle
         eventData: query
         is: "living room off"
@@ -52,7 +52,7 @@ automations:
           - lr2 - Living Room
           - lr3 - Living Room
           - lr4 - Living Room
-          - kitchen light - Kitchen
+          - kl1 - Kitchen
   - starters:
       - type: assistant.event.OkGoogle
         eventData: query
@@ -65,5 +65,5 @@ automations:
           - lr2 - Living Room
           - lr3 - Living Room
           - lr4 - Living Room
-          - kitchen light - Kitchen
+          - kl1 - Kitchen
 
