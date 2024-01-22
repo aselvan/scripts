@@ -9,9 +9,9 @@ metadata:
 automations:
   - starters:
       - type: time.schedule
-        at: 11:00 PM
+        at: 10:00 PM
       - type: time.schedule
-        at: 02:00 PM
+        at: 2:30 PM
       - type: assistant.event.OkGoogle
         eventData: query
         is: "kitchen off"
@@ -19,7 +19,7 @@ automations:
       - type: device.command.OnOff # Turn the device on or off.
         on: false
         devices:
-          - kitchen light - Kitchen
+          - kl1 - Kitchen
   - starters:
       - type: time.schedule
         at: 7:00 AM
@@ -32,5 +32,5 @@ automations:
       - type: device.command.OnOff # Turn the device on or off.
         on: true
         devices:
-          - kitchen light - Kitchen
+          - kl1 - Kitchen
 
