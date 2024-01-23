@@ -17,3 +17,6 @@
 
 # Free online game
 0.0.0.0 yad.com
+
+# amplifyapp.com hosts bunch of phising/malware zap it
+0.0.0.0 amplifyapp.com
