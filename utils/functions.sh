@@ -26,8 +26,8 @@ email_subject_failed="$my_version on $host_name: FAILED"
 declare -A unit_table=(
     ["volt_to_millivolt"]="1000"
     ["millivolt_to_volt"]="0.001"
-    ["celsius_to_fahrenheit"]=$(echo "scale=5; 9/5" | bc)
-    ["fahrenheit_to_celsius"]=$(echo "scale=5; 5/9" | bc)
+    ["celsius_to_fahrenheit"]=$(echo "scale=2; 9/5" | bc)
+    ["fahrenheit_to_celsius"]=$(echo "scale=2; 5/9" | bc)
 )
 
 
@@ -111,19 +111,19 @@ send_mail() {
 #   echo "Volt/mVolt: 3.2/$v2mv"
 
 v2mv() {
-    echo "$(bc <<< "scale=4; $1 * ${unit_table[volt_to_millivolt]}")"
+    echo "$(bc <<< "scale=2; $1 * ${unit_table[volt_to_millivolt]}")"
 }
 
 mv2v() {
-    echo "$(bc <<< "scale=4; $1 * ${unit_table[millivolt_to_volt]}")"
+    echo "$(bc <<< "scale=2; $1 * ${unit_table[millivolt_to_volt]}")"
 }
 
 c2f() {
-    echo "$(bc <<< "scale=4; $1 * ${unit_table[celsius_to_fahrenheit]} + 32")"
+    echo "$(bc <<< "scale=2; $1 * ${unit_table[celsius_to_fahrenheit]} + 32")"
 }
 
 f2c() {
-    echo "$(bc <<< "scale=4; ($1 - 32) * ${unit_table[fahrenheit_to_celsius]}")"
+    echo "$(bc <<< "scale=2; ($1 - 32) * ${unit_table[fahrenheit_to_celsius]}")"
 }
 
 # convert sec to msec
