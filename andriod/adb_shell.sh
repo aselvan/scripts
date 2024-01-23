@@ -31,7 +31,7 @@ default_scripts_github=$HOME/src/scripts.github
 scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
 # commandline options
-options_list="s:c:p:tblvh"
+options_list="s:c:p:tblovh"
 
 # ensure path for cron runs
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
@@ -50,6 +50,7 @@ Usage: $my_name -s <device> [options]
   -c <cmd>      ---> execute arbitary "adb shell" command passed ex: batterystats
   -t            ---> shows battery temp(Celsious) not necessarily phone temp but gives an idea
   -b            ---> battery full stats
+  -o            ---> voltage (since -v argumet is reserved for verbose, using -o)
   -l            ---> current level i.e. percent of battery left
   -v            ---> enable verbose, otherwise just errors/warnings are printed.    
   -h help
@@ -123,9 +124,22 @@ shell_command() {
 
 battery_temp() {
   check_device_count
-  log.stat "Battery temperature (celscious) ..."
-  adb $device shell dumpsys battery get temp
+  log.stat "Battery temperature ..."
+  local c=$(adb $device shell dumpsys battery get temp)
+  # value is in 10th of degree celcious
+  local c=$(echo "scale=1; $c/10" | bc)
+  local f=$(c2f $c)
+  log.stat "Temp (deg C/F): $c/$f" $green
   exit 0
+}
+
+battery_voltage() {
+  check_device_count
+  log.stat "Battery voltage ..."
+  local voltage=$(adb $device shell dumpsys battery | grep "^  voltage" | awk '{print $2}')
+  # convert to voltage (milli) to v
+  voltage=$(mv2v $voltage)
+  log.stat "Voltage: $voltage V" $green
 }
 
 battery_stats() {
@@ -147,6 +161,7 @@ battery_level() {
 if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
   # include logger, functions etc as needed 
   source $scripts_github/utils/logger.sh
+  source $scripts_github/utils/functions.sh  
 else
   echo "ERROR: SCRIPTS_GITHUB env variable is either not set or has invalid path!"
   echo "The env variable should point to root dir of scripts i.e. $default_scripts_github"
@@ -186,6 +201,10 @@ while getopts "$options_list" opt ; do
     l)
       get_device_count
       battery_level
+      ;;
+    o)
+      get_device_count
+      battery_voltage
       ;;
     v)
       verbose=1
