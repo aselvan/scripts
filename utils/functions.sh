@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 #
 # functions.sh --- This script is meant to be included in main script for reusable functions.
 #
@@ -20,6 +21,15 @@ email_status=0
 email_address=""
 email_subject_success="$my_version on $host_name: SUCCESS"
 email_subject_failed="$my_version on $host_name: FAILED"
+
+# for unit converstion functions below
+declare -A unit_table=(
+    ["volt_to_millivolt"]="1000"
+    ["millivolt_to_volt"]="0.001"
+    ["celsius_to_fahrenheit"]=$(echo "scale=5; 9/5" | bc)
+    ["fahrenheit_to_celsius"]=$(echo "scale=5; 5/9" | bc)
+)
+
 
 # --- file utils ---
 
@@ -94,7 +104,27 @@ send_mail() {
   fi
 }
 
-#--- general utilities ---
+#--- conversion utilities ---
+# Define separate functions for each conversion.
+# usage:
+#   v2mv=$(v2mv 3.2)
+#   echo "Volt/mVolt: 3.2/$v2mv"
+
+v2mv() {
+    echo "$(bc <<< "scale=4; $1 * ${unit_table[volt_to_millivolt]}")"
+}
+
+mv2v() {
+    echo "$(bc <<< "scale=4; $1 * ${unit_table[millivolt_to_volt]}")"
+}
+
+c2f() {
+    echo "$(bc <<< "scale=4; $1 * ${unit_table[celsius_to_fahrenheit]} + 32")"
+}
+
+f2c() {
+    echo "$(bc <<< "scale=4; ($1 - 32) * ${unit_table[fahrenheit_to_celsius]}")"
+}
 
 # convert sec to msec
 sec2msec() {
@@ -191,6 +221,8 @@ path_separate() {
 }
 
 # --- timestamp utilities ---
+
+# convert seconds to date
 seconds_to_date() {
   local seconds=$1
   if [ $os_name = "Darwin" ] ; then
@@ -200,6 +232,8 @@ seconds_to_date() {
   fi
 }
 
+# convert seconds from now or raw seconds. If secondt arg is 1 it will 
+# result in seconds calculated from from Jan 1, 1970, otherwise just seconds
 convert_seconds() {
   local seconds=$1
   local from_now=$2
@@ -210,6 +244,8 @@ convert_seconds() {
   echo "$(seconds_to_date $seconds)"
 }
 
+# convert milliseconds from now or raw msec. If second arg is 1 it will 
+# result in milliseconds calculated from from Jan 1, 1970.
 convert_mseconds() {
   local msec=$1
   local from_now=$2

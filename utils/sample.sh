@@ -89,5 +89,14 @@ else
 fi
 
 path_separate "/var/log/apache2/access.log"
-date_st=$(msec_to_date "1686709485000")
-echo "Converted 1686709485000 to human readble date: $date_st"
+
+# seconds/mseconds to date conversion
+date_st=$(convert_mseconds 1686709485000 0)
+echo "1686709485000 msec will map to human readble date: $date_st"
+date_st=$(convert_mseconds 1686709485000 1)
+echo "1686709485000 msec from now to human readble date: $date_st"
+
+# conversion function
+v2mv=$(v2mv 3.2)
+echo "Volt/mVolt: 3.2/$v2mv"
+
