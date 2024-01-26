@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 #
 # clamscan.sh --- wrapper script for clamscan 
@@ -7,32 +7,46 @@
 # and optionally send mail if one or more files are infected. This will 
 # run on both MacOS and Linux assuming clamscan is installed.
 #
-# Author: Arul Selvan
-# Version: May 28, 2018
-#
 # NOTE: feel free to modify the below variables in TODO section like scanpath, 
 #       excludes_dir, excluded_files, and others to fit your needs.
 #
+# Author: Arul Selvan
+# Version History: 
+#   May 28, 2018 --- Original Version
+#   Jan 26, 2024 --- Refactored to use logger, function includes, exclude large files
+#
+
+# version format YY.MM.DD
+version=24.04.26
+my_name="`basename $0`"
+my_version="`basename $0` v$version"
+my_title="Sample script"
+my_dirname=`dirname $0`
+my_path=$(cd $my_dirname; pwd -P)
+my_logfile="/tmp/$(echo $my_name|cut -d. -f1).log"
+default_scripts_github=$HOME/src/scripts.github
+scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
+
+# commandline options
+options_list="uhvcp:m:f:l:d:e:x:"
 
 # ensure paths so we don't need to deal with location of tools
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/opt/homebrew/bin:$PATH"
 
 # TODO: modify these to fit your needs, the rest should be fine
 # variables that need to be customized
-exclude_dirs=".Trash|.Trashes|.Spotlight-V100|index.spotlightV3|var|dev|private|xarts|CloudStorage|CrashReporter|views|com.apple.mail|creditexpert|javanetexamples|ice|work|VirtualBoxVMs|android|sleepyhead|react-tutorial|.svn"
+exclude_dirs=".Trash|.Trashes|.Spotlight-V100|index.spotlightV3|var|dev|private|xarts|CloudStorage|CrashReporter|views|com.apple.mail|creditexpert|javanetexamples|ice|work|VirtualBoxVMs|android|medical_records|react-tutorial|gdrive|configs|google-backup|raspberrypi|offline-videos|Movies|.svn|.ak"
 macos_unreadable="com.apple.homed.notbackedup.plist|com.apple.homed.plist|com.apple.mail-shared.plist|com.apple.AddressBook.plist"
 chrom_plugin_excludes="urlhaus-filter-online.txt"
+misl_excludes="vc56g_exfat.hc"
 macos_false_positive="--exclude=EPSON.*FAX.*.gz"
-exclude_files=".qcow2|.swf|.ova|.vmdk|.mp3|.mp4|.jpg|.jpeg|.JPG|.MTS|.jar|.pst|.ost|.mov|.pack|$macos_unreadable|$chrom_plugin_excludes"
+exclude_files=".qcow2|.swf|.ova|.vmdk|.mp3|.mp4|.jpg|.jpeg|.JPG|.MTS|.jar|.pst|.ost|.mov|.pack|.olm|$macos_unreadable|$chrom_plugin_excludes|$misl_excludes"
 pua_args="--detect-pua=yes --exclude-pua=PwTool --exclude-pua=NetTool --exclude-pua=P2P --exclude-pua=Tool"
 
 # other variables don't need to be changed
-options_list="uhvcp:m:f:l:d:e:x:"
-my_name=`basename $0`
-log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 virus_report=/tmp/virus_report.log
 changed_files=/tmp/clamscan_files.txt
-freshclam_log_file=/tmp/freshclam.log
+freshclam_my_logfile=/tmp/freshclam.log
 changed_only=0
 days_since=8
 max_file_size="128M"
@@ -41,50 +55,48 @@ scan_path="$default_linux_scan_path"
 # use this for macOS since starting from catalina lot of OS area is mounted under "/"
 # that is not writeable anyway (unless SIP disabled) so dont bother scanning
 default_macos_scanpath="/Applications /Library /Users /usr/local"
-os_name=`uname -s`
 my_host=`hostname`
 urlhaus_sig_file="urlhaus.ndb"
 urlhaus_sig_url="https://urlhaus.abuse.ch/downloads"
-
 clamscan_bin=`which clamscan`
 freshclam_bin=`which freshclam`
 sha256sum_bin=`which sha256sum`
-
 single_file=""
 clamav_lib_path=""
 update_signature_only=0
-# mail variables
-subject="ClamAv virus scan report [Host: $my_host]"
-mail_to=""
 exit_code=0
 verbose_opt="--quiet"
 clamscan_opts="-r -i -o --max-filesize=$max_file_size $pua_args --log=$virus_report $macos_false_positive --bytecode-unsigned --bytecode-timeout=120000"
 
 usage() {
-  echo "Usage: $my_name [options]"
-  echo "    -p <paths_to_scan> list of directories to scan in quotes. note: the default is '/'"
-  echo "    -c scan only changed files since the last $days_since days"
-  echo "    -d <days> number of days to check for changed files. default: $days_since days"
-  echo "    -f <single_file> scan a single file and exit"
-  echo "    -m <email_address> enable email and send scan results"
-  echo "    -l <log_file_path> log file path, default=$log_file"
-  echo "    -u update signature only (i.e. freshclam, urlhouse filter, pua setup etc) don't scan"
-  echo "    -e <file_list> pipe delimited list of files, extensions to exclude from scane example: \".mp3|.mp4|myfile\""
-  echo "    -x <dir_list> pipe delimited list of directories to exclude from scane example: \"Trash|.ssh\""
-  echo "    -v enable verbose mode"
-  exit
+cat << EOF
+Usage: $my_name [options]
+  -p <path>  ---> list of directories path to scan in quotes. note: the default is '/'
+  -c         ---> scan only changed files since the last $days_since days
+  -d <days>  ---> number of days to check for changed files. default: $days_since days
+  -f <file>  ---> scan a single file and exit
+  -m <email> ---> enable email and send scan results
+  -l <log>   ---> log file path [default: $my_logfile]
+  -u         ---> update signature only (i.e. freshclam, urlhouse filter, pua setup etc) don't scan
+  -e <list>  ---> pipe delimited list of files, extensions to exclude from scane example: ".mp3|.mp4|myfile"
+  -x <dir>   ---> pipe delimited list of directories to exclude from scane example: "Trash|.ssh"
+  -v         ---> enable verbose, otherwise just errors are printed
+  -h         ---> print usage/help
+  
+EOF
+  exit 0
 }
 
 scan_single_file() {
-  echo "[INFO] scanning file: '$single_file' ... " | tee -a $log_file
+  log.stat "Scanning file: '$single_file' ... "
   if [ -f "$single_file" ]; then
-    $clamscan_bin $verbose_opt $clamscan_opts "$single_file" >> $log_file
+    $clamscan_bin $verbose_opt $clamscan_opts "$single_file" >> $my_logfile
     exit_code=$?
-    echo "[INFO] scan results..." | tee -a $log_file
     cat $virus_report
   else
-    echo "[ERROR] file '$single_file' does not exist!" | tee -a $log_file
+    log.error "File '$single_file' does not exist!"
   fi
+  log.stat "Total runtime: $(elapsed_time)"
 }
 
 # get the urlhaus clamv signature to scan for virus website, compromised hosts etc.
@@ -93,37 +105,37 @@ get_urlhaus_sig() {
     rm -f $urlhaus_sig_file
   fi
 
-  echo "[INFO] downloading $urlhaus_sig_url/{$urlhaus_sig_file,$urlhaus_sig_file.sha256} " >> $log_file
+  log.stat "Downloading $urlhaus_sig_url/{$urlhaus_sig_file,$urlhaus_sig_file.sha256} "
   # download the urlhaus clamv database and sha256sum of the database
   # note: urlhaus creates these 2 files every minute so we have to get both database
   #       and sha256sum files at one shot otherwise, they will be mismatched.
   curl -s -O "$urlhaus_sig_url/{$urlhaus_sig_file,$urlhaus_sig_file.sha256}"
   if [ $? -ne 0 ]; then
-    echo "[ERROR] failed to download urlhaus signature file '$urlhaus_sig_file'" >> $log_file
+    log.error "Failed to download urlhaus signature file '$urlhaus_sig_file'" >> $my_logfile
     exit_code=11
     return
   fi
 
   # check if the sha256sum matches
-  echo "[INFO] matching sha256sum: `cat $urlhaus_sig_file.sha256` $urlhaus_sig_file|$sha256sum_bin -c" >> $log_file  
-  echo "`cat $urlhaus_sig_file.sha256` $urlhaus_sig_file" | $sha256sum_bin -c >> $log_file 2>&1
+  log.stat "Matching sha256sum: `cat $urlhaus_sig_file.sha256` $urlhaus_sig_file|$sha256sum_bin -c" 
+  echo "`cat $urlhaus_sig_file.sha256` $urlhaus_sig_file" | $sha256sum_bin -c >> $my_logfile 2>&1
   if [ $? -ne 0 ] ; then
-    echo "[ERROR] MD5 sum does not match for '$urlhaus_sig_file', skiping urlhaus signature..." >> $log_file
+    log.warn "MD5 sum does not match for '$urlhaus_sig_file', skiping urlhaus signature..."
     exit_code=12
     return
   fi
   
   # finally scan it before adding to clamscan lib
-  echo "[INFO] sha256sum matched, scanning $urlhaus_sig_file " >> $log_file    
+  log.stat "sha256sum matched, scanning $urlhaus_sig_file "
   $clamscan_bin $urlhaus_sig_file >/dev/null 2>&1
   if [ $? -ne 0 ] ; then
-    echo "[ERROR] scan failed for $urlhaus_sig_file, so ignoring the file" >> $log_file
+    log.error "Scan failed for $urlhaus_sig_file, so ignoring the file"
     exit_code=13
     return
   fi
  
   # all checked out, move file to clamav lib
-  echo "[INFO] updating urlhaus signature file '$urlhaus_sig_file' in clamav lib ($clamav_lib_path)" >> $log_file
+  log.stat "Updating urlhaus signature file '$urlhaus_sig_file' in clamav lib ($clamav_lib_path)"
   mv $urlhaus_sig_file $clamav_lib_path/.
 }
 
@@ -132,9 +144,9 @@ setup_pua() {
   # ensure the PUA override file is there (it will be gone when clamscan is updated, so always write one)
   # CAUTION: ignoring these are not good but too much of noise/false positives forced me to add these!
   #
-  echo "[INFO] Setting up PUA over-ride entries ..." >> $log_file
-  echo "[INFO] clamav HOME=$clamav_lib_path" >> $log_file
-  echo "[INFO] creating clamav overide file ($clamav_lib_path/local.ign2) ..." >> $log_file
+  log.stat "Setting up PUA over-ride entries ..." 
+  log.stat "clamav HOME=$clamav_lib_path"
+  log.stat "Creating clamav overide file ($clamav_lib_path/local.ign2) ..." 
 
   cat <<EOF > $clamav_lib_path/local.ign2
 PUA.Pdf.Trojan.EmbeddedJavaScript-1
@@ -158,35 +170,50 @@ PUA.Win.Tool.Packed-176
 PUA.Win.Exploit.CVE_2012_1461-1
 EOF
   chmod a+rw $clamav_lib_path/local.ign2
-  echo "[INFO] content of $clamav_lib_path/local.ign2 " >> $log_file
-  cat $clamav_lib_path/local.ign2 >> $log_file
+  log.stat "Content of $clamav_lib_path/local.ign2 "
+  cat $clamav_lib_path/local.ign2 >> $my_logfile
 }
 
 update_all() {
   # do a freshclam first
-  echo "[INFO] Get latest virus signatures..." >> $log_file
-  if [ -f $freshclam_log_file ] ; then
-    rm -f $freshclam_log_file
+  log.stat "Get latest virus signatures..."
+  if [ -f $freshclam_my_logfile ] ; then
+    rm -f $freshclam_my_logfile
   fi
 
   # print current version
-  echo "[INFO] current sig version: `$freshclam_bin -V`" >> $log_file
+  log.stat "Current sig version: `$freshclam_bin -V`"
 
   # update the sigs
-  $freshclam_bin -l $freshclam_log_file >> $log_file 2>&1
+  $freshclam_bin -l $freshclam_my_logfile >> $my_logfile 2>&1
   exit_code=$?
 
   # print the updated version
-  echo "[INFO] updated sig version: `$freshclam_bin -V`" >> $log_file
+  log.stat "Updated sig version: `$freshclam_bin -V`"
 
   # update urlhaus signature
   get_urlhaus_sig
 
   # setup the PUA overide
   setup_pua
+
+  log.stat "Signature update runtime: $(elapsed_time)"
 }
 
-# ---------------------------- main --------------------------------
+# -------------------------------  main -------------------------------
+# First, make sure scripts root path is set, we need it to include files
+if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
+  # include logger, functions etc as needed 
+  source $scripts_github/utils/logger.sh
+  source $scripts_github/utils/functions.sh
+else
+  echo "ERROR: SCRIPTS_GITHUB env variable is either not set or has invalid path!"
+  echo "The env variable should point to root dir of scripts i.e. $default_scripts_github"
+  exit 1
+fi
+# init logs
+log.init $my_logfile
+
 if [ -f  $virus_report ]; then
   rm -f $virus_report
 fi
@@ -217,17 +244,14 @@ while getopts "$options_list" opt ; do
       changed_only=1
       ;;
     m)
-      mail_to=$OPTARG
-      ;;
-    v)
-      verbose_opt="-v"
+      email_address=$OPTARG
       ;;
     f)
       single_file=$OPTARG
       scan_path=$OPTARG
       ;;
     l)
-      log_file=$OPTARG
+      my_logfile=$OPTARG
       ;;
     d)
       days_since=$OPTARG
@@ -239,11 +263,15 @@ while getopts "$options_list" opt ; do
       exclude_dirs="$exclude_dirs|$OPTARG"
       ;;
     u)
-      echo "[INFO] updating virus definitions ..." > $log_file
+      log.stat "Updating virus definitions ..."
       update_all
       exit $exit_code
       ;;
-    h)
+    v)
+      verbose_opt="-v"
+      verbose=1
+      ;;
+    ?|h|*)
       usage
       ;;
   esac
@@ -251,19 +279,16 @@ done
 
 # add excludes (file/dir) default plus additional commandline passed to options
 clamscan_opts="$verbose_opt $clamscan_opts --exclude-dir=\"$exclude_dirs\" --exclude=\"$exclude_files\""
-
-echo "[INFO] -------------------- VIRUS SCAN log starting --------------------" > $log_file
-echo "" >> $log_file
-echo "[INFO] Scan start:   `date`" >> $log_file
-echo "[INFO] Scan host:    $my_host" >> $log_file
-if [ ! -z $mail_to ] ; then
-  echo "[INFO] Email report: Yes" >> $log_file
+log.stat "-------------------- VIRUS SCAN log starting --------------------"
+log.stat "Scan start:   `date`" 
+log.stat "Scan host:    $my_host"
+if [ ! -z $email_address ] ; then
+  log.stat "Email report: Yes"
 fi
-echo "[INFO] Scan path:    $scan_path " >> $log_file
-echo "[INFO] Scan bin:     $clamscan_bin " >> $log_file
-echo "[INFO] Scan lib:     $clamav_lib_path " >> $log_file
-echo "[INFO] Scan options: $clamscan_opts " >> $log_file
-
+log.stat "Scan path:    $scan_path "
+log.stat "Scan bin:     $clamscan_bin "
+log.stat "Scan lib:     $clamav_lib_path "
+log.stat "Scan options: $clamscan_opts "
 
 # special case: single file scan; need to scan fast, so not updating signature
 if [ ! -z "$single_file" ] ; then
@@ -284,45 +309,30 @@ if [ $changed_only -eq 1 ] ; then
   for dir in $scan_path ; do
     find $dir -type f -mtime -$days_since -exec echo {} \; >> $changed_files
   done
-  echo "[INFO] Full command: $clamscan_bin $verbose_opt $clamscan_opts -f $changed_files" >> $log_file  
-  echo "[INFO] Scanning changed files in the last $days_since day(s) under '$scan_path'" >> $log_file
-  $clamscan_bin $verbose_opt $clamscan_opts -f $changed_files >> $log_file 2>&1
+  log.stat "Full command: $clamscan_bin $verbose_opt $clamscan_opts -f $changed_files"
+  log.stat "Scanning changed files in the last $days_since day(s) under '$scan_path'"
+  $clamscan_bin $verbose_opt $clamscan_opts -f $changed_files >> $my_logfile 2>&1
   exit_code=$?
 else
-  echo "[INFO] Full command: $clamscan_bin $verbose_opt $clamscan_opts $scan_path" >> $log_file
-  echo "[INFO] Scanning ALL files under: $scan_path" >> $log_file
-  $clamscan_bin $verbose_opt $clamscan_opts $scan_path >> $log_file 2>&1
+  log.stat "Full command: $clamscan_bin $verbose_opt $clamscan_opts $scan_path"
+  log.stat "Scanning ALL files under: $scan_path" 
+  $clamscan_bin $verbose_opt $clamscan_opts $scan_path >> $my_logfile 2>&1
   exit_code=$?
 fi
-echo "" >> $log_file
+log.stat ""
+log.stat "Scan end for $scan_path: `date`"
+log.stat "Total runtime: $(elapsed_time)"
+log.stat "Return code: $exit_code"
+log.stat "Following is virus report for: $scan_path"
+log.stat ""
+cat $virus_report >> $my_logfile
+log.stat ""
+log.stat "-------------------- VIRUS SCAN log end --------------------"
 
-echo "[INFO] Scan end for $scan_path: `date`" >> $log_file
-echo "[INFO] return code: $exit_code" >> $log_file
-echo "[INFO] Following is virus report for: $scan_path" >> $log_file
-echo "" >> $log_file
-cat $virus_report >> $log_file
-echo "" >> $log_file
-echo "[INFO] -------------------- VIRUS SCAN log end --------------------" >> $log_file
-
-
-# send e-mail if address provided.
-if [ ! -z $mail_to ] ; then
-  # clamscan return (0: no virus; 1: virus found 2: some errors occured)
-  case $exit_code in
-    0)
-	    subject="ClamAV: success [Host: $my_host]"
-      ;;
-    1)
-	    subject="ClamAV: Found one or more virus! [Host: $my_host]"
-      ;;
-    2)
-	    subject="ClamAV: failed on scan! [Host: $my_host]"
-      ;;
-  esac
-
-  echo "[INFO] Scan complete w/ status $exit_code; Results are e-mailed" |tee -a $log_file
-  cat $log_file | mail -s "$subject" $mail_to >> $log_file 2>&1
-fi
+# send e-mail if address provided
+# clamscan return (0: no virus; 1: virus found 2: some errors occured)
+log.stat "Scan complete w/ status $exit_code; Results are e-mailed"
+send_mail "$exit_code"
 
 # exit w/ clamscan status for calling scripts
 exit $exit_code
