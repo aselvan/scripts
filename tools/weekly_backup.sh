@@ -252,7 +252,7 @@ for devpair in "${device_names[@]}" ; do
     echo "    ERROR: ${keyval[0]} backup failed!" >> $my_logfile
     backup_status=1
   fi
-  echo "Total elapsed time: <b>$(($SECONDS - $device_start_time))</b> seconds." >> $my_logfile
+  echo "Total elapsed time: <b><font color=\"green\">$(($SECONDS - $device_start_time))</font></b> seconds." >> $my_logfile
   echo "" >> $my_logfile
 done
 
@@ -263,7 +263,7 @@ if [ $backup_status -eq 0 ] ; then
 else
     echo "<b>Backup Result:</b> <b><font color=\"red\">FAILED</font></b> on one or more devices" >> $my_logfile
 fi
-echo "<b>Total backup runtime:</b> $(elapsed_time)" >> $my_logfile
+echo "<b>Total backup runtime:</b><font color=\"blue\">$(elapsed_time)</font>" >> $my_logfile
 
 # mail the report 
 send_mail "$backup_status" "$my_logfile"
