@@ -90,5 +90,4 @@ if [ $os_name = "Darwin" ] ; then
   check_root
 fi
 
-mtr -n -c$count -o "M" -r $server | awk -v ts="$(date +%d-%m-%Y\ %H:%M)" 'NR>2 {if ($NF+0 > max+0) {max=$NF; line=$2}} END {print ts, " ; Hop:",line, "; Avg Max jitter:",max}' >> $output_file
-log.stat "Output file: $output_file"
+mtr -n -c$count -o "M" -r $server | awk -v ts="$(date +%d-%m-%Y\ %H:%M)" 'NR>2 {if ($NF+0 > max+0) {max=$NF; line=$2}} END {print ts, " ; Hop:",line, "; Avg Max jitter:",max}' | tee -a $output_file
