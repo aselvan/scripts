@@ -252,7 +252,7 @@ for devpair in "${device_names[@]}" ; do
     echo "    ERROR: ${keyval[0]} backup failed!" >> $my_logfile
     backup_status=1
   fi
-  echo "Total elapsed time: <b><font color=\"green\">$(($SECONDS - $device_start_time))</font></b> seconds." >> $my_logfile
+  echo "Total elapsed time: <b><font color=\"blue\">$(($SECONDS - $device_start_time))</font></b> seconds." >> $my_logfile
   echo "" >> $my_logfile
 done
 
