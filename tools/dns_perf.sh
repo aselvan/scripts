@@ -4,10 +4,14 @@
 #
 #
 # Author : Arul Selvan
-# Version: Oct 7, 2022
-
+# Version History: 
+#   Oct 7,  2022 --- Initial version
+#   Nov 28, 2023 --- Misl changes
+#   Jan 2,  2024 --- Added url option to provide a large file list
+#
+#
 # version format YY.MM.DD
-version=23.11.28
+version=24.01.02
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="DNS lookup of large, random hosts to measure DNS resolve time."
