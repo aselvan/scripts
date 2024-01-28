@@ -17,7 +17,7 @@
 #
 
 # version format YY.MM.DD
-version=24.04.26
+version=24.01.26
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Sample script"
