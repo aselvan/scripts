@@ -24,10 +24,11 @@ scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
 
 # commandline options
-options="s:c:vh?"
+options="s:c:o:vh?"
 
 server="speed.cloudflare.com"
 count=30
+output_file="/tmp/$(echo $my_name|cut -d. -f1).txt"
 
 usage() {
 cat << EOF
@@ -36,6 +37,7 @@ $my_name - $my_title
 Usage: $my_name [options]
   -s <host>  ---> server to target to measure the jitter [Default: $server]
   -c <count> ---> number of times to repeat the mtr runs [Default: $count]
+  -o <file>  ---> append output to file for monitoring over a period of time [Default: $output_file]
   -v         ---> enable verbose, otherwise just errors are printed
   -h         ---> print usage/help
 
@@ -68,6 +70,9 @@ while getopts $options opt ; do
     s)
       server=${OPTARG}
       ;;
+    o)
+      output_file="${OPTARG}"
+      ;;
     v)
       verbose=1
       ;;
@@ -85,5 +90,5 @@ if [ $os_name = "Darwin" ] ; then
   check_root
 fi
 
-mtr -n -c$count -o "M" -r $server | awk 'NR>2 {if ($NF+0 > max+0) {max=$NF; line=$2}} END {print "Host:",line, "; Avg Max jitter:",max}'
-
+mtr -n -c$count -o "M" -r $server | awk 'NR>2 {if ($NF+0 > max+0) {max=$NF; line=$2}} END {print "Host:",line, "; Avg Max jitter:",max}' >> $output_file
+log.stat "Output file: $output_file"
