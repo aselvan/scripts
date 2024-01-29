@@ -109,6 +109,7 @@ do_create_thumbs() {
     echo "<a href=\"${wa_share}\" target=\"_blank\">" >> $index_file
     echo "<i class=\"fa fa-whatsapp\" style=\"font-size:24px;color:green\">" >> $index_file
     echo "</i></a> &nbsp;" >> $index_file
+    echo "" >> $index_file
 
     # facebook share
     fb_share="https://www.facebook.com/sharer/sharer.php?u=${abs_url},${fname}"
