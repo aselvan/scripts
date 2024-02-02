@@ -173,6 +173,35 @@ elapsed_time() {
   echo "$(($duration / (60*60))) hour(s), $(($duration / 60)) minute(s) and $(($duration % 60)) second(s)"
 }
 
+# check if the ip string passed is in the form x.x.x.x 
+#
+# usage:
+#   validate_ip 192.168.1.1
+#   if [ $? -ne 0 ]; then
+#     log.error "invalid ip"
+#   fi
+validate_ip() {
+  local ip=$1
+  local IFS='.' # Internal Field Separator set to '.'
+
+  # Read the IP address into an array
+  read -ra ip_parts <<< "$ip"
+
+  # Check if the IP has four parts
+  if [[ ${#ip_parts[@]} -ne 4 ]]; then
+    return 1
+  fi
+
+  # Check each part of the IP
+  for part in "${ip_parts[@]}"; do
+    # Check if the part is a number and between 0 and 255
+    if ! [[ $part =~ ^[0-9]+$ ]] || [[ $part -lt 0 ]] || [[ $part -gt 255 ]]; then
+      return 1
+    fi
+  done
+  # valid ip
+  return 0
+}
 
 # returns 1 for YES, 0 for NO
 confirm_action() {
