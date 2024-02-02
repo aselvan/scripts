@@ -95,6 +95,7 @@ cp $bashrc ${bashrc}.backup
 echo "" >> $bashrc
 echo "# ------------- Added by $my_version ------------- " >> $bashrc
 echo $path_to_append >> $bashrc
+echo "export SCRIPTS_GITHUB=$SH" >> $bashrc
 echo "" >> $bashrc
 echo "[INFO] install done"
 exit 0
