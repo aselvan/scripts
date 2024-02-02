@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 
-# Script to check if an IP address is in RBL list.
+# Script to check if an IP address is in RBL (realtime blackhole list).
 #
 # Author: Arul Selvan
 # Version History:
@@ -12,7 +12,7 @@
 version=23.11.15
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
-my_title="Script to check if an IP address is in RBL list"
+my_title="Script to check if an IP address is in RBL (realtime blackhole list)"
 my_dirname=`dirname $0`
 my_path=$(cd $my_dirname; pwd -P)
 my_logfile="/tmp/$(echo $my_name|cut -d. -f1).log"
@@ -82,18 +82,27 @@ done
 if [ $os_name = "Darwin" ]; then
 	sed_args="-En"
 fi
+
+# make sure IP is vaild format
+validate_ip $ip
+if [ $? -ne 0 ] ; then
+  log.error "The IP '$ip' is invalid!"
+  exit 1
+fi
 reverse_ip=`echo $ip|awk -F. '{print $4"."$3"."$2"."$1;}'`
 
+log.stat "Checking $ip against variety of RBL (Realtime Blackhole List)" $green
 for rbl in $rbl_list; do
-   if [ $verbose -eq 1 ]; then
-      status=`host -t a ${reverse_ip}.${rbl}`
-   else
-      status=`host -t a ${reverse_ip}.${rbl} 2>/dev/null`
-   fi
-   found=`echo $status |sed $sed_args 's/.*(127.0.[[:digit:]].[[:digit:]]).*/\1/p'` 
-   if [ ! -z $found ]; then
-      	log.stat "$ip is LISTED on RBL $rbl as $found" $red
-   else
-      	log.stat "$ip is GOOD on RBL $rbl" 
-   fi 
+  if [ $verbose -eq 1 ]; then
+    log.debug "Querying $rbl for ${reverse_ip}.${rbl} ..."
+    status=`host -t a ${reverse_ip}.${rbl}`
+  else
+    status=`host -t a ${reverse_ip}.${rbl} 2>/dev/null`
+  fi
+  found=`echo $status |sed $sed_args 's/.*(127.0.[[:digit:]].[[:digit:]]).*/\1/p'` 
+  if [ ! -z $found ]; then
+    log.stat "$ip is LISTED on RBL $rbl as $found" $red
+  else
+    log.stat "$ip is GOOD on RBL $rbl" 
+  fi 
 done
