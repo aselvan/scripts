@@ -8,9 +8,10 @@
 # Author : Arul Selvan
 # Version History: 
 #   Jan 27, 2024 --- Initial version
+#   Feb  4, 2024 --- Added functionality to create HTML file, changed output format
 #
 # version format YY.MM.DD
-version=24.01.27
+version=24.02.04
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Finds the max average jitter along the hop"
@@ -24,11 +25,25 @@ scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
 
 # commandline options
-options="s:c:o:vh?"
+options="s:c:o:wvh?"
 
+my_ip=`wget -qO- ifconfig.me/ip`
 server="speed.cloudflare.com"
 count=30
-output_file="/tmp/$(echo $my_name|cut -d. -f1).txt"
+jitter_output="/tmp/$(echo $my_name|cut -d. -f1).txt"
+
+# For HTML file content (change as needed)
+need_html=0
+title="selvans.net jitter max test results"
+desc="This file contains hourly internet jitter max average measured by mtr tool"
+sed_st="s/__TITLE__/$title/g;s/__DESC__/$desc/g"
+# location of www path, history location etc.
+home_dir=/root/speed_test
+www_root=/var/www
+html_file=$home_dir/jitter_max.html
+std_header=$www_root/std_header.html
+std_footer=/var/www/std_footer.html
+
 
 usage() {
 cat << EOF
@@ -37,7 +52,8 @@ $my_name - $my_title
 Usage: $my_name [options]
   -s <host>  ---> server to target to measure the jitter [Default: $server]
   -c <count> ---> number of times to repeat the mtr runs [Default: $count]
-  -o <file>  ---> append output to file for monitoring over a period of time [Default: $output_file]
+  -o <file>  ---> append output to file for monitoring over a period of time [Default: $jitter_output]
+  -w         ---> writes HTML file ($html_file) in addition for web server display.
   -v         ---> enable verbose, otherwise just errors are printed
   -h         ---> print usage/help
 
@@ -45,6 +61,21 @@ Usage: $my_name [options]
   
 EOF
   exit 0
+}
+
+write_html() {
+  # prepare the HTML file for website
+  log.debug "creating HTML file ($html_file) ..."
+  cat $std_header| sed -e "$sed_st"  > $html_file
+  echo "<body><pre>" >> $html_file
+  echo "<h3>$my_version --- max average jitter along source & destination as measured by mtr </h3>" >> $html_file
+  echo "<b>Source:</b>      $my_ip<br>" >> $html_file
+  echo "<b>Destination:</b> $server <br>" >> $html_file
+  echo "<b>Iteration:</b>   $count count<br>" >>$html_file
+  tac $jitter_output  >> $html_file
+  echo "</pre>" >> $html_file
+  cat $std_footer >> $html_file
+  mv $html_file ${www_root}/.
 }
 
 # -------------------------------  main -------------------------------
@@ -71,7 +102,10 @@ while getopts $options opt ; do
       server=${OPTARG}
       ;;
     o)
-      output_file="${OPTARG}"
+      jitter_output="${OPTARG}"
+      ;;
+    w)
+      need_html=1
       ;;
     v)
       verbose=1
@@ -90,4 +124,15 @@ if [ $os_name = "Darwin" ] ; then
   check_root
 fi
 
-mtr -n -c$count -o "M" -r $server | awk -v ts="$(date +%d-%m-%Y\ %H:%M)" 'NR>2 {if ($NF+0 > max+0) {max=$NF; line=$2}} END {print ts, " ; Hop:",line, "; Avg Max jitter:",max}' | tee -a $output_file
+# reset output to permanant store rather then /tmp/ in the case of html runs
+if [ $need_html -ne 0 ] ; then
+  jitter_output=$home_dir/jitter_max.txt
+fi
+
+# run jitter test and determine the router/hop that takes high ave jitter
+mtr -n -c$count -o "M" -r $server | awk -v ts="[$(date +'%D %H:%M %p')]" 'NR>2 {if ($NF+0 > max+0) {max=$NF; line=$2}} END {print ts, " Router/Hop:",line, "; Avg Max jitter:",max}' | tee -a $jitter_output
+
+# create HTML file if requested
+if [ $need_html -ne 0 ] ; then
+  write_html
+fi
