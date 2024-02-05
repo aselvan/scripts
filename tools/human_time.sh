@@ -39,8 +39,8 @@ Usage: $my_name [options]
   -v        ---> enable verbose, otherwise just errors are printed
   -h        ---> print usage/help
 
-example: $my_name -s 1703009984
-example: $my_name -n -s 42044  # the datetime will be 42044 from current time
+example: $my_name -s \`date +%s\` # prints time now in readable format
+example: $my_name -n -s 42044   # the datetime will be 42044 seconds from now
   
 EOF
   exit 0
