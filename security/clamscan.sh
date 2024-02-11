@@ -12,12 +12,13 @@
 #
 # Author: Arul Selvan
 # Version History: 
-#   May 28, 2018 --- Original Version
-#   Jan 26, 2024 --- Refactored to use logger, function includes, exclude large files
+#   May 28, 2018 --- Original Version.
+#   Jan 26, 2024 --- Refactored to use logger, function includes, exclude large files.
+#   Feb 11, 2024 --- Added code to write html file optionally.
 #
 
 # version format YY.MM.DD
-version=24.01.26
+version=24.02.11
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Sample script"
@@ -28,13 +29,13 @@ default_scripts_github=$HOME/src/scripts.github
 scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
 # commandline options
-options_list="uhvcp:m:f:l:d:e:x:"
+options_list="wuhvcp:m:f:l:d:e:x:"
 
 # ensure paths so we don't need to deal with location of tools
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/opt/homebrew/bin:$PATH"
 
-# TODO: modify these to fit your needs, the rest should be fine
-# variables that need to be customized
+# TODO:
+# Customize these to fit your needs (these are specific to my needs), the rest should be generic
 exclude_dirs=".Trash|.Trashes|.Spotlight-V100|index.spotlightV3|var|dev|private|xarts|CloudStorage|CrashReporter|views|com.apple.mail|creditexpert|javanetexamples|ice|work|VirtualBoxVMs|android|medical_records|react-tutorial|gdrive|configs|google-backup|raspberrypi|offline-videos|Movies|.svn|.ak"
 macos_unreadable="com.apple.homed.notbackedup.plist|com.apple.homed.plist|com.apple.mail-shared.plist|com.apple.AddressBook.plist"
 chrom_plugin_excludes="urlhaus-filter-online.txt"
@@ -42,6 +43,17 @@ misl_excludes="vc56g_exfat.hc"
 macos_false_positive="--exclude=EPSON.*FAX.*.gz"
 exclude_files=".qcow2|.swf|.ova|.vmdk|.mp3|.mp4|.jpg|.jpeg|.JPG|.MTS|.jar|.pst|.ost|.mov|.pack|.olm|$macos_unreadable|$chrom_plugin_excludes|$misl_excludes"
 pua_args="--detect-pua=yes --exclude-pua=PwTool --exclude-pua=NetTool --exclude-pua=P2P --exclude-pua=Tool"
+
+# TODO: 
+# If html report is needed fill in your own values here [default: skip]
+need_html=0
+www_root=/var/www
+std_header=$www_root/std_header.html
+std_footer=$www_root/std_footer.html
+html_file="/tmp/$(echo $my_name|cut -d. -f1).html"
+title="selvans.net virus scan log report"
+desc="This page contains the output of clamscan log file"
+sed_st="s/__TITLE__/$title/g;s/__DESC__/$desc/g"
 
 # other variables don't need to be changed
 virus_report=/tmp/virus_report.log
@@ -80,6 +92,7 @@ Usage: $my_name [options]
   -u         ---> update signature only (i.e. freshclam, urlhouse filter, pua setup etc) don't scan
   -e <list>  ---> pipe delimited list of files, extensions to exclude from scane example: ".mp3|.mp4|myfile"
   -x <dir>   ---> pipe delimited list of directories to exclude from scane example: "Trash|.ssh"
+  -w         ---> writes HTML file ($html_file) in addition for web server display.  
   -v         ---> enable verbose, otherwise just errors are printed
   -h         ---> print usage/help
   
@@ -87,10 +100,40 @@ EOF
   exit 0
 }
 
+# optional function to write html file to show on our website for easy review from anywhere
+write_html() {
+  # prepare the HTML file for website
+  log.stat "creating HTML file ($html_file) ..."
+  strip_ansi_codes $my_logfile  
+  cat $std_header| sed -e "$sed_st"  > $html_file
+  echo "<body><pre>" >> $html_file
+  echo "<h3>$my_version --- scan report results </h3>" >> $html_file
+  echo "<b>Scan Path:</b> $scan_path<br>" >> $html_file
+  case $exit_code in 
+    0)
+      echo "<b>Status:</b><font color=\"blue\"> All clean</font><br>" >> $html_file
+      ;;
+    1)
+      echo "<b>Status:</b><font color=\"red\"> Found one or more virus</font><br>" >> $html_file
+      ;;
+    2)
+      echo "<b>Status:</b><font color=\"red\"> ClamAV failed on scan</font><br>" >> $html_file
+      ;;
+    *)
+      echo "<b>Status:</b>Unknown<br>" >> $html_file
+      ;;
+  esac
+  echo "<b>Status code:</b> $exit_code<br>" >> $html_file
+  cat $my_logfile  >> $html_file
+  echo "</pre>" >> $html_file
+  cat $std_footer >> $html_file
+  mv $html_file ${www_root}/.
+}
+
 scan_single_file() {
   log.stat "Scanning file: '$single_file' ... "
   if [ -f "$single_file" ]; then
-    $clamscan_bin $verbose_opt $clamscan_opts "$single_file" >> $my_logfile
+    $clamscan_bin $clamscan_opts "$single_file" >> $my_logfile
     exit_code=$?
     cat $virus_report
   else
@@ -267,6 +310,9 @@ while getopts "$options_list" opt ; do
       update_all
       exit $exit_code
       ;;
+    w)
+      need_html=1
+      ;;
     v)
       verbose_opt="-v"
       verbose=1
@@ -279,11 +325,12 @@ done
 
 # add excludes (file/dir) default plus additional commandline passed to options
 clamscan_opts="$verbose_opt $clamscan_opts --exclude-dir=\"$exclude_dirs\" --exclude=\"$exclude_files\""
-log.stat "-------------------- VIRUS SCAN log starting --------------------"
 log.stat "Scan start:   `date`" 
 log.stat "Scan host:    $my_host"
 if [ ! -z $email_address ] ; then
   log.stat "Email report: Yes"
+else
+  log.stat "Email report: No"
 fi
 log.stat "Scan path:    $scan_path "
 log.stat "Scan bin:     $clamscan_bin "
@@ -309,30 +356,28 @@ if [ $changed_only -eq 1 ] ; then
   for dir in $scan_path ; do
     find $dir -type f -mtime -$days_since -exec echo {} \; >> $changed_files
   done
-  log.stat "Full command: $clamscan_bin $verbose_opt $clamscan_opts -f $changed_files"
+  log.stat "Full command: $clamscan_bin $clamscan_opts -f $changed_files"
   log.stat "Scanning changed files in the last $days_since day(s) under '$scan_path'"
-  $clamscan_bin $verbose_opt $clamscan_opts -f $changed_files >> $my_logfile 2>&1
+  $clamscan_bin $clamscan_opts -f $changed_files >> $my_logfile 2>&1
   exit_code=$?
 else
-  log.stat "Full command: $clamscan_bin $verbose_opt $clamscan_opts $scan_path"
+  log.stat "Full command: $clamscan_bin $clamscan_opts $scan_path"
   log.stat "Scanning ALL files under: $scan_path" 
-  $clamscan_bin $verbose_opt $clamscan_opts $scan_path >> $my_logfile 2>&1
+  $clamscan_bin $clamscan_opts $scan_path >> $my_logfile 2>&1
   exit_code=$?
 fi
-log.stat ""
-log.stat "Scan end for $scan_path: `date`"
-log.stat "Total runtime: $(elapsed_time)"
-log.stat "Return code: $exit_code"
-log.stat "Following is virus report for: $scan_path"
-log.stat ""
 cat $virus_report >> $my_logfile
-log.stat ""
-log.stat "-------------------- VIRUS SCAN log end --------------------"
+# clamscan return (0: no virus; 1: virus found 2: some errors occured)
+log.stat "Scan completed with exit code: $exit_code"
+log.stat "Total runtime: $(elapsed_time)"
 
 # send e-mail if address provided
-# clamscan return (0: no virus; 1: virus found 2: some errors occured)
-log.stat "Scan complete w/ status $exit_code; Results are e-mailed"
 send_mail "$exit_code"
+
+# create HTML with stats if requested
+if [ $need_html -ne 0 ] ; then
+  write_html
+fi
 
 # exit w/ clamscan status for calling scripts
 exit $exit_code
