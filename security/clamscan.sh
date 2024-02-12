@@ -103,7 +103,7 @@ EOF
 # optional function to write html file to show on our website for easy review from anywhere
 write_html() {
   # prepare the HTML file for website
-  log.stat "creating HTML file ($html_file) ..."
+  log.debug "creating HTML file ($html_file) ..."
   strip_ansi_codes $my_logfile  
   cat $std_header| sed -e "$sed_st"  > $html_file
   echo "<body><pre>" >> $html_file

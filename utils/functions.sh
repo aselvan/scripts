@@ -89,8 +89,6 @@ send_mail() {
     data_file=$logger_file
   fi
 
-  
-  log.stat "Sending mail ..."
   if [ $status -ne 0 ] ; then
     log.debug "Sending failure mail ..."
     # strip any ansi chars
