@@ -107,20 +107,20 @@ write_html() {
   strip_ansi_codes $my_logfile  
   cat $std_header| sed -e "$sed_st"  > $html_file
   echo "<body><pre>" >> $html_file
-  echo "<h3>$my_version --- scan report results </h3>" >> $html_file
+  echo "<h3>$my_version --- Daily virus scan report log @$host_name </h3>" >> $html_file
   echo "<b>Scan Path:</b> $scan_path<br>" >> $html_file
   case $exit_code in 
     0)
-      echo "<b>Status:</b><font color=\"blue\"> All clean</font><br>" >> $html_file
+      echo "<b>Result:</b><font color=\"blue\"> All clean</font><br>" >> $html_file
       ;;
     1)
-      echo "<b>Status:</b><font color=\"red\"> Found one or more virus</font><br>" >> $html_file
+      echo "<b>Result:</b><font color=\"red\"> Found one or more virus!</font><br>" >> $html_file
       ;;
     2)
-      echo "<b>Status:</b><font color=\"red\"> ClamAV failed on scan</font><br>" >> $html_file
+      echo "<b>Result:</b><font color=\"red\"> ClamAV failed on scan!</font><br>" >> $html_file
       ;;
     *)
-      echo "<b>Status:</b>Unknown<br>" >> $html_file
+      echo "<b>Result:</b>Unknown<br>" >> $html_file
       ;;
   esac
   echo "<b>Status code:</b> $exit_code<br>" >> $html_file
