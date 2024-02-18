@@ -7,11 +7,12 @@
 #
 # Author : Arul Selvan
 # Version History: 
-#   Jan 27, 2024 --- Initial version
-#   Feb  4, 2024 --- Added functionality to create HTML file, changed output format
+#   Jan 27,  2024 --- Initial version
+#   Feb  4,  2024 --- Added functionality to create HTML file, changed output format
+#   Feb  16, 2024 --- Default to use udp, added option to use tcp.
 #
 # version format YY.MM.DD
-version=24.02.04
+version=24.02.16
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Finds the max average jitter along the hop"
@@ -25,11 +26,12 @@ scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
 
 # commandline options
-options="s:c:o:wvh?"
+options="s:c:o:wtvh?"
 
 my_ip=`wget -qO- ifconfig.me/ip`
 server="speed.cloudflare.com"
 count=30
+protocol="udp"
 jitter_output="/tmp/$(echo $my_name|cut -d. -f1).txt"
 
 # For HTML file content (change as needed)
@@ -55,6 +57,8 @@ Usage: $my_name [options]
   -o <file>  ---> append output to file for monitoring over a period of time [Default: $jitter_output]
   -w         ---> writes HTML file ($html_file) in addition for web server display.
   -v         ---> enable verbose, otherwise just errors are printed
+  -t         ---> tcp protocol is used [Default: $protocol]
+  -t         ---> enable verbose, otherwise just errors are printed
   -h         ---> print usage/help
 
   example: $my_name -s $server -c$count
@@ -107,6 +111,9 @@ while getopts $options opt ; do
     w)
       need_html=1
       ;;
+    t)
+      protocol="tcp"
+      ;;
     v)
       verbose=1
       ;;
@@ -129,8 +136,13 @@ if [ $need_html -ne 0 ] ; then
   jitter_output=$home_dir/jitter_max.txt
 fi
 
-# run jitter test and determine the router/hop that takes high ave jitter
-mtr -n -c$count -o "M" -r $server | awk -v ts="[$(date +'%D %H:%M %p')]" 'NR>2 {if ($NF+0 > max+0) {max=$NF; line=$2}} END {print ts, " Router/Hop:",line, "; Avg Max jitter:",max}' | tee -a $jitter_output
+# run jitter test and determine which router/hop that has high ave jitter
+# 
+# awk checks if the last field is "not blank" && "not IP address" && "not greater than previous value"
+# This is done this way since with --tcp or --udp option, there are lines in mtr output that contains
+# just the IP address and nothing else on some lines only
+mtr -n -c$count --${protocol} -o "M" -r $server | awk -v ts="[$(date +'%D %H:%M %p')]" 'NR>2 {if ($NF !~ /^ *$/ && $NF !~ /^([0-9]{1,3}\.){3}[0-9]{1,3}$/ && $NF+0 > max+0) {max=$NF; line=$2}} END {print ts, " Router/Hop:",line, "; Avg Max jitter:",max}'
+
 
 # create HTML file if requested
 if [ $need_html -ne 0 ] ; then
