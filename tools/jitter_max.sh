@@ -12,7 +12,7 @@
 #   Feb  16, 2024 --- Default to use udp, added option to use tcp.
 #
 # version format YY.MM.DD
-version=24.02.16
+version=24.02.21
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Finds the max average jitter along the hop"
@@ -141,7 +141,7 @@ fi
 # awk checks if the last field is "not blank" && "not IP address" && "not greater than previous value"
 # This is done this way since with --tcp or --udp option, there are lines in mtr output that contains
 # just the IP address and nothing else on some lines only
-mtr -n -c$count --${protocol} -o "M" -r $server | awk -v ts="[$(date +'%D %H:%M %p')]" 'NR>2 {if ($NF !~ /^ *$/ && $NF !~ /^([0-9]{1,3}\.){3}[0-9]{1,3}$/ && $NF+0 > max+0) {max=$NF; line=$2}} END {print ts, " Router/Hop:",line, "; Avg Max jitter:",max}'
+mtr -n -c$count --${protocol} -o "M" -r $server | awk -v ts="[$(date +'%D %H:%M %p')]" 'NR>2 {if ($NF !~ /^ *$/ && $NF !~ /^([0-9]{1,3}\.){3}[0-9]{1,3}$/ && $NF+0 > max+0) {max=$NF; line=$2}} END {print ts, " Router/Hop:",line, "; Avg Max jitter:",max}' | tee -a $jitter_output
 
 
 # create HTML file if requested
