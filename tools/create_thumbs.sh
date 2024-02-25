@@ -7,9 +7,11 @@
 #   brew install tidy imagemagick (macOS)
 #
 # Author:  Arul Selvan
-# Version: Dec 6, 2008
-# Updated: Mar 14, 2021
 #
+# Version History:
+#   Dec 6,  2008 --- Original version
+#   Mar 14, 2021 --- Added FB, whatsAPP links?
+#   Feb 25, 2024 --- Updated footer to include dynamic date and all our owned domains.
 
 os_name=`uname -s`
 my_name=`basename $0`
@@ -125,9 +127,12 @@ do_create_thumbs() {
   echo "<p align=\"center\">[<a href=\"../\">Photos</a>]   [<a href=\"../../\" target=\"_blank\">Home</a>]" >> $index_file
 
   # write a footer 
-  echo "<blockquote> <hr align=\"center\" size=\"2\" noshade> <center><small>Copyright (c) 1999-2023" >> $index_file
-  echo " <a href=\"https://selvans.net/\" target=\"_blank\" >https://selvans.net</a> <br>" >> $index_file
-  echo "Last updated: $today </small> </center></blockquote>" >> $index_file
+  echo "<blockquote> <hr align=\"center\" size=\"2\" noshade> <center><small> " >> $index_file
+  echo "Copyright &copy; 1999-<script>document.write(new Date().getFullYear())</script>" >> $index_file
+  echo " <a href=\"https://selvans.net/\" target=\"_blank\"> selvans.net</a> , " >> $index_file
+  echo " <a href=\"https://selvansoft.com/\" target=\"_blank\"> selvansoft.com</a> , " >> $index_file
+  echo " <a href=\"https://mypassword.us/\" target=\"_blank\"> mypassword.us</a><br> " >> $index_file
+  echo "Last updated: <script>document.write(document.lastModified);</script> </small> </center></blockquote>" >> $index_file
   echo "</body></html>" >> $index_file
 
   # tidy up html to be radable
