@@ -11,8 +11,9 @@
 # Version: Jan 6, 2018 --- original version
 # Version: Mar 1, 2023 --- updated with option and support for andrioid 10 or later.
 #
+
 # ensure path for utilities
-export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
+export PATH="/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
 
 # version format YY.MM.DD
 version=24.01.06
