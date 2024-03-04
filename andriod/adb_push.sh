@@ -10,7 +10,7 @@
 #
 
 # ensure path for cron runs
-export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
+export PATH="/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
 
 # version format YY.MM.DD
 version=23.11.18
