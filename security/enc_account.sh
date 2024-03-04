@@ -29,8 +29,8 @@ my_logfile="/tmp/$(echo $my_name|cut -d. -f1).log"
 default_scripts_github=$HOME/src/scripts.github
 scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
-# ensure path for cron runs
-export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
+# ensure path for cron runs (prioritize usr/local first)
+export PATH="/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
 
 # directory where the encrypted files are stored
 KEYS_HOME="$HOME/data/personal/keys"
