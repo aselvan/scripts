@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 ###########################################################################################
 # weekly_backup.sh --- script to do weekly back up of selvans.net 
@@ -11,10 +11,11 @@
 #    May 25, 2013 --- Original version
 #    Jan 14, 2024 --- Updated to use logger and function utilities
 #    Jan 17, 2024 --- Updated to use rsync log, disabled special case handling for offsite
+#    Mar 6,  2024 --- Added commandline option to provide device list array
 ###########################################################################################
 
 # version format YY.MM.DD
-version=24.01.17
+version=24.03.06
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Weekly backup of selvans.net"
@@ -25,7 +26,7 @@ default_scripts_github=$HOME/src/scripts.github
 scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
 # commandline options
-options_list="e:o:h"
+options_list="e:d:h"
 
 # ensure path for cron runs
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
@@ -56,19 +57,19 @@ current_device_model="N/A"
 
 # list of devices: descriptive name and mount points. NOTE: the /etc/fstab
 # entry should be setup to right device for each of the mount point specified.
-device_names=("PRIMARY,/media/usb-1tb-2" "SECONDARY,/media/usb-1tb-3" "TERTIARY eSATA-RAID,/media/sata-3tb" "OFFSITE SSD,$offsite_device" )
+device_names=("PRIMARY:/media/usb-1tb-2" "SECONDARY:/media/usb-1tb-3" "TERTIARY eSATA-RAID:/media/sata-3tb")
 
 usage() {
   cat << EOF
 $my_name - $my_title
 
 Usage: $my_name [options]
-  -e <email>  ---> email address to send backup report
-  -o <device> ---> mark this as offsite device for special handling [default: $offsite_device]
-  -v          ---> enable verbose, otherwise just errors are printed
-  -h          ---> print usage/help
+  -e <email>   ---> email address to send backup report
+  -d <devices> ---> device name/value pair(s) [default: "${device_names[*]}"]
+  -v           ---> enable verbose, otherwise just errors are printed
+  -h           ---> print usage/help
 
-example: $my_name -h -v
+example: $my_name -e foo@bar.com -d "DeviceName1:/mnt/backup,DeviceName2:/mnt/backup2"
   
 EOF
   exit 0
@@ -142,33 +143,19 @@ do_backup() {
   nice -19 $rsync_bin $rsync_opts /var/www $backup_dir
   echo "$(($SECONDS - $start_time)) second(s)." >> $my_logfile
 
+  start_time=$SECONDS
   echo -n "    Backup of /data/videos4youtube  ... " >> $my_logfile
   nice -19 $rsync_bin $rsync_opts /data/videos4youtube $backup_dir
   echo "$(($SECONDS - $start_time)) second(s)." >> $my_logfile
 
+  start_time=$SECONDS
   echo -n "    Backup of /data/debbie-backup  ... " >> $my_logfile
   nice -19 $rsync_bin $rsync_opts /data/debbie-backup $backup_dir
   echo "$(($SECONDS - $start_time)) second(s)." >> $my_logfile
 
-  #
-  # NOTE: 
-  #   Skip this for offsite storage as we may have sensitive information
-  #   For off-site device so copy just the encrypted container.
-  #
-  # UPDATE: We no longer need to do this special case anymore since we 
-  #   we validated there is no PII included so its ok to copy everything.
-  #   Leaving code here commented, in case we need it later.
-  #
-  # - Jan 17, 2024 (Arul)
-  #         
   start_time=$SECONDS
-  #if [ "$usb_mount" != "$offsite_device" ] ; then
-    echo -n "    Backup of /data/transfer ... " >> $my_logfile
-    nice -19 $rsync_bin $rsync_opts /data/transfer $backup_dir
-  #else
-  #  echo -n "    Off-site backup /data/transfer/arul-backup/data/encrypted" >> $my_logfile
-  #  nice -19 $rsync_bin $rsync_opts /data/transfer/arul-backup/data/encrypted $backup_dir
-  #fi
+  echo -n "    Backup of /data/transfer ... " >> $my_logfile
+  nice -19 $rsync_bin $rsync_opts /data/transfer $backup_dir
   echo "$(($SECONDS - $start_time)) second(s)." >> $my_logfile
 
   start_time=$SECONDS
@@ -218,8 +205,8 @@ while getopts "$options_list" opt; do
     e)
       email_address=$OPTARG
       ;;
-    o)
-      offsite_device="$OPTARG"
+    d)
+      IFS=',' read -r -a device_names <<< "${OPTARG}"
       ;;
     ?|h|*)
       usage
@@ -227,16 +214,14 @@ while getopts "$options_list" opt; do
    esac
 done
 
+
 # remove rsync logfile if present so it doesn't grow as rsync just appends
 if [ -f $rsync_log_file ] ; then
   rm -f $rsync_log_file
 fi
 
-# reset the list in case offsite_device is provided as cmdline option
-device_names=("PRIMARY,/media/usb-1tb-2" "SECONDARY,/media/usb-1tb-3" "TERTIARY eSATA-RAID,/media/sata-3tb" "OFFSITE SSD,$offsite_device" )
-
 for devpair in "${device_names[@]}" ; do
-  IFS=,
+  IFS=:
   keyval=($devpair)
   usb_desc=${keyval[0]}
   usb_mount=${keyval[1]}
