@@ -12,10 +12,11 @@
 #    Jan 14, 2024 --- Updated to use logger and function utilities
 #    Jan 17, 2024 --- Updated to use rsync log, disabled special case handling for offsite
 #    Mar 6,  2024 --- Added commandline option to provide device list array
+#    Mar 11, 2024 --- Added second (new offsite SSD) to the list of default devices.
 ###########################################################################################
 
 # version format YY.MM.DD
-version=24.03.06
+version=24.03.11
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Weekly backup of selvans.net"
@@ -49,15 +50,16 @@ rsync_bin="/usr/bin/rsync"
 # when a device is 90% full, send a nag email
 space_limit_percent=90
 backup_status=0
-offsite_device="/media/usb-ssd-500g"
 IFS_old=$IFS
 current_device="N/A"
 current_device_vendor="N/A"
 current_device_model="N/A"
 
 # list of devices: descriptive name and mount points. NOTE: the /etc/fstab
-# entry should be setup to right device for each of the mount point specified.
-device_names=("PRIMARY:/media/usb-1tb-2" "SECONDARY:/media/usb-1tb-3" "TERTIARY eSATA-RAID:/media/sata-3tb")
+# entry should be setup to right device for each of the mount point specified. 
+# Note: when offsite is swapped between home/chase locker, swap the below i.e uncoment first and comment next
+#device_names=("PRIMARY (Seagate 1TB):/media/usb-1tb-2" "SECONDARY (WD Element 1TB):/media/usb-1tb-3" "TERTIARY (eSATA-RAID 3TB):/media/sata-3tb" "OFFSITE (HP 500g):/media/usb-ssd-500g")
+device_names=("PRIMARY (Seagate 1TB):/media/usb-1tb-2" "SECONDARY (WD Element 1TB):/media/usb-1tb-3" "TERTIARY (eSATA-RAID 3TB):/media/sata-3tb" "OFFSITE (Crucial/micron SSD 1TB):/media/usb-ssd-1tb-crucial")
 
 usage() {
   cat << EOF
