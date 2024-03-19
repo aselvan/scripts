@@ -118,7 +118,7 @@ done
 # reset output to permanant store rather then /tmp/ in the case of html runs
 # also avoid running while already a copy is running.
 if [ $need_html -ne 0 ] ; then
-  if [ ! -f $ping_running ] ; then
+  if [ -f $ping_running ] ; then
     log.error "Alreay a copy of $my_name is running... exiting"
     exit 2
   fi
