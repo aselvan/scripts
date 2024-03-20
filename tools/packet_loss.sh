@@ -67,7 +67,6 @@ write_html() {
   cat $std_header| sed -e "$sed_st"  > $html_file
   echo "<body><pre>" >> $html_file
   echo "<h3>$my_version --- Simple packet loss measure using ping</h3>" >> $html_file
-  echo "<b>Ping Target:</b> $server <br>" >> $html_file
   tac $ping_output  >> $html_file
   echo "</pre>" >> $html_file
   cat $std_footer >> $html_file
@@ -128,7 +127,7 @@ fi
 # run ping 
 touch $ping_running
 result=`ping -c$count $server |grep packets` 
-echo "[$(date +'%D %H:%M %p')] target: $server ; $result" | tee -a $ping_output
+echo "[$(date +'%D %H:%M %p')] $result ; target: $server" | tee -a $ping_output
 rm -f $ping_running
 
 # create HTML file if requested
