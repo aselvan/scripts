@@ -124,14 +124,21 @@ if [ $need_html -ne 0 ] ; then
   ping_output=$home_dir/packet_loss.txt
 fi
 
-# run ping 
-touch $ping_running
-result=$(ping -c$count $server |grep packets)
+# run ping once to see server is good
+ping -q -c1 $server >/dev/null 2>&1
 rc=$?
-if [ $rc -eq 0 ] && [ ! -z "$result" ] ; then
+if [ $rc -ne 0 ] ; then
+  echo "[$(date +'%D %H:%M %p')] ; ERROR: ping $server failed with error code: $rc" | tee -a $ping_output
+  exit 1  
+fi
+
+# run ping with $count times 
+touch $ping_running
+result=$(ping -q -c$count $server 2>&1 |grep packets)
+if [ ! -z "$result" ] ; then
   echo "[$(date +'%D %H:%M %p')] $result ; target: $server" | tee -a $ping_output
 else
-  echo "[$(date +'%D %H:%M %p')] ; ERROR: ping $server failed with error code: $rc" | tee -a $ping_output
+  echo "[$(date +'%D %H:%M %p')] ; ERROR: ping $server returned empty output" | tee -a $ping_output
 fi
 rm -f $ping_running
 
