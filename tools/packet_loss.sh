@@ -8,7 +8,7 @@
 #   Mar 19,  2024 --- Initial version
 #
 # version format YY.MM.DD
-version=24.03.19
+version=24.03.22
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Simple packet loss measure using ping"
@@ -126,8 +126,13 @@ fi
 
 # run ping 
 touch $ping_running
-result=`ping -c$count $server |grep packets` 
-echo "[$(date +'%D %H:%M %p')] $result ; target: $server" | tee -a $ping_output
+result=$(ping -c$count $server |grep packets)
+rc=$?
+if [ $rc -eq 0 ] && [ ! -z "$result" ] ; then
+  echo "[$(date +'%D %H:%M %p')] $result ; target: $server" | tee -a $ping_output
+else
+  echo "[$(date +'%D %H:%M %p')] ; ERROR: ping $server failed with error code: $rc" | tee -a $ping_output
+fi
 rm -f $ping_running
 
 # create HTML file if requested
