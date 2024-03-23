@@ -8,7 +8,7 @@
 #   Mar 19,  2024 --- Initial version
 #
 # version format YY.MM.DD
-version=24.03.22
+version=24.03.23
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Simple packet loss measure using ping"
@@ -22,11 +22,10 @@ scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
 
 # commandline options
-options="s:c:o:wtvh?"
+options="s:c:o:wlvh?"
 
 server="speed.cloudflare.com"
 count=256
-protocol="udp"
 ping_output="/tmp/$(echo $my_name|cut -d. -f1).txt"
 ping_running="/tmp/$(echo $my_name|cut -d. -f1).running"
 
@@ -41,17 +40,18 @@ www_root=/var/www
 html_file=$home_dir/packet_loss.html
 std_header=$www_root/std_header.html
 std_footer=/var/www/std_footer.html
-
+packet_loss_only=0
 
 usage() {
 cat << EOF
 $my_name - $my_title
 
 Usage: $my_name [options]
-  -s <host>  ---> target server to measure packet loss [Default: $server]
+  -s <host>  ---> target server to measure packet loss [default: $server]
   -c <count> ---> number of times to repeat ping run [Default: $count]
-  -o <file>  ---> append output to file for monitoring over a period of time [Default: $ping_output]
+  -o <file>  ---> append output to file for monitoring over a period of time [default: $ping_output]
   -w         ---> writes HTML file ($html_file) in addition for web server display.
+  -l         ---> print only packet loss runs on HTML file [note: this is valid for HTML ouput only]
   -v         ---> enable verbose, otherwise just errors are printed
   -h         ---> print usage/help
 
@@ -67,7 +67,11 @@ write_html() {
   cat $std_header| sed -e "$sed_st"  > $html_file
   echo "<body><pre>" >> $html_file
   echo "<h3>$my_version --- Simple packet loss measure using ping</h3>" >> $html_file
-  tac $ping_output  >> $html_file
+  if [ $packet_loss_only -eq 1 ] ; then
+    tac $ping_output |grep -v "0% packet loss"  >> $html_file
+  else
+    tac $ping_output >> $html_file
+  fi
   echo "</pre>" >> $html_file
   cat $std_footer >> $html_file
   mv $html_file ${www_root}/.
@@ -102,8 +106,8 @@ while getopts $options opt ; do
     w)
       need_html=1
       ;;
-    t)
-      protocol="tcp"
+    l)
+      packet_loss_only=1
       ;;
     v)
       verbose=1
