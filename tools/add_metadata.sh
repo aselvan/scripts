@@ -20,7 +20,7 @@
 # Version History
 # --------------
 #   23.09.17 --- Initial version
-#   24.03.31 --- Use standard includes for logging.
+#   24.03.31 --- Use standard includes for logging, added description metadata.
 
 # version format YY.MM.DD
 version=24.03.31
@@ -34,7 +34,7 @@ default_scripts_github=$HOME/src/scripts.github
 scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
 # commandline options
-options="p:c:a:o:vh?"
+options="p:c:a:o:d:vh?"
 
 # ensure path for cron runs
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
@@ -50,6 +50,7 @@ skip_tag="-wm cg"
 artist="Arul Selvan"
 owner="Arul Selvan"
 copyright="Copyright (c) 2023-2024 SelvanSoft, LLC."
+description="Photo by SelvanSoft, LLC."
 
 usage() {
   cat << EOF
@@ -61,6 +62,7 @@ usage() {
     -c <copyright> ---> copyright string [default: $copyright]
     -a <artist>    ---> artist name [default: $artist]
     -o <owner>     ---> owner name [default: $owner]
+    -d <desc>      ---> description string to set [default: $description]
     -v             ---> verbose mode prints info messages, otherwise just errors are printed
     -h             ---> print usage/help
 
@@ -137,6 +139,9 @@ while getopts $options opt; do
     o)
       owner="$OPTARG"
       ;;
+    d)
+      description="$OPTARG"
+      ;;
     v)
       verbose=1
       ;;
@@ -169,6 +174,6 @@ for fname in ${file_list} ;  do
     continue
   fi
   log.stat "Adding owner/copyright info & reseting OS timestamp of '$fname' ..." $green
-  exiftool $exiftool_opt -artist="$artist" -copyright="$copyright" -ownername="$owner" -overwrite_original $fname 2>&1 >> $my_logfile
+  exiftool $exiftool_opt -artist="$artist" -copyright="$copyright" -ownername="$owner" -ImageDescription="$description" -overwrite_original $fname 2>&1 >> $my_logfile
   reset_os_timestamp $fname
 done
