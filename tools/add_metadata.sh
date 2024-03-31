@@ -3,7 +3,8 @@
 # add_metadata.sh --- add exif metadata to one or more destination files
 #
 # This script will add the exif metadata (for now owner,copyright) 
-# reference file provided to a destination file/path.
+# reference file provided to a destination file/path. Also resets 
+# file timestamps.
 #
 #
 # pre-req: exiftool
@@ -11,39 +12,49 @@
 #  brew install exiftool [MacOS]
 #  apt-get install libimage-exiftool-perl [Linux]
 #
-# Author : Arul Selvan
-# Version: Jun 24, 2023 
+# Author:  Arul Selvan
+# Created: Jun 24, 2023
+#
+# See Also: reset_file_timestamp.sh copy_metadata.sh exif_check.sh geocode_media_files.sh add_metadata.sh reset_media_timestamp.sh exif_check.sh
+#
+# Version History
+# --------------
+#   23.09.17 --- Initial version
+#   24.03.31 --- Use standard includes for logging.
+
+# version format YY.MM.DD
+version=24.03.31
+my_name="`basename $0`"
+my_version="`basename $0` v$version"
+my_title="add metadata (for now just owner,artist,copyright) to one or more destination files"
+my_dirname=`dirname $0`
+my_path=$(cd $my_dirname; pwd -P)
+my_logfile="/tmp/$(echo $my_name|cut -d. -f1).log"
+default_scripts_github=$HOME/src/scripts.github
+scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
+
+# commandline options
+options="p:c:a:o:vh?"
 
 # ensure path for cron runs
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
 
-# version format YY.MM.DD
-version=23.09.17
-my_name="`basename $0`"
-my_version="`basename $0` v$version"
-dir_name=`dirname $0`
-my_path=$(cd $dir_name; pwd -P)
-options="p:c:a:o:vh?"
-log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
-log_init=0
-verbose=0
-green=32
-red=31
-blue=34
 exiftool_opt="-m"
 type_check=0
 ref_file=""
 dest_path=""
 file_list=""
 skip_tag="-wm cg"
+
+# defaukt metadata
 artist="Arul Selvan"
 owner="Arul Selvan"
-copyright="Copyright (c) 2023 SelvanSoft, LLC."
+copyright="Copyright (c) 2023-2024 SelvanSoft, LLC."
 
 usage() {
   cat << EOF
 
-  $my_name --- add metadata (for now just owner,artist,copyright) to one or more destination files
+  $my_name - $my_title
 
   Usage: $my_name [options]
     -p <path>      ---> destination file/path to add metadata
@@ -53,59 +64,12 @@ usage() {
     -v             ---> verbose mode prints info messages, otherwise just errors are printed
     -h             ---> print usage/help
 
-  example: $my_name -p "*.jpg" -o "Foobar" -c "Copyright (c) 2023, Foobar, allrights reserved"
+  example: $my_name -p "*.jpg" -o "Foobar" -c "Copyright (c) 2024, Foobar, allrights reserved"
+
+  See Also: reset_file_timestamp.sh copy_metadata.sh exif_check.sh geocode_media_files.sh add_metadata.sh reset_media_timestamp.sh exif_check.sh
 
 EOF
   exit 0
-}
-
-# -- Log functions ---
-log.init() {
-  if [ $log_init -eq 1 ] ; then
-    return
-  fi
-
-  log_init=1
-  if [ -f $log_file ] ; then
-    rm -f $log_file
-  fi
-  echo -e "\e[0;34m$my_version, `date +'%m/%d/%y %r'` \e[0m" | tee -a $log_file
-}
-
-log.info() {
-  if [ $verbose -eq 0 ] ; then
-    return;
-  fi
-  log.init
-  local msg=$1
-  echo -e "\e[0;32m$msg\e[0m" | tee -a $log_file 
-}
-log.debug() {
-  if [ $verbose -eq 0 ] ; then
-    return;
-  fi
-  log.init
-  local msg=$1
-  echo -e "\e[1;30m$msg\e[0m" | tee -a $log_file 
-}
-log.stat() {
-  log.init
-  local msg=$1
-  local color=$2
-  if [ -z $color ] ; then
-    color=$blue
-  fi
-  echo -e "\e[0;${color}m$msg\e[0m" | tee -a $log_file 
-}
-log.warn() {
-  log.init
-  local msg=$1
-  echo -e "\e[0;33m$msg\e[0m" | tee -a $log_file 
-}
-log.error() {
-  log.init
-  local msg=$1
-  echo -e "\e[0;31m$msg\e[0m" | tee -a $log_file 
 }
 
 
@@ -146,9 +110,18 @@ reset_os_timestamp() {
 }
 
  
-# ----------  main --------------
-# parse commandline options
-log.init
+# -------------------------------  main -------------------------------
+# First, make sure scripts root path is set, we need it to include files
+if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
+  # include logger, functions etc as needed 
+  source $scripts_github/utils/logger.sh
+else
+  echo "ERROR: SCRIPTS_GITHUB env variable is either not set or has invalid path!"
+  echo "The env variable should point to root dir of scripts i.e. $default_scripts_github"
+  exit 1
+fi
+# init logs
+log.init $my_logfile
 
 while getopts $options opt; do
   case $opt in
@@ -195,7 +168,7 @@ for fname in ${file_list} ;  do
     log.warn "The file '$fname' is not known media type, skipping ..."
     continue
   fi
-  log.stat "Adding owner/copyright info and reseting OS timestamp of '$fname' ..." $green
-  exiftool $exiftool_opt -artist="$artist" -copyright="$copyright" -ownername="$owner" -overwrite_original $fname 2>&1 >> $log_file
+  log.stat "Adding owner/copyright info & reseting OS timestamp of '$fname' ..." $green
+  exiftool $exiftool_opt -artist="$artist" -copyright="$copyright" -ownername="$owner" -overwrite_original $fname 2>&1 >> $my_logfile
   reset_os_timestamp $fname
 done

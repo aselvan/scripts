@@ -8,13 +8,16 @@
 # Author : Arul Selvan
 # Created: Jul 10, 2022
 #
+#  See Also: reset_file_timestamp.sh copy_metadata.sh exif_check.sh geocode_media_files.sh add_metadata.sh reset_media_timestamp.sh exif_check.sh
+#
 # Version History
 # --------------
 #   22.07.10 --- Initial version
 #   23.03.21 --- Use stanard logging, with terse support
+#   24.03.31 --- Added "see also" for related tools
 
 # version format YY.MM.DD
-version=23.11.25
+version=24.03.31
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="reset a file timestamp using the 'createdate' from its metadata"
@@ -42,6 +45,8 @@ Usage: $my_name [options]
   -v         ---> enable verbose, otherwise just errors are printed
 
   example: $my_name -p "$HOME/*.jpg"
+
+  See Also: reset_file_timestamp.sh copy_metadata.sh exif_check.sh geocode_media_files.sh add_metadata.sh reset_media_timestamp.sh exif_check.sh
 EOF
   exit 0
 }
