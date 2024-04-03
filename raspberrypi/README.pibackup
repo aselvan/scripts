@@ -1,0 +1,27 @@
+#
+# Steps to backup raspberyPI image.
+#
+# Follow this steps to backup the raspberrypi to a image for use in the case
+# the SD card went bad. This image can be copied to a brand new SD card to bring
+# back the PI instantly. 
+#
+# NOTE: The new SD card must be least the current size of the broken SD card or 
+# larger size. 
+#
+#
+# Author:  Arul Selvan
+# Version: Aug 30, 2020
+#
+# Ref:    https://www.tomshardware.com/how-to/back-up-raspberry-pi-as-disk-image
+# Credit: https://github.com/Drewsif/PiShrink --- forked to my github https://github.com/PiShrink)
+
+#
+# Steps
+#
+1. wget https://github.com/aselvan/PiShrink/blob/master/pishrink.sh
+2. Attach a external USB to PI4 (should be same size or bigger than current running SD card)
+3. run lsblk to get the PI sd card's block device we need [typically it should be /dev/mmcblk0]
+4. sudo dd if=/dev/mmcblk0 of=<where external disk is mounted>/pi4backup.img bs=1M
+5. copy the pi4backup.img to a linux host
+6. run "sudo pishrink.sh -z pi4backup.img pi4backup_shrinked.img"
+7. Finally, save the shrinked image as your PI backup image.
