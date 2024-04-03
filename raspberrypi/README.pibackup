@@ -6,8 +6,7 @@
 # back the PI instantly. 
 #
 # NOTE: The new SD card must be least the current size of the broken SD card or 
-# larger size. 
-#
+# larger size.
 #
 # Author:  Arul Selvan
 # Version: Aug 30, 2020
@@ -25,3 +24,11 @@
 5. copy the pi4backup.img to a linux host
 6. run "sudo pishrink.sh -z pi4backup.img pi4backup_shrinked.img"
 7. Finally, save the shrinked image as your PI backup image.
+
+#
+# PS: If you dont have physical access to your PI4, you can replace the step #4 with the 
+# following and ignore step#2
+#
+4. ssh root@pi "dd if=/dev/mmcblk0 bs=1M" | dd of=pi4backup.img bs=1M
+
+
