@@ -21,7 +21,14 @@
 # Author  : Arul Selvan
 # Version : Oct 11, 2022
 #
-version=23.11.25
+# See Also: reset_file_timestamp.sh copy_metadata.sh exif_check.sh geocode_media_files.sh add_metadata.sh reset_media_timestamp.sh exif_check.sh
+#
+# Version History
+# --------------
+#   22.10.11 --- Initial version
+#   24.04.07 --- Added see also
+#
+version=24.04.07
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Add lat/lon to media files"
