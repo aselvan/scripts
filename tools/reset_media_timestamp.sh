@@ -56,6 +56,9 @@ Usage: $my_name [options]
 
   example: $my_name -p image.jpg -t 202209141800
   example: $my_name -p "/home/images/*.jpg" -t 202209141800
+
+  See Also: reset_file_timestamp.sh copy_metadata.sh exif_check.sh geocode_media_files.sh add_metadata.sh reset_media_timestamp.sh exif_check.sh
+
 EOF
   exit 0
 }

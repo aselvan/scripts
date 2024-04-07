@@ -70,8 +70,11 @@ Usage: $my_name [options]
   -l <lat,lon> ---> use this values in quotes separated by comma/space for lat/lon [note: -a arg will be ignored]
   -v           ---> enable verbose, otherwise just errors are printed
 
-example: $my_name -p photo.jpg -a "1600 Amphitheatre Parkway Mountain View, CA 94043"
-example: $my_name -p "/data/photos/*.jpg" -l "37.422288,-122.085652"
+  example: $my_name -p photo.jpg -a "1600 Amphitheatre Parkway Mountain View, CA 94043"
+  example: $my_name -p "/data/photos/*.jpg" -l "37.422288,-122.085652"
+
+  See Also: reset_file_timestamp.sh copy_metadata.sh exif_check.sh geocode_media_files.sh add_metadata.sh reset_media_timestamp.sh exif_check.sh
+
 EOF
   exit 0
 }
