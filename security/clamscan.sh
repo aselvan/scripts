@@ -211,6 +211,7 @@ PUA.Doc.Packed.EncryptedDoc-6563700-0
 PUA.Andr.Trojan.Mobidash-6840972-0
 PUA.Win.Tool.Packed-176
 PUA.Win.Exploit.CVE_2012_1461-1
+PUA.Pdf.Trojan.OpenActionObjectwithJavascript-1
 EOF
   chmod a+rw $clamav_lib_path/local.ign2
   log.stat "Content of $clamav_lib_path/local.ign2 "
