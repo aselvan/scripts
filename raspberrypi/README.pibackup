@@ -29,6 +29,5 @@
 # PS: If you dont have physical access to your PI4, you can replace the step #4 with the 
 # following and ignore step#2
 #
-4. ssh root@pi "dd if=/dev/mmcblk0 bs=1M" | dd of=pi4backup.img bs=1M
-
+4. ssh root@pi "dd if=/dev/mmcblk0 bs=32M" | dd of=pi4backup.img
 
