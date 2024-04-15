@@ -21,11 +21,12 @@ default_scripts_github=$HOME/src/scripts.github
 scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
 # commandline options
-options="levh?"
+options="lervh?"
 
 # ensure path for cron runs
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
 
+resolve_ip="-n"
 list_option=0
 
 usage() {
@@ -35,10 +36,12 @@ $my_name - $my_title
 Usage: $my_name [options]
   -l  ---> Show only ports listening [default: all]
   -e  ---> Show only ports with established connections [default: all]
+  -r  ---> Resolve remote address to hostname [WARN: this will take a while]
   -v  ---> enable verbose, otherwise just errors are printed
   -h  ---> print usage/help
 
 example: $my_name -e
+example: $my_name -e -r
  
 EOF
   exit 0
@@ -48,14 +51,14 @@ show_listen() {
   log.stat "\nList of services Listening"
   printf "%-20s %-10s %-20s\n"  "Application" "User" "Listen"
   printf "%-20s %-10s %-20s\n"  "-----------" "----" "------"
-  lsof +c 0 -n -i | grep LISTEN | sort -f -k 1,1 |awk '{printf "%-*s %-*s %-*s %-*s\n", 20,$1, 10,$3, 3,$8, 20,$9}' | tee -a $my_logfile
+  lsof +c 0 $resolve_ip -i | grep LISTEN | sort -f -k 1,1 |awk '{printf "%-*s %-*s %-*s %-*s\n", 20,$1, 10,$3, 3,$8, 20,$9}' | tee -a $my_logfile
 }
 
 show_established() {
   log.stat "\nList of connection established"
   printf "%-40s %-10s %-50s\n"  "Application" "User" "Established"
   printf "%-40s %-10s %-50s\n"  "-----------" "----" "-----------"
-  lsof +c 0 -n -i | grep EST | sort -f -k 1,1 | awk '{printf "%-*s %-*s %-*s %-*s\n", 40,$1, 10,$3, 3,$8, 20,$9}' | tee -a $my_logfile
+  lsof +c 0 $resolve_ip -i | grep EST | sort -f -k 1,1 | awk '{printf "%-*s %-*s %-*s %-*s\n", 40,$1, 10,$3, 3,$8, 20,$9}' | tee -a $my_logfile
 }
 
 # -------------------------------  main -------------------------------
@@ -80,6 +83,9 @@ while getopts $options opt ; do
       ;;
     e)
       list_option=2
+      ;;
+    r)
+      resolve_ip=""
       ;;
     v)
       list_option=1
