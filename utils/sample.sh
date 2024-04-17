@@ -21,8 +21,8 @@ scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 # commandline options
 options="e:vh?"
 
-# ensure path for cron runs
-export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
+# ensure path for cron runs (prioritize usr/local first)
+export PATH="/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
 
 usage() {
   cat << EOF
