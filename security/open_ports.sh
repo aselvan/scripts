@@ -23,8 +23,8 @@ scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 # commandline options
 options="lervh?"
 
-# ensure path for cron runs
-export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
+# ensure path for cron runs (prioritize usr/local first)
+export PATH="/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
 
 resolve_ip="-n"
 list_option=0
@@ -48,7 +48,8 @@ EOF
 }
 
 show_listen() {
-  log.stat "\nList of services Listening"
+  log.stat "\nLIST OF SERVICES"
+  log.stat "================="
   printf "%-20s %-10s %-20s\n"  "Application" "User" "Listen"
   printf "%-20s %-10s %-20s\n"  "-----------" "----" "------"
   if [ $os_name = "Darwin" ] ; then
@@ -60,14 +61,15 @@ show_listen() {
 }
 
 show_established() {
-  log.stat "\nList of connection established"
-  printf "%-40s %-10s %-50s\n"  "Application" "User" "Established"
-  printf "%-40s %-10s %-50s\n"  "-----------" "----" "-----------"
+  log.stat "\nLIST OF CONNECTIONS"
+  log.stat "===================="
+  printf "%-32s %-10s %-50s\n"  "Application" "User" "Established"
+  printf "%-32s %-10s %-50s\n"  "-----------" "----" "-----------"
   if [ $os_name = "Darwin" ] ; then
     # maxOS adds weird \x20 for spaces that is impossible to get rid of so we are leaving '\' but striping x20
-    lsof +c 0 $resolve_ip -i | grep EST | sort -f -k 1,1 | awk '{ gsub("x20","",$1); printf "%-*s %-*s %-*s %-*s\n", 40,$1, 10,$3, 3,$8, 20,$9}' | tee -a $my_logfile
+    lsof +c 0 $resolve_ip -i | grep EST | sort -f -k 1,1 | awk '{ gsub("x20","",$1); printf "%-*s %-*s %-*s %-*s\n", 32,$1, 10,$3, 3,$8, 20,$9}' | tee -a $my_logfile
   else
-    lsof +c 0 $resolve_ip -i | grep EST | sort -f -k 1,1 | awk '{printf "%-*s %-*s %-*s %-*s\n", 40,$1, 10,$3, 3,$8, 20,$9}' | tee -a $my_logfile
+    lsof +c 0 $resolve_ip -i | grep EST | sort -f -k 1,1 | awk '{printf "%-*s %-*s %-*s %-*s\n", 32,$1, 10,$3, 3,$8, 20,$9}' | tee -a $my_logfile
   fi
 }
 
