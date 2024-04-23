@@ -12,6 +12,7 @@
 #   Dec 6,  2008 --- Original version
 #   Mar 14, 2021 --- Added FB, whatsAPP links?
 #   Feb 25, 2024 --- Updated footer to include dynamic date and all our owned domains.
+#   Apr 23, 2024 --- Added image_link classes and hard-code font size
 
 os_name=`uname -s`
 my_name=`basename $0`
@@ -70,6 +71,21 @@ do_create_thumbs() {
   echo "<html><head><title>$site_name - $title</title>" >> $index_file
   echo "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">" >> $index_file
   echo "<link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css\">" >> $index_file
+  # some styles inline 
+  echo "<style> 
+    .image-link {
+      max-width: 100%;
+      height: auto;
+    }
+    H1 {
+      font-family: $font_family ;
+      font-size: 20px;
+    }
+    P {
+      font-family: $font_family ;
+      font-size: 15px;
+    }
+  </style>" >> $index_file
   #echo "<style type=\"text/css\">H1, P {font-family: $font_family}</style>" >> $index_file
   echo "</head> <body bgcolor=\"$bg_color\" text=\"$text_color\"" >> $index_file 
   echo "vlink=\"$vlink_color\" link=\"$link_color\">" >> $index_file
@@ -103,7 +119,7 @@ do_create_thumbs() {
 		convert $convert_opt $fname thumb/$thumb_fname >> $log_file 2>&1
     
     echo "<p align=\"center\">" >> $index_file
-    echo "<a href=\"$fname\"><img src=\"thumb/$thumb_fname\"" >> $index_file
+    echo "<a href=\"$fname\" class=\"image-link\"><img src=\"thumb/$thumb_fname\"" >> $index_file
     echo "alt=\"$fname\"></a><br>" >> $index_file
     
     # whatsapp share
