@@ -10,95 +10,43 @@
 # Author : Arul Selvan
 # Version: Jan 13, 2023
 
-# ensure path for cron runs
-export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
-
 # version format YY.MM.DD
-version=23.09.17
-my_name=`basename $0`
-my_version="$my_name v$version"
-os_name=`uname -s`
+version=24.04.25
+my_name="`basename $0`"
+my_version="`basename $0` v$version"
+my_title="Query specific exif metadata present on a media file."
+my_dirname=`dirname $0`
+my_path=$(cd $my_dirname; pwd -P)
+my_logfile="/tmp/$(echo $my_name|cut -d. -f1).log"
+default_scripts_github=$HOME/src/scripts.github
+scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
+
+# commandline options
 options="p:ltah"
-log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
-log_init=0
-verbose=0
-failure=0
-green=32
-red=31
-blue=34
+
+# ensure path for cron runs (prioritize usr/local first)
+export PATH="/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
+
 source_path=""
 exiftool_opt="-m"
 check_gps=0
 check_camera=0
 check_createtime=0
-
-# ensure path for cron runs
-export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
+dir_name=""
 
 usage() {
   cat << EOF
-
-  $my_name --- Query specific exif metadata present on a media file
-
-  Usage: $my_name [options]
-    -l  ---> check if lat/lon present as metadata
-    -t  ---> check if createdate present as metadata
-    -a  ---> check both createdate and gps present as metadata
-    -v  ---> verbose mode prints info messages, otherwise just errors are printed
-    -h  ---> print usage/help
+$my_title
+Usage: $my_name [options]
+  -l  ---> check if lat/lon present as metadata
+  -t  ---> check if createdate present as metadata
+  -a  ---> check both createdate and gps present as metadata
+  -v  ---> verbose mode prints info messages, otherwise just errors are printed
+  -h  ---> print usage/help
   
   example: $my_name -l -p image.jpg
 EOF
   exit 0
-}
-
-# -- Log functions ---
-log.init() {
-  if [ $log_init -eq 1 ] ; then
-    return
-  fi
-
-  log_init=1
-  if [ -f $log_file ] ; then
-    rm -f $log_file
-  fi
-  echo -e "\e[0;34m$my_version, `date +'%m/%d/%y %r'` \e[0m" | tee -a $log_file
-}
-
-log.info() {
-  if [ $verbose -eq 0 ] ; then
-    return;
-  fi
-  log.init
-  local msg=$1
-  echo -e "\e[0;32m$msg\e[0m" | tee -a $log_file 
-}
-log.debug() {
-  if [ $verbose -eq 0 ] ; then
-    return;
-  fi
-  log.init
-  local msg=$1
-  echo -e "\e[1;30m$msg\e[0m" | tee -a $log_file 
-}
-log.stat() {
-  log.init
-  local msg=$1
-  local color=$2
-  if [ -z $color ] ; then
-    color=$blue
-  fi
-  echo -e "\e[0;${color}m$msg\e[0m" | tee -a $log_file 
-}
-log.warn() {
-  log.init
-  local msg=$1
-  echo -e "\e[0;33m$msg\e[0m" | tee -a $log_file 
-}
-log.error() {
-  log.init
-  local msg=$1
-  echo -e "\e[0;31m$msg\e[0m" | tee -a $log_file 
 }
 
 # check if file is a media file that could support metadata
@@ -145,8 +93,20 @@ has_createtime() {
   fi
 }
 
-# ----------  main --------------
-log.init
+# -------------------------------  main -------------------------------
+# First, make sure scripts root path is set, we need it to include files
+if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
+  # include logger, functions etc as needed 
+  source $scripts_github/utils/logger.sh
+  source $scripts_github/utils/functions.sh
+else
+  echo "ERROR: SCRIPTS_GITHUB env variable is either not set or has invalid path!"
+  echo "The env variable should point to root dir of scripts i.e. $default_scripts_github"
+  exit 1
+fi
+# init logs
+log.init $my_logfile
+
 
 # parse commandline options
 while getopts $options opt; do
@@ -192,12 +152,16 @@ else
 fi
 
 for fname in ${file_list} ;  do
+  if [ ! -z "$dir_name" ] ; then
+    fname="$dir_name/$file_name/$fname"
+  fi
+
   is_media $fname
   if [ $? -ne 0 ] ; then
     log.warn "The file '$fname' is not known media type, skipping ..."
     continue
   fi
-  output="File Name:$fname"
+  output="File Name: `basename $fname`"
   if [ $check_gps -eq 1 ] ; then
     has_gps $fname
     output="$output ; GPS:$gps_present"
