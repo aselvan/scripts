@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # check_disks.sh --- script to check Linux mountable disks and reset mount counts
 #
@@ -21,42 +21,51 @@
 # 
 #
 # Author:  Arul Selvan
-# Created: Jun 23, 2019 
+# Created: Jun 23, 2019
+#
+# Version History
+#   19.06.23 --- Original version
+#   24.05.01 --- Updated to use common logging includes
 #
 
 # version format YY.MM.DD
-version=19.06.23
+version=24.05.01
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
-host_name=`hostname`
-os_name=`uname -s`
-cmdline_args=`printf "%s " $@`
-dir_name=`dirname $0`
-my_path=$(cd $dir_name; pwd -P)
+my_title="Script to check mountable disks and reset mount counts"
+my_dirname=`dirname $0`
+my_path=$(cd $my_dirname; pwd -P)
+my_logfile="/tmp/$(echo $my_name|cut -d. -f1).log"
+default_scripts_github=$HOME/src/scripts.github
+scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
-log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
+# commandline options
 options_list="u:e:cvh"
-verbose=0
+
 email_address=""
-subject="$host_name: disk check SUCCESS"
-subject_failed="$host_name: disk check FAILED"
 failure=0
 # UUID: from "ls -al /dev/disk/by-uuid"
-uuid_list="638c3c50-6f6f-4b2b-b407-437c7074602b f5b39d74-5541-4478-b705-9762f7d3110c e087431d-84b8-404f-8de2-a3785f692426 acbc7081-368e-4459-b7b9-58f821665890"
+# NOTE: keep rotating (*58f821665890 & *58e406aaef5d) everytime we move the last device to offsite (bank locker)
+#uuid_list="638c3c50-6f6f-4b2b-b407-437c7074602b f5b39d74-5541-4478-b705-9762f7d3110c e087431d-84b8-404f-8de2-a3785f692426 acbc7081-368e-4459-b7b9-58f821665890"
+#uuid_list="638c3c50-6f6f-4b2b-b407-437c7074602b f5b39d74-5541-4478-b705-9762f7d3110c e087431d-84b8-404f-8de2-a3785f692426 5204ef97-f3f1-46cc-8a80-58e406aaef5d"
+uuid_list="638c3c50-6f6f-4b2b-b407-437c7074602b f5b39d74-5541-4478-b705-9762f7d3110c e087431d-84b8-404f-8de2-a3785f692426 5204ef97-f3f1-46cc-8a80-58e406aaef5d"
+
 uuid_path="/dev/disk/by-uuid"
 
-# ensure path for cron runs
-export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
+# ensure path for cron runs (prioritize usr/local first)
+export PATH="/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
+
 
 usage() {
   cat << EOF
+$my_title
 
-  Usage: $my_name [options]
-     -u <uuid_list> ---> double quoted list of space separated uuid's i.e. 'ls /dev/disk/by-uuid'
-     -e <email>     ---> optional email address to mail results [default: '$email_address']
-     -c             ---> validate all uuids [default: $uuid_list] 
-     -v             ---> verbose mode prints info messages, otherwise just errors are printed
-     -h             ---> print usage/help
+Usage: $my_name [options]
+  -u <uuid_list> ---> double quoted list of space separated uuid's i.e. 'ls /dev/disk/by-uuid'
+  -e <email>     ---> optional email address to mail results
+  -c             ---> validate all uuids [default: $uuid_list] 
+  -v             ---> enable verbose, otherwise just errors are printed
+  -h             ---> print usage/help
 
   example: $my_name -u "$uuid_list" -e foo@bar.com -v
   
@@ -64,39 +73,10 @@ EOF
   exit 0
 }
 
-write_log() {
-  local msg_type=$1
-  local msg=$2
-
-  # log info type only when verbose flag is set
-  if [ "$msg_type" == "[INFO]" ] && [ $verbose -eq 0 ] ; then
-    return
-  fi
-
-  echo "$msg_type $msg" | tee -a $log_file
-}
-
-init_log() {
-  if [ -f $log_file ] ; then
-    rm -f $log_file
-  fi
-  write_log "[STAT]" "$my_version"
-  write_log "[STAT]" "Running from: $my_path"
-  write_log "[STAT]" "Start time:   `date +'%m/%d/%y %r'` ..."
-}
-
-
 check_os() {
   if [ $os_name != "Linux" ] ; then
-    write_log "[ERROR]" "This script is meant for Linux OS only!"
+    log.error "This script is meant for Linux OS only!"
     exit 1
-  fi
-}
-
-check_root() {
-  if [ `id -u` -ne 0 ] ; then
-    write_log "[ERROR]" "root access needed to run this script, run with 'sudo $my_name'"
-    exit 2
   fi
 }
 
@@ -105,7 +85,7 @@ validate_uuid() {
   local uuid=$1
   disk_dev=`/usr/bin/readlink -nf  $uuid_path/$uuid`
   
-  write_log "[INFO]" "validating uuid: $uuid"
+  log.stat "validating uuid: $uuid"
   if [ ! -b $disk_dev ] ; then
     return 1
   else
@@ -121,7 +101,7 @@ validate_uuids() {
   for uuid in $uuid_list ; do
     validate_uuid $uuid
     if [ $? -ne 0 ]; then
-      write_log "[WARN]" "  Invalid/non-existent uuid: $uuid"      
+      log.warn "  Invalid/non-existent uuid: $uuid"      
       atleast_one_failed=1
     fi
   done
@@ -132,21 +112,30 @@ validate_uuids() {
 # unmount and return 0 if it is successfully unmounted.
 unmount_device() {
   local uuid=$1
-  write_log "[INFO]" "Checking mount status ..."
+  log.stat "Checking mount status ..."
   /usr/bin/findmnt UUID=$uuid >/dev/null 2>&1
   if [ $? -eq 0 ] ; then
-    write_log "[INFO]" "Device was in mounted state, so attempting to unmount..." 
-    umount UUID=$uuid >> $log_file 2>&1
+    log.stat "Device was in mounted state, so attempting to unmount..." 
+    umount UUID=$uuid >> $my_logfile 2>&1
     return $?
   fi
-  write_log "[INFO]" "Device was not in mounted state." 
+  log.stat "Device was not in mounted state." 
   return 0
 }
 
-# ----------  main --------------
-init_log
-check_os
-check_root
+# -------------------------------  main -------------------------------
+# First, make sure scripts root path is set, we need it to include files
+if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
+  # include logger, functions etc as needed 
+  source $scripts_github/utils/logger.sh
+  source $scripts_github/utils/functions.sh
+else
+  echo "ERROR: SCRIPTS_GITHUB env variable is either not set or has invalid path!"
+  echo "The env variable should point to root dir of scripts i.e. $default_scripts_github"
+  exit 1
+fi
+# init logs
+log.init $my_logfile
 
 # parse commandline options
 while getopts "$options_list" opt ; do
@@ -169,15 +158,16 @@ while getopts "$options_list" opt ; do
   esac
 done
 
-
-write_log "[INFO]" "Host: $host_name"
+check_os
+check_root
+log.stat "Host: $host_name"
 for uuid in $uuid_list ; do
-  write_log "[STAT]" "==================== device: $uuid ==================== "
+  log.stat "==================== device: $uuid ==================== "
 
   # check if device is valid disk
   validate_uuid $uuid
   if [ $? -ne 0 ] ; then
-    write_log "[WARN]" "skipping invalid uuid ($uuid) ..."     
+    log.warn "skipping invalid uuid ($uuid) ..."     
     failure=1
     continue
   fi
@@ -185,38 +175,32 @@ for uuid in $uuid_list ; do
   # check and make sure device is in unmounted state
   unmount_device $uuid
   if [ $? -ne 0 ] ; then
-    write_log "[WARN]" "Device failed to unmount, skipping device $uuid" 
+    log.warn "Device failed to unmount, skipping device $uuid" 
     failure=1
     continue
   fi
-  
-  write_log "[INFO]" "Ensured device is not mounted, proceeding to check ..."
+  log.stat "Ensured device is not mounted, proceeding to check ..."
   
   # now do a e2fsck on this device
-  write_log "[STAT]" "Running e2fsck ..."
+  log.stat "Running e2fsck ..."
   # note: -p to automatically fix, or error out with error message and non-zero exit code
-  /sbin/e2fsck -p UUID=$uuid >> $log_file 2>&1
+  /sbin/e2fsck -p UUID=$uuid >> $my_logfile 2>&1
   rc=$?
   if [ $rc -ne 0 ] ; then
-    write_log "[ERROR]" "e2fsck failed, error code = $rc, skipping device $uuid"
+    log.error "e2fsck failed, error code = $rc, skipping device $uuid"
     failure=1
     continue
   fi
 
   # reset mount counts
-  write_log "[STAT]" "Resetting mount count/max ..." 
-  /sbin/tune2fs -C0 -c64 UUID=$uuid >> $log_file 2>&1
+  log.stat "Resetting mount count/max ..." 
+  /sbin/tune2fs -C0 -c64 UUID=$uuid >> $my_logfile 2>&1
   if [ $verbose -eq 1 ] ; then
-    /sbin/tune2fs -l UUID=$uuid |grep -i "mount count" >> $log_file 2>&1
+    /sbin/tune2fs -l UUID=$uuid |grep -i "mount count" >> $my_logfile 2>&1
   fi
 done
 
-# email the results if email address provided
-if [ ! -z $email_address ] ; then  
-  write_log "[INFO]" "Emailing results ..."
-  if [ $failure -eq 0 ] ; then
-    /bin/cat $log_file | /usr/bin/mail -s "$subject" $email_address
-  else
-    /bin/cat $log_file | /usr/bin/mail -s "$subject_failed" $email_address
-  fi
-fi
+# mail and exit
+log.stat "Disk check/reset complete."
+log.stat "Total runtime: $(elapsed_time)"
+send_mail "$failure"
