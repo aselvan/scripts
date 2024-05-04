@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# cleanup_cache.sh --- Wipe MacOS cache, logs etc 
+# cleanup_cache.sh --- Wipe MacOS cache, logs & document revisions etc 
 #
 # This script empties logs & cache. Especially cache directory in macOS tend to 
 # grow a lot depending on usage. I often find it to gobble up a gig or more after
@@ -10,12 +10,16 @@
 # Author:  Arul Selvan
 # Version: Jun 14, 2020
 #
+# Version History:
+#   Jun 14, 2020 --- Original version
+#   May 4,  2024 --- Zap the document revisions wasting space
+#
 
 # version format YY.MM.DD
-version=23.12.13
+version=25.05.04
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
-my_title="Wipe macOS cache, logs etc"
+my_title="Wipe macOS cache, logs, revision backup, spotlight etc."
 my_dirname=`dirname $0`
 my_path=$(cd $my_dirname; pwd -P)
 my_logfile="/tmp/$(echo $my_name|cut -d. -f1).log"
@@ -23,20 +27,24 @@ default_scripts_github=$HOME/src/scripts.github
 scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
 # commandline arguments
-options_list="u:sahv"
+options_list="u:saihv"
 current_user=""
 user_list="" # empty for current user i.e. no sudo needed
 do_system=0  # by default just do user level only
+document_rev_path="/System/Volumes/Data/.DocumentRevisions-V100"
+do_spotlight=0
+spolight_path="/System/Volumes/Data/.Spotlight-V100"
 
 usage() {
   cat << EOF
-$my_name - $my_title
+$my_title
 
 Usage: $my_name [options]
-  -u <list>  ---> List of users to clean [default: only current users cache is cleaned]
-  -s         ---> Enable cleaning system level cache/logs as well
-  -v         ---> enable verbose, otherwise just errors are printed
-  -h         ---> print usage/help
+  -u <list> ---> List of users to clean [default: only current users cache is cleaned]
+  -s        ---> Enable cleaning system level cache/logs as well
+  -v        ---> enable verbose, otherwise just errors are printed
+  -i        ---> Clear spotlight (useful if lot of apps installed/removed orphaning index files) 
+  -h        ---> print usage/help
 
 example: $my_name 
 example: $my_name -u "user1 user2 user3" -s
@@ -105,6 +113,10 @@ while getopts "$options_list" opt; do
       do_system=1
       check_root
       ;;
+    i)
+      do_spotlight=1
+      log.warn "Not implemented Spotlight cleaning yet..., ignoring."
+      ;;
     v)
       verbose=1
       ;;
@@ -120,12 +132,20 @@ if [ -z "$user_list" ] ; then
 fi
 
 for user in $user_list ; do
-  log.stat "cleaning cache, logs for user: $user ..." $green
+  log.stat "  cleaning cache, logs for user: $user ..." $green
   clean_user $user
 done
 
 # clean system if requested
 if [ $do_system -eq 1 ] ; then
-  log.stat "cleaning cache, logs at system level ..." $green
+  log.stat "  cleaning cache, logs at system level ..." $green
   clean_system
 fi
+
+# clean the document revisions. (note: this would remove the ability to restore previous versions (mostly preview app)
+if [ $do_system -eq 1 ] ; then
+  log.stat "  cleaning document versions at system level... (requires reboot)"
+  rm -rf $document_rev_path
+fi
+
+log.stat "Cleanup completed"
