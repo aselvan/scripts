@@ -26,7 +26,7 @@ export PATH="/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
 
 usage() {
   cat << EOF
-$my_name - $my_title
+$my_title
 
 Usage: $my_name [options]
   -e <email> ---> email address to send success/failure messages
@@ -46,8 +46,9 @@ if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
   source $scripts_github/utils/logger.sh
   source $scripts_github/utils/functions.sh
 else
-  echo "ERROR: SCRIPTS_GITHUB env variable is either not set or has invalid path!"
+  echo "SCRIPTS_GITHUB env variable is either not set or has invalid path!"
   echo "The env variable should point to root dir of scripts i.e. $default_scripts_github"
+  echo "See INSTALL instructions at: https://github.com/aselvan/scripts?tab=readme-ov-file#setup"
   exit 1
 fi
 # init logs
