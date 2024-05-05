@@ -12,11 +12,11 @@
 #
 # Version History:
 #   Jun 14, 2020 --- Original version
-#   May 4,  2024 --- Zap the document revisions wasting space
+#   May 4,  2024 --- delete document revisions wasting space, optionally remove spotlight index
 #
 
 # version format YY.MM.DD
-version=25.05.04
+version=25.05.05
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Wipe macOS cache, logs, revision backup, spotlight etc."
@@ -88,6 +88,23 @@ clean_system() {
   rm -rf $log_dir/*
 }
 
+clean_spotlight() {
+  log.stat "  cleaning spotlight indexes"
+  space_reclaimed=`du -sh $spolight_path |awk '{print $1}'`
+  
+  log.stat "  disabling spotlight indexing ..."
+  mdutil -i off /System/Volumes/Data  >> $my_logfile 2>&1
+  
+  log.stat "  removing spotlight index space ..."
+  rm -rf $spolight_path
+  
+  log.stat "  Removed $space_reclaimed of spotlight index data!"
+  log.stat "  enabling spotlight indexing..."
+  mdutil -i on /System/Volumes/Data  >> $my_logfile 2>&1
+  log.stat "Spotlight indexing will start now as background process."
+  log.stat "NOTE: indexing *will* take long time to complete, just let them (mds_store & mdworker) run."
+}
+
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
 if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
@@ -95,8 +112,9 @@ if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
   source $scripts_github/utils/logger.sh
   source $scripts_github/utils/functions.sh
 else
-  echo "ERROR: SCRIPTS_GITHUB env variable is either not set or has invalid path!"
+  echo "SCRIPTS_GITHUB env variable is either not set or has invalid path!"
   echo "The env variable should point to root dir of scripts i.e. $default_scripts_github"
+  echo "See INSTALL instructions at: https://github.com/aselvan/scripts?tab=readme-ov-file#setup" 
   exit 1
 fi
 # init logs
@@ -115,7 +133,7 @@ while getopts "$options_list" opt; do
       ;;
     i)
       do_spotlight=1
-      log.warn "Not implemented Spotlight cleaning yet..., ignoring."
+      check_root
       ;;
     v)
       verbose=1
@@ -136,16 +154,25 @@ for user in $user_list ; do
   clean_user $user
 done
 
-# clean system if requested
+# clean system level (only if requested)
 if [ $do_system -eq 1 ] ; then
   log.stat "  cleaning cache, logs at system level ..." $green
   clean_system
+
+  # clean the document revisions. (note: this would remove the ability to restore previous versions (mostly preview app)
+  log.stat "  cleaning document versions at system level... (reboot at your convenience)"
+  rm -rf $document_rev_path
 fi
 
-# clean the document revisions. (note: this would remove the ability to restore previous versions (mostly preview app)
-if [ $do_system -eq 1 ] ; then
-  log.stat "  cleaning document versions at system level... (requires reboot)"
-  rm -rf $document_rev_path
+# clean spotlight (only if requested)
+if [ $do_spotlight -eq 1 ] ; then
+  # check with user
+  confirm_action "WARNING: Spotlight index will be removed"
+  if [ $? -eq 1 ] ; then
+    clean_spotlight
+  else
+    log.warn "  skipping spotlight cleanup"
+  fi
 fi
 
 log.stat "Cleanup completed"
