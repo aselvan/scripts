@@ -9,6 +9,7 @@
 # Version History: 
 #   Feb 16, 2023 --- Original version
 #   Jan 11, 2024 --- Moved to my gitrepo https://raw.githubusercontent.com/aselvan/scripts/master/pihole/block_list.txt
+#   May 8 , 2024 --- Added weird citi.com content providers.
 #
 
 # double click
@@ -20,3 +21,9 @@
 
 # amplifyapp.com hosts bunch of phising/malware zap it
 0.0.0.0 amplifyapp.com
+
+# strange websites citi.com uses for some "unknown" content
+# my reddit post: https://www.reddit.com/r/Domains/comments/1cmpg48/info_on_domains_behind_domains_by_proxy_service/
+0.0.0.0 1.a79ab95c1589a13f8a4cab612bc71f9f7.com
+0.0.0.0 1.b406929acabac9b095f124c81bdfcf57f.com
+0.0.0.0 1.c81358859121583b7adf2ace89cb39f44.com
