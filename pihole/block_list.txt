@@ -9,7 +9,7 @@
 # Version History: 
 #   Feb 16, 2023 --- Original version
 #   Jan 11, 2024 --- Moved to my gitrepo https://raw.githubusercontent.com/aselvan/scripts/master/pihole/block_list.txt
-#   May 8 , 2024 --- Added weird citi.com content providers.
+#   May 8 , 2024 --- Added weird citi.com content providers, oracle co-browsing we dont care about.
 #
 
 # double click
@@ -27,3 +27,8 @@
 0.0.0.0 1.a79ab95c1589a13f8a4cab612bc71f9f7.com
 0.0.0.0 1.b406929acabac9b095f124c81bdfcf57f.com
 0.0.0.0 1.c81358859121583b7adf2ace89cb39f44.com
+
+# cobrowsing used by chase.com possibly others, dont give a crap about this, zap it
+# See: https://docs.oracle.com/en/cloud/paas/content-cloud/creating-experiences/cobrowse.html
+0.0.0.0 public.cobrowse.oraclecloud.com
+
