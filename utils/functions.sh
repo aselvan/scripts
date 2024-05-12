@@ -204,7 +204,7 @@ validate_ip() {
 # returns 1 for YES, 0 for NO
 confirm_action() {
   local msg=$1
-  echo $msg
+  log.error $msg
   read -p "Are you sure? (y/n) " -n 1 -r
   echo 
   if [[ $REPLY =~ ^[Yy]$ ]] ; then
