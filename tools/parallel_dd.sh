@@ -13,10 +13,11 @@
 #
 # Version History:
 #   May 10, 2024 --- Original version
+#   May 12, 2024 --- Validate the output devices before using
 #
 
 # version format YY.MM.DD
-version=24.05.10
+version=24.05.12
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Run dd in parallel to copy image to multiple devices."
@@ -52,6 +53,34 @@ example: $my_name -i myimage -l "/dev/sdb /dev/sdb /dev/sdc"
 EOF
   exit 0
 }
+
+#
+# validate if the device list is indeed a real one. For files
+# we just check if path is valid
+#
+validate_devices() {
+  for d in $device_list ; do
+    if [[ "$d" = "/dev/"* ]]; then
+      df $d >/dev/null 2>&1
+      if [ $? -eq 0 ] ; then
+        log.debug "  Device: '$d' is a valid device"
+        continue
+      else
+        log.error "  Device: '$d' is an invalid device!"
+        exit 2
+      fi
+    else
+      if [ -w "`dirname $d`" ]; then
+        log.debug "  Device: '$d' is a file path and dir is writable!"
+        continue
+      else
+        log.error "  Device: '$d' is invalid file/path!"
+        exit 3
+      fi
+    fi
+  done
+}
+
 
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
@@ -98,6 +127,8 @@ if [ -z "$image_file" ] || [ -z "$device_list" ] ; then
   log.error "Missing required arguments! See usage below"
   usage
 fi
+
+validate_devices
 
 # set correct flag for buffer size depending on MacOS or Linux
 if [ "$os_name" = "Darwin" ] ; then
