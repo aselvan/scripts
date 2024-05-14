@@ -8,6 +8,7 @@
 #
 # Version History:
 #   May 13, 2024 --- Initial version
+#   May 14, 2024 --- Get additional info for device like model,vendor,size etc.
 
 # version format YY.MM.DD
 version=24.05.13
@@ -40,6 +41,36 @@ EOF
   exit 0
 }
 
+get_model() {
+  local d=$1
+  local m=`udevadm info --query=property --name=$d | grep ID_MODEL= | awk -F= '{print $2}'`
+  if [ -z $m ] ; then
+    m=`udevadm info --query=property --name=$d | grep ID_USB_MODEL= | awk -F= '{print $2}'`
+  fi
+  echo $m
+}
+
+get_vendor() {
+  local d=$1
+  local v=`udevadm info --query=property --name=$d | grep ID_VENDOR= | awk -F= '{print $2}'`
+  if [ -z $v ] ; then
+    v=`udevadm info --query=property --name=$d | grep ID_USB_VENDOR= | awk -F= '{print $2}'`
+  fi
+  echo $v
+}
+
+get_size() {
+  local d=$1
+  local s=`udevadm info --query=property --name=$d | grep ID_FS_SIZE= | awk -F= '{print $2}'`
+  if [ -z $s ] ; then
+    s="N/A"
+  else
+    s="$(byte2gb $s)G"
+  fi
+  echo $s
+}
+
+
 check_os() {
   if [ $os_name != "Linux" ] ; then
     log.error "This script is meant for Linux OS only!"
@@ -48,17 +79,25 @@ check_os() {
 }
 
 list_fs_devices() {
-  fs_dev_list=`ls /dev/sd?[0-9]`
 
+  log.stat ""
+  log.stat "List of storage devices"
+  
+  fs_dev_list=`ls /dev/sd?[0-9]`
   for d in $fs_dev_list ; do
     log.stat "  Device: $d"
+    log.stat "  Model: $(get_model $d)"
+    log.stat "  Vendor: $(get_vendor $d)"
+    log.stat "  Size:   $(get_size $d)"
     if ! findmnt -n $d 2>&1 >/dev/null ; then
-      log.warn "    Mounted: False"
+      log.stat "  Mounted: False" $grey
+      log.stat ""
       continue
     fi
-    log.stat  "    Mounted: True"
-    output=$(findmnt -n $d --output=size,avail|awk '{print $1,"/",$2}')
-    log.stat "    Total/Available: $output" 
+    log.stat  "  Mounted: True" $green
+    output=$(findmnt -n $d --output=avail)
+    log.stat "  Free: $output" 
+    log.stat ""
   done
 }
 
