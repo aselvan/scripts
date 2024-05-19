@@ -6,9 +6,12 @@
 # Author:  Arul Selvan
 # Created: Jul 19, 2022
 #
+# Version History:
+#   Jul 19, 2022 --- Original version
+#
 
 # version format YY.MM.DD
-version=23.11.15
+version=24.05.19
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Sample script"
@@ -60,11 +63,11 @@ log.init $my_logfile
 # parse commandline options
 while getopts $options opt ; do
   case $opt in
-    v)
-      verbose=1
-      ;;
     e)
       email_address="$OPTARG"
+      ;;
+    v)
+      verbose=1
       ;;
     ?|h|*)
       usage

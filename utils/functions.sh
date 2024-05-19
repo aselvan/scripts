@@ -6,6 +6,10 @@
 # Author:  Arul Selvan
 # Created: Nov 14, 2023
 #
+# Version History:
+#   Nov 14, 2023 --- Original version
+#   May 19, 2024 --- Added version_le, version_ge functions
+#
 
 # os and other vars
 host_name=`hostname`
@@ -163,6 +167,19 @@ string_contains() {
   fi
   echo "$string1" | egrep "$string2" 2>&1 > /dev/null
   return $?
+}
+
+# compare versions (le or ge)
+# usage: check if my_version is less than or equal to 3.1.0
+#   if version_le "$my_version" "3.1.10" ; then
+#   fi
+version_le() {
+    [ "$1" = "$(echo -e "$1\n$2" | sort -V | head -n1)" ]
+}
+
+# Function to compare versions (greater than or equal)
+version_ge() {
+    [ "$1" = "$(echo -e "$1\n$2" | sort -V | tail -n1)" ]
 }
 
 # returns a string of elapsed time since start. Bash magically advances $SECONDS variable!
