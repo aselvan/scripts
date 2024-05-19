@@ -8,14 +8,15 @@
 # have openssl
 #
 # Author:  Arul Selvan
-# Created: May 18, 2024
+# Created: Aug 7, 2019
 #
 # Version History:
-#   May 18, 2024 --- Initial version.
+#   Aug 7,  2019 --- Orginal version (from ~/.bashrc) moved to standalone script
+#   May 19, 2024 --- Added options, validate chain, list chain error check etc.
 #
 
 # version format YY.MM.DD
-version=25.05.18
+version=25.05.19
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Download and validate SSL certs of a server"
@@ -25,13 +26,14 @@ default_scripts_github=$HOME/src/scripts.github
 scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
 # commandline options
-options="s:d:o:vh?"
+options="s:d:o:lvh?"
 
 optional_checks=""
+show_ssl_chain=0
 chain_depth=5
 server=""
 pem_path_prefix="/tmp/$(echo $my_name|cut -d. -f1)"
-openssl_version=`openssl version |awk  '{ print $2; }'`
+openssl_version_30x=0
 ls_opt="-1t"
 first_cert_name=""
 last_cert_name=""
@@ -47,7 +49,8 @@ Usage: $my_name [options]
   -s <server> ---> webserver who's SSL cert needs to be validated
   -d <number> ---> chain depth [default: $chain_depth is sufficient for most cases]
   -o <flags>  ---> Any openssl x509 flags example "-enddate -issuer -subject -fingerprint"
-  -v          ---> enable verbose, otherwise just errors are printed
+  -l          ---> list ssl chain starting from root -> server cert
+  -c          ---> enable verbose, otherwise just errors are printed
   -h          ---> print usage/help
 
 example: $my_name -s google.com -o "-enddate -issuer -subject"
@@ -56,22 +59,49 @@ EOF
   exit 0
 }
 
+# NOTE: need to reverse the certs for older openssl version. As per ChatGPT openssl version
+# at or below 3.0.10 lists order of certs starting with server,intermediate,root which 
+# doesn't work for openssl verify. Need to change sort order accordingly
+check_openssl_version() {
+  local openssl_version=`openssl version |awk  '{ print $2; }'`
+  if version_le "$openssl_version" "3.0.10" ; then
+    log.warn "  Openssl version is old: v${openssl_version}"
+    ls_opt="-1rt"
+    openssl_version_30x=1
+  fi
+}
+
+list_ssl_chain() {
+  if [ $show_ssl_chain -eq 0 ] ; then
+    return
+  fi
+  log.stat "  SSL cert chain list:"
+  local n=0
+  for f in `ls $ls_opt ${pem_path_prefix}_?.pem` ; do
+    local result=`openssl x509 -in $f -noout -subject -issuer|tr '\n' ' ,'`
+    log.stat "    $n: $result" $black
+    ((++n))
+  done
+}
+
 validate_ssl_chain() {
-  log.stat "Validating SSL cert chain for '$server'"
+  log.stat "  Validating SSL cert chain for server: $server"
 
   # make sure there aren't any old *.pem siting around from prev runs
   rm -f ${pem_path_prefix}*.pem
   
   openssl s_client -showcerts -verify $chain_depth -connect $server:443 < /dev/null 2>/dev/null | awk -v path="${pem_path_prefix}" '/BEGIN CERTIFICATE/,/END CERTIFICATE/{ if(/BEGIN CERTIFICATE/){n++}; out=path "_" n ".pem"; print >out}'
-  
-
-  # need to reverse the certs for older openssl version. Not clear when openssl started 
-  # provide chain certs in reverse order which is needd for verify to work but older version
-  # 3.0x need to have order reversed (correct order is root, intermediate, & server certs)
-  if [[ $openssl_version = "3.0"* ]] ; then
-    log.debug "  reversing order of certificate chain"
-    ls_opt="-1rt"
+  status_list=( ${PIPESTATUS[*]} )
+  if [ ${status_list[0]} -ne 0 ] ; then
+    log.error "  Timeout connecting to server $server ... exiting"
+    echo
+    exit 1
+  elif [ ${status_list[1]} -ne 0 ] ; then
+    log.error "  Error reading certs from server $server ... exiting"
+    echo
+    exit 2
   fi
+
   local list=""
   first_cert_name="${pem_path_prefix}_1.pem"
   for f in `ls $ls_opt ${pem_path_prefix}_?.pem` ; do
@@ -83,7 +113,7 @@ validate_ssl_chain() {
   # validate
   openssl verify ${pem_path_prefix}_all.pem >> $my_logfile 2>&1
   if [ $? -ne 0 ] ; then
-    log.error "  One or more intermediate certificate in the chain is invalid!"
+    log.error "  At least one intermediate cert in the cert chain is invalid!"
   else
     log.stat "  SSL certs are valid for: $server" $green
   fi
@@ -96,15 +126,12 @@ additional_options() {
 
   # pick the right cert for the sever (not cert from intermediate chain)
   local cert_name=""
-  if [[ $openssl_version = "3.0"* ]] ; then
+  if [ $openssl_version_30x -eq 1 ] ; then
     openssl x509 -in $last_cert_name $optional_checks -noout
-    log.debug "  using certname $last_cert_name"
   else
     openssl x509 -in $first_cert_name $optional_checks -noout
-    log.debug "  using certname $first_cert_name"
   fi
 }
-
 
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
@@ -134,6 +161,9 @@ while getopts $options opt ; do
     o)
       optional_checks="$OPTARG"
       ;;
+    l)
+      show_ssl_chain=1
+      ;;
     v)
       verbose=1
       ;;
@@ -148,6 +178,10 @@ if [ -z "$server" ] ; then
   usage
 fi
 
+check_openssl_version
+
 validate_ssl_chain
+list_ssl_chain
 additional_options
+
 
