@@ -58,6 +58,10 @@ EOF
 
 validate_ssl_chain() {
   log.stat "Validating SSL cert chain for '$server'"
+
+  # make sure there aren't any old *.pem siting around from prev runs
+  rm -f ${pem_path_prefix}*.pem
+  
   openssl s_client -showcerts -verify $chain_depth -connect $server:443 < /dev/null 2>/dev/null | awk -v path="${pem_path_prefix}" '/BEGIN CERTIFICATE/,/END CERTIFICATE/{ if(/BEGIN CERTIFICATE/){n++}; out=path "_" n ".pem"; print >out}'
   
 
