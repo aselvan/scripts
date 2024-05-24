@@ -158,4 +158,13 @@ fi
 log.stat "Running ..."
 full_command="pv $image_file | tee $dd_chain"
 /usr/bin/env bash -c "$full_command" 2>&1 >> $my_logfile
+log.stat "All disks are flashed with the content of $image_file"
+
+# note we need to skip if the destination is file but we can do that later.
+log.stat "GPT mismatch fix ..."
+for dev in $device_list ; do
+  log.stat "  Adjust device: $dev"
+  fix_gpt_mismatch $dev
+don
+
 log.stat "$my_name completed."
