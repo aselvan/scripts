@@ -34,6 +34,41 @@ declare -A unit_table=(
     ["fahrenheit_to_celsius"]=$(echo "scale=2; 5/9" | bc)
 )
 
+# --- disk manipulation (linux only) 
+# when dd out image to a target disk of different size, we need to fix size mismatch
+# GPT PMBR size mismatch
+fix_gpt_mismatch() {
+  local dev=$1
+  # ensure we are on linux platform and root
+  check_linux
+  check_root
+
+  if [ -z "$dev" ] ; then
+    log.error "Missing device!"
+    return
+  fi
+  
+  # Check if fdisk supports writing GPT table
+  if ! fdisk -l $dev 2>&1 | grep -q "GPT"; then
+    log.error "Disk $dev is not GPT."
+    return
+  else
+    log.debug "Disk contains GPT mismatch"
+  fi
+  
+  # Fix GPT PMBR size mismatch with fdisk (non-interactive)
+fdisk $dev 2>&1 >/dev/null << EOF
+w
+q
+EOF
+  # Check exit code of fdisk
+  if [[ $? -ne 0 ]]; then
+    log.warn "Failed to fix GPT PMBR size mismatch on $dev"
+    return
+  fi
+  log.debug "GPT PMBR size mismatch fixed on $dev"
+}
+
 
 # --- file utils ---
 
@@ -55,6 +90,14 @@ check_root() {
     log.error "root access needed to run this script, run with 'sudo $my_name' ... exiting."
     exit 1
   fi
+}
+
+check_linux() {
+  if [ $os_name == "Linux" ] ; then
+    return
+  fi
+  log.error "This is Linux only function ... exiting."
+  exit 1
 }
 
 get_current_user() {
