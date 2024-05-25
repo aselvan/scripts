@@ -165,6 +165,7 @@ get_urlhaus_sig() {
   if [ $? -ne 0 ] ; then
     log.warn "MD5 sum does not match for '$urlhaus_sig_file', skiping urlhaus signature..."
     exit_code=12
+    rm -f ${urlhaus_sig_file}.sha256
     return
   fi
   
@@ -174,12 +175,14 @@ get_urlhaus_sig() {
   if [ $? -ne 0 ] ; then
     log.error "Scan failed for $urlhaus_sig_file, so ignoring the file"
     exit_code=13
+    rm -f ${urlhaus_sig_file}.sha256
     return
   fi
  
   # all checked out, move file to clamav lib
   log.stat "Updating urlhaus signature file '$urlhaus_sig_file' in clamav lib ($clamav_lib_path)"
   mv $urlhaus_sig_file $clamav_lib_path/.
+  rm -f ${urlhaus_sig_file}.sha256
 }
 
 setup_pua() {
