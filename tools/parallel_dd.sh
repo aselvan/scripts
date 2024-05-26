@@ -14,10 +14,12 @@
 # Version History:
 #   May 10, 2024 --- Original version
 #   May 12, 2024 --- Validate the output devices before using
+#   May 24, 2024 --- Fix GPT size mismatch, send mail optionally, -f to skip confirmation
+#   May 26, 2024 --- Added resize partition to fill, and extend NTFS to end of partition.
 #
 
 # version format YY.MM.DD
-version=24.05.12
+version=24.05.26
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Run dd in parallel to copy image to multiple devices."
@@ -28,7 +30,7 @@ default_scripts_github=$HOME/src/scripts.github
 scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
 # commandline options
-options="i:l:s:vh?"
+options="i:l:s:e:fxvh?"
 
 # ensure path for cron runs (prioritize usr/local first)
 export PATH="/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
@@ -36,6 +38,9 @@ export PATH="/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
 device_list=""
 image_file=""
 dd_bs="32"
+failure=0
+skip_confirmation=0
+extend_ntfs=0
 
 usage() {
   cat << EOF
@@ -45,13 +50,23 @@ Usage: $my_name [options]
   -i <image> ---> The disk image to write to multiple devices 
   -l <list>  ---> list of output devices write image
   -s <size>  ---> buffer size (megabyte) argument for dd [default: $dd_bs]
+  -e <email> ---> email address to send success/failure emails
+  -f         ---> skip confirmation question for automated runs from cron.
+  -x         ---> extend the NTFS volume (assuming image is NTFS and last partion is NTFS) [default: NO]
   -v         ---> enable verbose, otherwise just errors are printed
   -h         ---> print usage/help
 
-example: $my_name -i myimage -l "/dev/sdb /dev/sdb /dev/sdc"
+example: $my_name -i myimage.iso -l "/dev/sdb /dev/sdb /dev/sdc" -e foo@bar.com
   
 EOF
   exit 0
+}
+
+mail_and_exit() {
+  log.stat "Total runtime: $(elapsed_time)"
+  log.stat "Exit Status: $failure"
+  send_mail "$failure"
+  exit $failure
 }
 
 #
@@ -100,6 +115,9 @@ log.init $my_logfile
 # parse commandline options
 while getopts $options opt ; do
   case $opt in
+    e)
+      email_address=$OPTARG
+      ;;
     i)
       image_file="$OPTARG"
       ;;
@@ -108,6 +126,12 @@ while getopts $options opt ; do
       ;;
     s)
       dd_bs="$OPTARG"
+      ;;
+    f)
+      skip_confirmation=1
+      ;;
+    x)
+      extend_ntfs=1
       ;;
     v)
       verbose=1
@@ -146,11 +170,13 @@ done
 # capture output of tee going to stdout to dev/null
 dd_chain="$dd_chain | dd of=/dev/null >/dev/null 2>&1"
 
-# confirm
-confirm_action "WARNING: writing to \"$device_list\""
-if [ $? -eq 0 ] ; then
-  log.warn "Aborting..."
-  exit 1
+# confirm to proceed. Optionally, skip confirmation for automated runs
+if [ $skip_confirmation -eq 0 ] ; then
+  confirm_action "WARNING: writing to \"$device_list\""
+  if [ $? -eq 0 ] ; then
+    log.warn "Aborting..."
+    exit 1
+  fi
 fi
 
 # finally execute dd in parallel.
@@ -158,13 +184,27 @@ fi
 log.stat "Running ..."
 full_command="pv $image_file | tee $dd_chain"
 /usr/bin/env bash -c "$full_command" 2>&1 >> $my_logfile
-log.stat "All disks are flashed with the content of $image_file"
+if [ $? -ne 0 ] ; then
+  failure=1
+  log.error "Failure during flashing $image_file ..."
+  mail_and_exit
+fi
+log.stat "Success: all disks are flashed with the content of $image_file"
 
 # note we need to skip if the destination is file but we can do that later.
-log.stat "GPT mismatch fix ..."
+log.stat "Fixing GPT mismatch ..."
 for dev in $device_list ; do
   log.stat "  Adjust device: $dev"
   fix_gpt_mismatch $dev
-don
+done
 
-log.stat "$my_name completed."
+# if se need to extend the disk and NTFS filesystems
+if [ $extend_ntfs -ne 0 ] ; then
+  for dev in $device_list ; do
+    log.stat "  Extend the partition and NTFS file system on: $dev"
+    extend_ntfs_partition $dev
+  done
+fi
+
+mail_and_exit
+
