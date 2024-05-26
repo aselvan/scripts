@@ -39,15 +39,15 @@ declare -A unit_table=(
 # GPT PMBR size mismatch
 fix_gpt_mismatch() {
   local dev=$1
-  # ensure we are on linux platform and root
-  check_linux
-  check_root
-
   if [ -z "$dev" ] ; then
     log.error "Missing device!"
     return
   fi
   
+  # ensure we are on linux platform and root
+  check_linux
+  check_root
+
   # Check if fdisk supports writing GPT table
   if ! fdisk -l $dev 2>&1 | grep -q "GPT"; then
     log.error "Disk $dev is not GPT."
@@ -67,6 +67,60 @@ EOF
     return
   fi
   log.debug "GPT PMBR size mismatch fixed on $dev"
+}
+
+# --- ntfs partition extend/fix (linux only)
+# WARNING: This will find the last partition and will extend it to the end of the physical drive
+extend_ntfs_partition() {
+  local dev=$1
+  if [ -z "$dev" ] ; then
+    log.error "Missing device/partition!"
+    return
+  fi
+
+  # ensure we are on linux platform and root
+  check_linux
+  check_root
+
+  # find last partition
+  local pnum=$(parted -s $dev print | awk '$1 ~ /^[0-9]+$/ { last = $1 } END { print last }')
+  if [ -z "$pnum" ]; then
+    log.error "Unable to find the last partition!"
+    return
+  fi
+
+  # Resize the partition to the end of the disk
+  parted -s $dev resizepart $pnum 100%
+  if [ $? -ne 0 ] ; then
+    log.error "Error while resizing partition: ${dev}${pnum}"
+    return
+  fi
+
+  # Check and repair NTFS filesystem
+  ntfsfix ${dev}${pnum}
+  if [ $? -ne 0 ] ; then
+    log.error "Error running ntfsfix on ${dev}${pnum}"
+    return
+  fi
+  
+  # scan for the ntfs file system
+  ntfsresize -i -f -v ${dev}${pnum}
+  if [ $? -ne 0 ] ; then
+    log.error "Error while scanning for NTFS file system on ${dev}${pnum}"
+    return
+  fi
+
+  # do a dry run and if it is successful, do the actual NTFS resize
+  ntfsresize -f --no-action $dev$pnum
+  if [ $? -ne 0 ] ; then
+    ntfsresize -f ${dev}${pnum}
+    if [ $? -ne 0 ] ; then
+      log.error "resize NTFS filesystem on ${dev}${pnum} failed!"
+    fi
+  else
+    log.error "Dry run to resize NTFS filesystem on ${dev}${pnum} failed!"
+    return
+  fi
 }
 
 
