@@ -88,34 +88,40 @@ extend_ntfs_partition() {
     log.error "Unable to find the last partition!"
     return
   fi
+  log.debug "Device ($dev) last partion is: $pnum"
 
   # Resize the partition to the end of the disk
-  parted -s $dev resizepart $pnum 100%
+  log.stat "Resisizing disk partion ..."
+  parted -s $dev resizepart $pnum 100% >> $logger_file 2>&1
   if [ $? -ne 0 ] ; then
     log.error "Error while resizing partition: ${dev}${pnum}"
     return
   fi
 
   # Check and repair NTFS filesystem
-  ntfsfix ${dev}${pnum}
+  log.stat "Check/repair NTFS filesystem... (might take a few minutes)"
+  ntfsfix ${dev}${pnum} >> $logger_file 2>&1
   if [ $? -ne 0 ] ; then
     log.error "Error running ntfsfix on ${dev}${pnum}"
     return
   fi
   
   # scan for the ntfs file system
-  ntfsresize -i -f -v ${dev}${pnum}
+  log.stat "Scanning NTFS file system ${dev}${pnum}"
+  ntfsresize -i -f ${dev}${pnum} >> $logger_file 2>&1
   if [ $? -ne 0 ] ; then
     log.error "Error while scanning for NTFS file system on ${dev}${pnum}"
     return
   fi
 
   # do a dry run and if it is successful, do the actual NTFS resize
-  ntfsresize -f --no-action $dev$pnum
-  if [ $? -ne 0 ] ; then
-    ntfsresize -f ${dev}${pnum}
+  log.stat "Dry run for NTFS file system resize operation on ${dev}${pnum}"  
+  ntfsresize -f -f --no-action $dev$pnum >> $logger_file 2>&1
+  if [ $? -eq 0 ] ; then
+    log.stat "Actual NTFS file system resize operation on ${dev}${pnum}"  
+    ntfsresize -f -f ${dev}${pnum} >> $logger_file 2>&1
     if [ $? -ne 0 ] ; then
-      log.error "resize NTFS filesystem on ${dev}${pnum} failed!"
+      log.error "Resize NTFS filesystem on ${dev}${pnum} failed!"
     fi
   else
     log.error "Dry run to resize NTFS filesystem on ${dev}${pnum} failed!"
