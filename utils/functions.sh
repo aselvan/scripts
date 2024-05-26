@@ -78,9 +78,10 @@ extend_ntfs_partition() {
     return
   fi
 
-  # ensure we are on linux platform and root
+  # ensure we are on linux platform and root and tools needed
   check_linux
   check_root
+  check_installed ntfsresize
 
   # find last partition
   local pnum=$(parted -s $dev print | awk '$1 ~ /^[0-9]+$/ { last = $1 } END { print last }')
