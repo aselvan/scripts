@@ -87,7 +87,7 @@ if [ -z "$src_list" ] || [ -z "$backup_dir" ] ; then
 fi
 
 # start backup
-log.stat "Starting rsync backup to Destination: $backup_dir"
+log.stat "Destination: $backup_dir"
 
 IFS=',' read -ra src_list_array <<< "$src_list"
 for src_path in "${src_list_array[@]}"; do
@@ -97,7 +97,7 @@ for src_path in "${src_list_array[@]}"; do
   if [ $? -ne 0 ] ; then
     log.error "  Backup failed, error code=$?"
   else
-    log.stat "  End:     `date +'%D %H:%M:%S %p'`" $green
+    log.stat "  Elapsed: $(elapsed_time)" $green
   fi
   echo ""
 done
