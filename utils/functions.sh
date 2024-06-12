@@ -49,11 +49,11 @@ fix_gpt_mismatch() {
   check_root
 
   # Check if fdisk supports writing GPT table
-  if ! fdisk -l $dev 2>&1 | grep -q "GPT"; then
-    log.error "Disk $dev is not GPT."
+  if ! fdisk -l $dev 2>&1 | grep -q -i "GPT"; then
+    log.error "  Missing GPT string on $dev"
     return
   else
-    log.debug "Disk contains GPT mismatch"
+    log.debug "  Disk $dev might contain GPT mismatch, running fdisk"
   fi
   
   # Fix GPT PMBR size mismatch with fdisk (non-interactive)
@@ -62,10 +62,10 @@ w
 EOF
   # Check exit code of fdisk
   if [[ $? -ne 0 ]]; then
-    log.warn "Failed to fix GPT PMBR size mismatch on $dev"
+    log.warn "  Failed to fix GPT PMBR size mismatch on $dev"
     return
   fi
-  log.debug "GPT PMBR size mismatch fixed on $dev"
+  log.debug "  GPT PMBR size mismatch fixed on $dev"
 }
 
 # --- ntfs partition extend/fix (linux only)
