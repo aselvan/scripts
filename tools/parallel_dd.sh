@@ -102,7 +102,7 @@ write_tag_file() {
 
   # write the tag file
   log.stat "Writing tag/version file on root directory of ${dev}${pnum} ..."
-  cat << EOF > ${mount_dir}/{$my_name_noext}.txt
+  cat << EOF > ${mount_dir}/${my_name_noext}.txt
   
   Imaging Tool: $my_version
   Image Tag:    $tag
