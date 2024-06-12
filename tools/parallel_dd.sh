@@ -90,7 +90,7 @@ write_tag_file() {
 
   # create a mount point in /tmp and mount the disk
   mount_dir="/tmp/$my_name_noext"
-  mkdir $mount_dir
+  mkdir -p $mount_dir
 
   # mount the disk
   log.stat "Mounting ${dev}${pnum} on $mount_dir ..."
