@@ -59,7 +59,6 @@ fix_gpt_mismatch() {
   # Fix GPT PMBR size mismatch with fdisk (non-interactive)
 fdisk $dev 2>&1 >/dev/null << EOF
 w
-q
 EOF
   # Check exit code of fdisk
   if [[ $? -ne 0 ]]; then
@@ -81,7 +80,7 @@ extend_ntfs_partition() {
   # ensure we are on linux platform and root and tools needed
   check_linux
   check_root
-  check_installed ntfsresize
+  check_installed ntfsresize noexit
 
   # find last partition
   local pnum=$(parted -s $dev print | awk '$1 ~ /^[0-9]+$/ { last = $1 } END { print last }')
@@ -168,9 +167,15 @@ get_current_user() {
 
 check_installed() {
   local app=$1
+  local noexit=$2
   if [ ! `which $app` ]; then
-    log.error "required binary ('$app') is missing, install it and try again"
-    exit 2
+    if [ ! -z "$noexit" ] ; then
+      log.warin "required binary \"$app\" is missing, skiping the task and continuing ..."
+      return
+    else
+      log.error "required binary \"$app\" is missing, install it and try again, exiting."
+      exit 2
+    fi
   fi
 }
 
