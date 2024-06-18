@@ -34,13 +34,13 @@ declare -A unit_table=(
     ["fahrenheit_to_celsius"]=$(echo "scale=2; 5/9" | bc)
 )
 
-# --- disk manipulation (linux only) 
+# -------------------- disk manipulation (linux only) --------------------
 # when dd out image to a target disk of different size, we need to fix size mismatch
 # GPT PMBR size mismatch
 fix_gpt_mismatch() {
   local dev=$1
   if [ -z "$dev" ] ; then
-    log.error "Missing device!"
+    log.error "  Missing device!"
     return
   fi
   
@@ -67,6 +67,27 @@ EOF
   fi
   log.debug "  GPT PMBR size mismatch fixed on $dev"
 }
+
+# unmount all partitions on the device specified if they are already mounted
+unmount_all_partitions() {
+  local dev=$1
+
+  # ensure we are on linux platform and root
+  check_linux
+  check_root
+  
+  partition_list=`lsblk $dev -o NAME -l|grep -e "[0-9]"`
+  for p in $partition_list ; do
+    # check if it is mounted before attempting to unmount
+    grep $p /proc/mounts
+    if [ $? -eq 0 ] ; then
+      # it is mounted, unmount
+      log.debug "   Dev /dev/$p is mounted state, unmounting it..."
+      umount /dev/$p
+    fi
+  done
+}
+
 
 # --- ntfs partition extend/fix (linux only)
 # WARNING: This will find the last partition and will extend it to the end of the physical drive
