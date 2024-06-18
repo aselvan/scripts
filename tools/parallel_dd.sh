@@ -16,7 +16,8 @@
 #   May 12, 2024 --- Validate the output devices before using
 #   May 24, 2024 --- Fix GPT size mismatch, send mail optionally, -f to skip confirmation
 #   May 26, 2024 --- Added resize partition to fill, and extend NTFS to end of partition.
-#   Jun 18, 2024 --- Added option to write a tag/version file on new imaged disk(s)
+#   Jun 13, 2024 --- Added option to write a tag/version file on new imaged disk(s)
+#   Jun 18, 2024 --- Added code to ensure all partitions on target device are umounted.
 #
 
 # version format YY.MM.DD
@@ -114,21 +115,26 @@ EOF
 }
 
 #
-# validate if the device list is indeed a real one. For files
-# we just check if path is valid
+# Validate if the device list is indeed a real one. For files, we just check if 
+# path is valid. Also for devices, also ensure all partitions in that device are
+# unmounted.
 #
 validate_devices() {
   for d in $device_list ; do
     if [[ "$d" = "/dev/"* ]]; then
+      # this is a device, first (unmount any/all partitions)
       df $d >/dev/null 2>&1
       if [ $? -eq 0 ] ; then
-        log.debug "  Device: '$d' is a valid device"
+        log.debug "  $d is a valid device"
+        log.stat  "  Unmounting any mounted partions on $d ..."
+        unmount_all_partitions $d
         continue
       else
-        log.error "  Device: '$d' is an invalid device!"
+        log.error "  Device: $d is an invalid device!"
         exit 2
       fi
     else
+      # this is a file
       if [ -w "`dirname $d`" ]; then
         log.debug "  Device: '$d' is a file path and dir is writable!"
         continue
