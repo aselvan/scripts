@@ -79,10 +79,10 @@ unmount_all_partitions() {
   partition_list=`lsblk $dev -o NAME -l|grep -e "[0-9]"`
   for p in $partition_list ; do
     # check if it is mounted before attempting to unmount
-    grep $p /proc/mounts
+    grep $p /proc/mounts 2>&1 >/dev/null
     if [ $? -eq 0 ] ; then
       # it is mounted, unmount
-      log.debug "   Dev /dev/$p is mounted state, unmounting it..."
+      log.debug "  Dev /dev/$p is mounted state, unmounting it..."
       umount /dev/$p
     fi
   done
