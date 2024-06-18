@@ -85,7 +85,7 @@ write_tag_file() {
   # find last partition
   local pnum=$(parted -s $dev print | awk '$1 ~ /^[0-9]+$/ { last = $1 } END { print last }')
   if [ -z "$pnum" ]; then
-    log.error "Unable to find the last partition on $dev ... skiping tag file"
+    log.error "  Unable to find the last partition on $dev ... skiping tag file"
     return
   fi
 
@@ -94,15 +94,15 @@ write_tag_file() {
   mkdir -p $mount_dir
 
   # mount the disk
-  log.stat "Mounting ${dev}${pnum} on $mount_dir ..."
+  log.stat "  Mounting ${dev}${pnum} on $mount_dir ..."
   mount ${dev}${pnum} $mount_dir
   if [ $? -ne 0 ] ; then
-    log.error "Mount failed... skipping tag file ..."
+    log.error "  Mount failed... skipping tag file ..."
     return
   fi
 
   # write the tag file
-  log.stat "Writing tag/version file on root directory of ${dev}${pnum} ..."
+  log.stat "  Writing tag/version file on root directory of ${dev}${pnum} ..."
   cat << EOF > ${mount_dir}/${my_name_noext}.txt
   
   Imaging Tool:  $my_version

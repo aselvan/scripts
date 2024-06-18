@@ -94,7 +94,7 @@ unmount_all_partitions() {
 extend_ntfs_partition() {
   local dev=$1
   if [ -z "$dev" ] ; then
-    log.error "Missing device/partition!"
+    log.error "  Missing device/partition!"
     return
   fi
 
@@ -106,46 +106,46 @@ extend_ntfs_partition() {
   # find last partition
   local pnum=$(parted -s $dev print | awk '$1 ~ /^[0-9]+$/ { last = $1 } END { print last }')
   if [ -z "$pnum" ]; then
-    log.error "Unable to find the last partition!"
+    log.error "  Unable to find the last partition!"
     return
   fi
-  log.debug "Device ($dev) last partion is: $pnum"
+  log.debug "  Last partition of $dev is: $pnum"
 
   # Resize the partition to the end of the disk
-  log.stat "Resisizing disk partion ..."
+  log.stat "  Resisizing disk partion ..."
   parted -s $dev resizepart $pnum 100% >> $logger_file 2>&1
   if [ $? -ne 0 ] ; then
-    log.error "Error while resizing partition: ${dev}${pnum}"
+    log.error "  Error while resizing partition: ${dev}${pnum}"
     return
   fi
 
   # Check and repair NTFS filesystem
-  log.stat "Check/repair NTFS filesystem... (might take a few minutes)"
+  log.stat "  Check/repair NTFS filesystem... (might take a few minutes)"
   ntfsfix ${dev}${pnum} >> $logger_file 2>&1
   if [ $? -ne 0 ] ; then
-    log.error "Error running ntfsfix on ${dev}${pnum}"
+    log.error "  Error running ntfsfix on ${dev}${pnum}"
     return
   fi
   
   # scan for the ntfs file system
-  log.stat "Scanning NTFS file system ${dev}${pnum}"
+  log.stat "  Scanning NTFS file system ${dev}${pnum}"
   ntfsresize -i -f ${dev}${pnum} >> $logger_file 2>&1
   if [ $? -ne 0 ] ; then
-    log.error "Error while scanning for NTFS file system on ${dev}${pnum}"
+    log.error "  Error while scanning for NTFS file system on ${dev}${pnum}"
     return
   fi
 
   # do a dry run and if it is successful, do the actual NTFS resize
-  log.stat "Dry run for NTFS file system resize operation on ${dev}${pnum}"  
+  log.stat "  Dry run for NTFS file system resize operation on ${dev}${pnum}"  
   ntfsresize -f -f --no-action $dev$pnum >> $logger_file 2>&1
   if [ $? -eq 0 ] ; then
-    log.stat "Actual NTFS file system resize operation on ${dev}${pnum}"  
+    log.stat "  Actual NTFS file system resize operation on ${dev}${pnum}"  
     ntfsresize -f -f ${dev}${pnum} >> $logger_file 2>&1
     if [ $? -ne 0 ] ; then
-      log.error "Resize NTFS filesystem on ${dev}${pnum} failed!"
+      log.error "  Resize NTFS filesystem on ${dev}${pnum} failed!"
     fi
   else
-    log.error "Dry run to resize NTFS filesystem on ${dev}${pnum} failed!"
+    log.error "  Dry run to resize NTFS filesystem on ${dev}${pnum} failed!"
     return
   fi
 }
