@@ -16,11 +16,11 @@
 #   May 12, 2024 --- Validate the output devices before using
 #   May 24, 2024 --- Fix GPT size mismatch, send mail optionally, -f to skip confirmation
 #   May 26, 2024 --- Added resize partition to fill, and extend NTFS to end of partition.
-#   Jun 12, 2024 --- Added option to write a tag/version file on new imaged disk
+#   Jun 18, 2024 --- Added option to write a tag/version file on new imaged disk(s)
 #
 
 # version format YY.MM.DD
-version=24.06.12
+version=24.06.18
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Run dd in parallel to copy image to multiple devices."
@@ -44,24 +44,24 @@ dd_bs="32"
 failure=0
 skip_confirmation=0
 extend_ntfs=0
-tag=""
+tag="Not Provided"
 
 usage() {
   cat << EOF
 $my_title
 
 Usage: $my_name [options]
-  -i <image>  ---> The disk image to write to multiple devices 
+  -i <image>  ---> The disk image to write to one or more devices in parallel
   -l <list>   ---> list of output devices write image
   -s <size>   ---> buffer size (megabyte) argument for dd [default: $dd_bs]
   -e <email>  ---> email address to send success/failure emails
-  -t <string> ---> A tag string to inlcude in /$my_name_noext.txt [default: no file written]
+  -t <string> ---> A tag string to inlcude in /$my_name_noext.txt
   -f          ---> skip confirmation question for automated runs from cron.
   -x          ---> extend the NTFS volume (assuming image is NTFS and last partion is NTFS) [default: NO]
   -v          ---> enable verbose, otherwise just errors are printed
   -h          ---> print usage/help
 
-example: $my_name -i myimage.iso -l "/dev/sdb /dev/sdb /dev/sdc" -e foo@bar.com
+example: $my_name -i myimage.img -l "/dev/sdc /dev/sdd /dev/sde" -e foo@bar.com
   
 EOF
   exit 0
@@ -104,9 +104,9 @@ write_tag_file() {
   log.stat "Writing tag/version file on root directory of ${dev}${pnum} ..."
   cat << EOF > ${mount_dir}/${my_name_noext}.txt
   
-  Imaging Tool: $my_version
-  Image Tag:    $tag
-  Image Date:   `date`
+  Imaging Tool:  $my_version
+  Image Tag:     $tag
+  Date created:  `date +'%b %d, %r'`
   
 EOF
   # now unmount
@@ -195,7 +195,7 @@ check_installed pv
 
 # check required args
 if [ -z "$image_file" ] || [ -z "$device_list" ] ; then
-  log.error "Missing required arguments! See usage below"
+  log.error "  Missing required arguments! See usage below"
   usage
 fi
 
@@ -221,7 +221,7 @@ dd_chain="$dd_chain | dd of=/dev/null >/dev/null 2>&1"
 if [ $skip_confirmation -eq 0 ] ; then
   confirm_action "WARNING: writing to \"$device_list\""
   if [ $? -eq 0 ] ; then
-    log.warn "Aborting..."
+    log.warn "  Aborting..."
     exit 1
   fi
 fi
@@ -233,13 +233,13 @@ full_command="pv $image_file | tee $dd_chain"
 /usr/bin/env bash -c "$full_command" 2>&1 >> $my_logfile
 if [ $? -ne 0 ] ; then
   failure=1
-  log.error "Failure during flashing $image_file ..."
+  log.error "  Failure during flashing $image_file ..."
   mail_and_exit
 fi
-log.stat "Success: all disks are flashed with the content of $image_file"
+log.stat "  Success: all disks are flashed with the content of $image_file"
 
 # note we need to skip if the destination is file but we can do that later.
-log.stat "Fixing GPT mismatch ..."
+log.stat "  Fixing GPT mismatch ..."
 for dev in $device_list ; do
   log.stat "  Adjust device: $dev"
   fix_gpt_mismatch $dev
@@ -253,13 +253,10 @@ if [ $extend_ntfs -ne 0 ] ; then
   done
 fi
 
-# write tag/version file
-if [ ! -z "$tag" ] ; then
-  for dev in $device_list ; do
-    log.stat "  Writing tag file on for: $dev"
-    write_tag_file $dev
-  done
-fi
+# write tag/version
+for dev in $device_list ; do
+  log.stat "  Writing tag file on for: $dev"
+  write_tag_file $dev
+done
 
 mail_and_exit
-
