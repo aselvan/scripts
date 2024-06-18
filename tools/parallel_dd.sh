@@ -261,7 +261,7 @@ fi
 
 # write tag/version
 for dev in $device_list ; do
-  log.stat "  Writing tag file on for: $dev"
+  log.stat "  Writing tag file on $dev"
   write_tag_file $dev
 done
 

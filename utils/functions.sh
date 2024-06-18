@@ -82,7 +82,7 @@ unmount_all_partitions() {
     grep $p /proc/mounts 2>&1 >/dev/null
     if [ $? -eq 0 ] ; then
       # it is mounted, unmount
-      log.debug "  Dev /dev/$p is mounted state, unmounting it..."
+      log.debug "  /dev/$p is in mounted state, unmounting it..."
       umount /dev/$p
     fi
   done
@@ -123,11 +123,11 @@ extend_ntfs_partition() {
   log.stat "  Check/repair NTFS filesystem... (might take a few minutes)"
   ntfsfix ${dev}${pnum} >> $logger_file 2>&1
   if [ $? -ne 0 ] ; then
-    log.warn "   ntfsfix ${dev}${pnum} returned non-zero exit code, but continuing ..."
+    log.warn "  ntfsfix ${dev}${pnum} returned non-zero exit code, but continuing ..."
   fi
   
   # scan for the ntfs file system
-  log.stat "  Scanning NTFS file system ${dev}${pnum}"
+  log.stat "  Scanning NTFS file system on ${dev}${pnum}"
   ntfsresize -i -f ${dev}${pnum} >> $logger_file 2>&1
   if [ $? -ne 0 ] ; then
     log.warn "  ntfsresize -i -f ${dev}${pnum} returned non-zero exit code, but continuing"
