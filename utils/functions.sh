@@ -123,15 +123,14 @@ extend_ntfs_partition() {
   log.stat "  Check/repair NTFS filesystem... (might take a few minutes)"
   ntfsfix ${dev}${pnum} >> $logger_file 2>&1
   if [ $? -ne 0 ] ; then
-    log.error "  Error running ntfsfix on ${dev}${pnum}"
-    return
+    log.warn "   ntfsfix ${dev}${pnum} returned non-zero exit code, but continuing ..."
   fi
   
   # scan for the ntfs file system
   log.stat "  Scanning NTFS file system ${dev}${pnum}"
   ntfsresize -i -f ${dev}${pnum} >> $logger_file 2>&1
   if [ $? -ne 0 ] ; then
-    log.error "  Error while scanning for NTFS file system on ${dev}${pnum}"
+    log.warn "  ntfsresize -i -f ${dev}${pnum} returned non-zero exit code, but continuing"
     return
   fi
 
