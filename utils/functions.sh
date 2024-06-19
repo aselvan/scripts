@@ -132,7 +132,7 @@ extend_ntfs_partition() {
   
   # scan for the ntfs file system
   log.stat "  Scanning NTFS file system on ${dev}${pnum}"
-  ntfsresize -i -f ${dev}${pnum} >> $logger_file 2>&1
+  ntfsresize -i -f --no-progress-bar ${dev}${pnum} >> $logger_file 2>&1
   if [ $? -ne 0 ] ; then
     log.warn "  ntfsresize -i -f ${dev}${pnum} returned non-zero exit code, but continuing"
     return
