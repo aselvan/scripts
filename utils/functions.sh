@@ -130,20 +130,12 @@ extend_ntfs_partition() {
     fi
   fi
   
-  # scan for the ntfs file system
-  log.stat "  Scanning NTFS file system on ${dev}${pnum}"
-  ntfsresize -i -f --no-progress-bar ${dev}${pnum} >> $logger_file 2>&1
-  if [ $? -ne 0 ] ; then
-    log.warn "  ntfsresize -i -f ${dev}${pnum} returned non-zero exit code, but continuing"
-    return
-  fi
-
   # do a dry run and if it is successful, do the actual NTFS resize
   log.stat "  Dry run for NTFS file system resize operation on ${dev}${pnum}"  
-  ntfsresize -f -f --no-action $dev$pnum >> $logger_file 2>&1
+  ntfsresize -f -f --no-action --no-progress-bar $dev$pnum >> $logger_file 2>&1
   if [ $? -eq 0 ] ; then
     log.stat "  Actual NTFS file system resize operation on ${dev}${pnum}"  
-    ntfsresize -f -f ${dev}${pnum} >> $logger_file 2>&1
+    ntfsresize -f -f --no-progress-bar ${dev}${pnum} >> $logger_file 2>&1
     if [ $? -ne 0 ] ; then
       log.error "  Resize NTFS filesystem on ${dev}${pnum} failed!"
     fi
