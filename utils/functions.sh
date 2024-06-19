@@ -120,10 +120,11 @@ extend_ntfs_partition() {
   fi
 
   # Check if ntfs is clean by running ntfsfix with no action switch.
+  log.stat "  Checking NTFS filesystem state on ${dev}${pnum} ..."  
   ntfsfix -n ${dev}${pnum} >> $logger_file 2>&1
   if [ $? -ne 0 ] ; then
     # since ntfsfix returned non-zero, make an attempt to run it to fix any errors
-    log.stat "  Check/repair NTFS filesystem... (might take a few minutes)"
+    log.stat "  NTFS filesystem is not clean, attempting to fix ... (might take a few minutes)"
     ntfsfix ${dev}${pnum} >> $logger_file 2>&1
     if [ $? -ne 0 ] ; then
       log.warn "  ntfsfix ${dev}${pnum} returned non-zero exit code, but continuing ..."
