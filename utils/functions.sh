@@ -119,11 +119,15 @@ extend_ntfs_partition() {
     return
   fi
 
-  # Check and repair NTFS filesystem
-  log.stat "  Check/repair NTFS filesystem... (might take a few minutes)"
-  ntfsfix ${dev}${pnum} >> $logger_file 2>&1
+  # Check if ntfs is clean by running ntfsfix with no action switch.
+  ntfsfix -n ${dev}${pnum} >> $logger_file 2>&1
   if [ $? -ne 0 ] ; then
-    log.warn "  ntfsfix ${dev}${pnum} returned non-zero exit code, but continuing ..."
+    # since ntfsfix returned non-zero, make an attempt to run it to fix any errors
+    log.stat "  Check/repair NTFS filesystem... (might take a few minutes)"
+    ntfsfix ${dev}${pnum} >> $logger_file 2>&1
+    if [ $? -ne 0 ] ; then
+      log.warn "  ntfsfix ${dev}${pnum} returned non-zero exit code, but continuing ..."
+    fi
   fi
   
   # scan for the ntfs file system
