@@ -106,6 +106,8 @@ write_tag_file() {
   cat << EOF > ${mount_dir}/${my_name_noext}.txt
   
   Imaging Tool:  $my_version
+  Source:        https://github.com/aselvan/scripts/blob/master/tools/parallel_dd.sh
+  GitHub:        https://github.com/aselvan/scripts
   Image Tag:     $tag
   Date created:  `date +'%b %d, %r'`
   
