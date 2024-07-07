@@ -32,3 +32,5 @@
 # See: https://docs.oracle.com/en/cloud/paas/content-cloud/creating-experiences/cobrowse.html
 0.0.0.0 public.cobrowse.oraclecloud.com
 
+# reddit ad image preview
+0.0.0.0 preview.redd.it
