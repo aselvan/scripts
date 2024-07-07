@@ -34,3 +34,4 @@
 
 # reddit ad image preview
 0.0.0.0 preview.redd.it
+0.0.0.0 external-preview.redd.it
