@@ -22,10 +22,11 @@
 #   Jun 13, 2024 --- Added option to write a tag/version file on new imaged disk(s)
 #   Jun 18, 2024 --- Added code to ensure all partitions on target device are umounted.
 #   Juy 15, 2024 --- Renamed (was parallel_dd.sh) and now uses images created by disk_copy.sh
+#   Juy 17, 2024 --- Reordered tag file creation and also make a copy to disk_copy_dir
 #
 
 # version format YY.MM.DD
-version=24.07.15
+version=24.07.17
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Clone multiple disks in parallel using dd."
@@ -33,6 +34,7 @@ my_dirname=`dirname $0`
 my_path=$(cd $my_dirname; pwd -P)
 my_logfile="/tmp/$(echo $my_name|cut -d. -f1).log"
 my_name_noext="$(echo $my_name|cut -d. -f1)"
+tag_file="/tmp/${my_name_noext}.txt"
 
 default_scripts_github=$HOME/src/scripts.github
 scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
@@ -52,7 +54,7 @@ device_list=""
 failure=0
 skip_confirmation=0
 extend_ntfs=0
-tag="Not Provided"
+tag="CFTB image (`date +'%b %d, %r'`)"
 partition_file_count=0
 
 usage() {
@@ -80,6 +82,18 @@ mail_and_exit() {
   log.stat "Exit Status: $failure"
   send_mail "$failure"
   exit $failure
+}
+
+create_tag_file() {
+  cat << EOF > ${tag_file}
+  
+  Imaging Tool:  $my_version
+  Source:        https://github.com/aselvan/scripts/blob/master/tools/disk_clone.sh
+  GitHub:        https://github.com/aselvan/scripts
+  Image Tag:     $tag
+  Date created:  `date +'%b %d, %r'`
+  
+EOF
 }
 
 write_tag_file() {
@@ -110,15 +124,8 @@ write_tag_file() {
 
   # write the tag file
   log.stat "  Writing tag/version file on root directory of ${dev}${pnum} ..."
-  cat << EOF > ${mount_dir}/${my_name_noext}.txt
-  
-  Imaging Tool:  $my_version
-  Source:        https://github.com/aselvan/scripts/blob/master/tools/disk_clone.sh
-  GitHub:        https://github.com/aselvan/scripts
-  Image Tag:     $tag
-  Date created:  `date +'%b %d, %r'`
-  
-EOF
+  cp  ${tag_file} ${mount_dir}/.
+
   # now unmount
   umount $mount_dir
 }
@@ -284,11 +291,17 @@ copy_partition_table
 # now copy each of the partition data in parallel
 copy_all_partitions
 
+# create the tagfile and copy to all target devices
+create_tag_file
+
 # Finally, write tag/version
 for dev in $device_list ; do
   log.stat "  Writing tag file on $dev"
   write_tag_file $dev
 done
+
+# save tag file 
+cp ${tag_file} ${disk_copy_dir}/.
 
 log.stat "$my_name completed in $(elapsed_time)"
 
