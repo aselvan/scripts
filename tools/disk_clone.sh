@@ -78,9 +78,9 @@ EOF
 }
 
 mail_and_exit() {
-  log.stat "Total runtime: $(elapsed_time)"
-  log.stat "Exit Status: $failure"
+  log.debug "Exit Status: $failure"
   send_mail "$failure"
+  log.stat "$my_name completed in $(elapsed_time)"
   exit $failure
 }
 
@@ -302,7 +302,5 @@ done
 
 # save tag file 
 cp ${tag_file} ${disk_copy_dir}/.
-
-log.stat "$my_name completed in $(elapsed_time)"
 
 mail_and_exit
