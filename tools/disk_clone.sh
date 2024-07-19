@@ -115,7 +115,7 @@ copy_files() {
   fi
 
   # check if there is any files to copy
-  ls ${disk_copy_dir}/*.${copy_files_ext} 2>/dev/null
+  ls ${disk_copy_dir}/*.${copy_files_ext} >/dev/null 2>&1
   if [ $? -ne 0 ] ; then
     log.warn "  No files found at ${disk_copy_dir}/*.${copy_files_ext} to copy to target device, skipping..."
     return
