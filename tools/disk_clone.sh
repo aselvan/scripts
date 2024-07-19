@@ -23,10 +23,11 @@
 #   Jun 18, 2024 --- Added code to ensure all partitions on target device are umounted.
 #   Juy 15, 2024 --- Renamed (was parallel_dd.sh) and now uses images created by disk_copy.sh
 #   Juy 17, 2024 --- Reordered tag file creation and also make a copy to disk_copy_dir
+#   Juy 19, 2024 --- Flush OS cache after each disk operations, option to copy files to root dir
 #
 
 # version format YY.MM.DD
-version=24.07.17
+version=24.07.19
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Clone multiple disks in parallel using dd."
@@ -40,7 +41,7 @@ default_scripts_github=$HOME/src/scripts.github
 scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
 # commandline options
-options="p:l:e:t:fvh?"
+options="p:l:e:t:c:fvh?"
 
 # ensure path for cron runs (prioritize usr/local first)
 export PATH="/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
@@ -56,6 +57,9 @@ skip_confirmation=0
 extend_ntfs=0
 tag="CFTB image (`date +'%b %d, %r'`)"
 partition_file_count=0
+copy_files_ext=""
+mount_dir="/tmp/$my_name_noext"
+
 
 usage() {
   cat << EOF
@@ -67,6 +71,7 @@ Usage: $my_name [options]
   -l <list>   ---> list of output devices to write [example: "/dev/sdc /dev/sdd"]
   -e <email>  ---> email address to send success/failure emails
   -t <string> ---> A tag string to inlcude in /$my_name_noext.txt
+  -c <ext>    ---> Copy all the files from $disk_copy_dir/*.<ext> to root drive of target device
   -f          ---> skip confirmation question for automated runs from cron.
   -v          ---> enable verbose, otherwise just errors are printed
   -h          ---> print usage/help
@@ -96,6 +101,32 @@ create_tag_file() {
 EOF
 }
 
+sync_os_cache() {
+  # just sync OS
+  log.stat "  Sync'ing OS cache to storage devices ..."
+  sync
+}
+
+copy_files() {
+  local dev=$1
+  if [ -z "$copy_files_ext" ] ; then
+    log.debug "  No optional files to copy"
+    return
+  fi
+
+  # check if there is any files to copy
+  ls ${disk_copy_dir}/*.${copy_files_ext} 2>/dev/null
+  if [ $? -ne 0 ] ; then
+    log.warn "  No files found at ${disk_copy_dir}/*.${copy_files_ext} to copy to target device, skipping..."
+    return
+  fi
+
+  # finally copy
+  log.stat "  Copying *.${copy_files_ext} to root drive of target device ${dev}${pnum}"
+  cp ${disk_copy_dir}/*.${copy_files_ext} ${mount_dir}/. 
+
+}
+
 write_tag_file() {
   local dev=$1
   if [ -z "$dev" ] ; then
@@ -111,7 +142,6 @@ write_tag_file() {
   fi
 
   # create a mount point in /tmp and mount the disk
-  mount_dir="/tmp/$my_name_noext"
   mkdir -p $mount_dir
 
   # mount the disk
@@ -125,9 +155,11 @@ write_tag_file() {
   # write the tag file
   log.stat "  Writing tag/version file on root directory of ${dev}${pnum} ..."
   cp  ${tag_file} ${mount_dir}/.
+  copy_files $dev
 
   # now unmount
   umount $mount_dir
+  sync_os_cache
 }
 
 #
@@ -179,6 +211,7 @@ copy_gpt_mbr() {
     log.stat "    Device: $dev"
     dd if=${disk_copy_dir}/${gpt_mbr_file} of=$dev >> $my_logfile 2>&1
   done
+  sync_os_cache
 }
 
 copy_partition_table() {
@@ -187,6 +220,7 @@ copy_partition_table() {
     log.stat "    Device: $dev"
     cat ${disk_copy_dir}/${partition_table_file} | sfdisk $dev >> $my_logfile 2>&1
   done
+  sync_os_cache
 }
 
 copy_all_partitions() {
@@ -217,6 +251,9 @@ copy_all_partitions() {
       mail_and_exit
     fi
   done
+
+  # just sync OS
+  sync_os_cache
 }
 
 # -------------------------------  main -------------------------------
@@ -248,6 +285,9 @@ while getopts $options opt ; do
       ;;
     t)
       tag="$OPTARG"
+      ;;
+    c)
+      copy_files_ext="$OPTARG"
       ;;
     f)
       skip_confirmation=1
