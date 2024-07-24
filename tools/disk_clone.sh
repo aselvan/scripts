@@ -24,10 +24,11 @@
 #   Juy 15, 2024 --- Renamed (was parallel_dd.sh) and now uses images created by disk_copy.sh
 #   Juy 17, 2024 --- Reordered tag file creation and also make a copy to disk_copy_dir
 #   Juy 19, 2024 --- Flush OS cache after each disk operations, option to copy files to root dir
+#   Juy 24, 2024 --- Optionally, copy a directory to root dir of the target disk
 #
 
 # version format YY.MM.DD
-version=24.07.19
+version=24.07.24
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Clone multiple disks in parallel using dd."
@@ -57,7 +58,7 @@ skip_confirmation=0
 extend_ntfs=0
 tag="CFTB image (`date +'%b %d, %r'`)"
 partition_file_count=0
-copy_files_ext=""
+dir_to_copy=""
 mount_dir="/tmp/$my_name_noext"
 
 
@@ -71,12 +72,12 @@ Usage: $my_name [options]
   -l <list>   ---> list of output devices to write [example: "/dev/sdc /dev/sdd"]
   -e <email>  ---> email address to send success/failure emails
   -t <string> ---> A tag string to inlcude in /$my_name_noext.txt
-  -c <ext>    ---> Copy all the files from $disk_copy_dir/*.<ext> to root drive of target device
+  -c <subdir> ---> Copy all the files from $disk_copy_dir/<subdir> to root drive of target device
   -f          ---> skip confirmation question for automated runs from cron.
   -v          ---> enable verbose, otherwise just errors are printed
   -h          ---> print usage/help
 
-example: $my_name -p $disk_copy_dir -l "/dev/sdc /dev/sdd /dev/sde" -e foo@bar.com
+example: $my_name -p $disk_copy_dir -l "/dev/sdc /dev/sdd /dev/sde" -e foo@bar.com -f
   
 EOF
   exit 0
@@ -107,24 +108,23 @@ sync_os_cache() {
   sync
 }
 
-copy_files() {
+copy_dir() {
   local dev=$1
-  if [ -z "$copy_files_ext" ] ; then
-    log.debug "  No optional files to copy"
+  if [ -z "$dir_to_copy" ] ; then
+    log.debug "  No optional directory specified to copy"
     return
   fi
 
-  # check if there is any files to copy
-  ls ${disk_copy_dir}/*.${copy_files_ext} >/dev/null 2>&1
-  if [ $? -ne 0 ] ; then
-    log.warn "  No files found at ${disk_copy_dir}/*.${copy_files_ext} to copy to target device, skipping..."
+  # check if the directory exists and readable
+  local dpath="${disk_copy_dir}/${dir_to_copy}"
+  if [ ! -d "$dpath" ] || [ ! -r "$dpath" ] ; then
+    log.warn "  Directory $dpath does not exists or readable, skipping..."
     return
   fi
 
   # finally copy
-  log.stat "  Copying *.${copy_files_ext} to root drive of target device ${dev}${pnum}"
-  cp ${disk_copy_dir}/*.${copy_files_ext} ${mount_dir}/. 
-
+  log.stat "  Copying $dpath to root drive of target device ${dev}${pnum}"
+  cp -rp ${dpath} ${mount_dir}/.
 }
 
 write_tag_file() {
@@ -155,7 +155,7 @@ write_tag_file() {
   # write the tag file
   log.stat "  Writing tag/version file on root directory of ${dev}${pnum} ..."
   cp  ${tag_file} ${mount_dir}/.
-  copy_files $dev
+  copy_dir $dev
 
   # now unmount
   umount $mount_dir
@@ -287,7 +287,7 @@ while getopts $options opt ; do
       tag="$OPTARG"
       ;;
     c)
-      copy_files_ext="$OPTARG"
+      dir_to_copy="$OPTARG"
       ;;
     f)
       skip_confirmation=1
