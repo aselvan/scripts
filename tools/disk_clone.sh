@@ -223,9 +223,29 @@ copy_partition_table() {
   sync_os_cache
 }
 
+# UNSED proc
+create_partition_table() {
+  log.stat "  Creating partition table layout on all devices"
+  for dev in $device_list ; do
+    log.stat "    Device: $dev"
+
+    parted -s $dev mklabel gpt
+    parted -a optimal -s $dev mkpart primary fat32  0% 129MiB
+    parted -a optimal -s $dev mkpart primary fat32 129MiB 229MiB
+    parted -a optimal -s $dev mkpart primary ntfs  229MiB 100%
+    parted -a optimal -s $dev set 2 esp on
+  
+    # make fs on all three partitions
+    mkfs.fat  ${dev}1
+    mkfs.fat  ${dev}2
+  done
+  sync_os_cache
+}
+
 copy_all_partitions() {
   log.stat "  Copy partition data on all devices (be patient, will take long time)"
-  
+  log.stat "    Devices: $device_list"
+
   # loop through each partition file and copy to all disks in parallel
   for (( p=1; p <= partition_file_count; p++ )) do
     partition_file=${disk_copy_dir}/partition${p}.dat
