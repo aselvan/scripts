@@ -208,7 +208,7 @@ send_mail() {
   local data_file="$2"
 
   if [ -z $email_address ] ; then
-    log.warn "Required email address is missing, skipping email ..."
+    log.debug "Required email address is missing, skipping email ..."
     return;
   fi
 
