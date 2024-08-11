@@ -52,13 +52,7 @@ EOF
 
 create_response() {
   # create a echo request
-  response=$(cat << EOF 
-HTTP/1.1 200 OK\r\n
-Content-Type: text/plain\r\n
-Content-Length: $string_len\r\n\r\n
-$string
-EOF
-)
+  response="HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: $string_len\r\n\r\n$string"
 }
 
 # -------------------------------  main -------------------------------
@@ -82,6 +76,7 @@ while getopts $options opt ; do
   case $opt in
     e)
       string="$OPTARG"
+      string_len=${#string}
       ;;
     p)
       port="$OPTARG"
@@ -98,13 +93,18 @@ while getopts $options opt ; do
   esac
 done
 
-log.stat "Running echo webserver @$port ... Press Ctrl+C to exit."
+# create the canned response
 create_response
 
+# install signal handler
+trap 'signal_handler' SIGINT
+
 if [ $loop -eq 1 ] ; then
+  log.stat "Running echo webserver @$port in a loop. Press Ctrl+c to terminate."
   while true ; do
     echo -e $response | nc -l $port 2>&1 >> $my_logfile
   done
 else
-    echo -e $response | nc -l $port 2>&1 >> $my_logfile
+  log.stat "Running echo webserver @$port ..."
+  echo -e $response | nc -l $port 2>&1 >> $my_logfile
 fi

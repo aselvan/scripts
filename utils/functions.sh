@@ -161,7 +161,14 @@ strip_ansi_codes() {
   mv $tmp_file $in_file
 }
 
-#--- user related utilities ---
+#--- system utilities ---
+# used for ctrl+c install in main function as shown below
+# trap 'signal_handler' SIGINT <other signal as needed>
+signal_handler() {
+  log.warn "Received Ctrl+c signal, exiting."
+  exit 99
+}
+
 check_root() {
   if [ `id -u` -ne 0 ] ; then
     log.error "root access needed to run this script, run with 'sudo $my_name' ... exiting."
