@@ -47,7 +47,7 @@ options="p:l:e:t:c:fvh?"
 # ensure path for cron runs (prioritize usr/local first)
 export PATH="/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
 
-disk_copy_dir=${DISK_COPY_DIR:-"/opt/cftb/images"}
+disk_copy_dir=${DISK_COPY_DIR:-"/opt/cftb/images-256g"}
 dd_bs="64K"
 gpt_mbr_file=mbr_gpt.dat
 partition_table_file=partition.tab
