@@ -82,7 +82,9 @@ restore_mac() {
   echo "[INFO] restoring mac to $my_mac ..."
 
   if [ $os_name = "Darwin" ]; then
-    $airport_bin $iface -z
+    #$airport_bin $iface -z
+    ifconfig $iface down
+    sleep 1
     ifconfig $iface ether $my_mac
     networksetup -setairportnetwork $iface $ap_ssid    
   else
@@ -115,7 +117,9 @@ check_mac() {
   echo "[INFO] changing mac to $mac_addr ..."
   if [ $os_name = "Darwin" ]; then  
     echo "[INFO] disabling interface to switch macaddr ..."  
-    $airport_bin $iface -z
+    #$airport_bin $iface -z
+    ifconfig $iface down
+    sleep 1
     ifconfig $iface ether $mac_addr
   else
     ifconfig $iface hw ether $my_mac    
