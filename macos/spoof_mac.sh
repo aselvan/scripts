@@ -32,6 +32,18 @@ check_root() {
   fi
 }
 
+change_mac() {
+  local mac_address=$1
+  ifconfig $iface down
+  sleep 1
+  ifconfig $iface ether $mac_address
+  if [ $? -ne 0 ] ; then
+    echo "[ERROR] changing mac to $mac_address failed. Try again."
+  else
+    echo "[INFO] successfully changed mac to $mac_address"
+  fi
+}
+
 save_mac() {
   echo "[INFO] saving my mac address ..."
   if [ ! -f $my_mac_addr_file ] ; then
@@ -52,11 +64,7 @@ restore_mac() {
   fi
   my_mac=`cat $my_mac_addr_file`
   echo "[INFO] restoring mac to $my_mac on interface '$iface' ..."
-  $airport_bin $iface -z
-  ifconfig $iface ether $my_mac
-  networksetup -setairportnetwork $iface $ap_ssid
-  ifconfig $iface down
-  ifconfig $iface up
+  change_mac $my_mac
 }
 
 spoof_mac() {
@@ -65,11 +73,7 @@ spoof_mac() {
     mac_to_spoof=`openssl rand -hex 6 | sed "s/\(..\)/\1:/g; s/.$//"`
   fi
   echo "[INFO] spoofing your mac as '$mac_to_spoof' on interface '$iface'"
-  $airport_bin $iface -z
-  ifconfig $iface ether $mac_to_spoof
-  networksetup -setairportnetwork $iface $ap_ssid
-  ifconfig $iface down
-  ifconfig $iface up
+  change_mac $mac_to_spoof
 }
 
 show_mac() {
@@ -89,8 +93,6 @@ usage() {
 }
 
 #  --- main entry ---
-check_root
-
 # parse commandline
 while getopts "$options_list" opt; do
   case $opt in
@@ -124,6 +126,8 @@ while getopts "$options_list" opt; do
      ;;
    esac
 done
+
+check_root
 
 # execute the request
 case $operation in 
