@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # secret.sh --- convenient wrapper to view/search sensitive data in an encrypted file
 #
@@ -10,67 +10,71 @@
 # Author:  Arul Selvan
 # Version: Feb 20, 2021 
 #
+# Version History
+#   Feb 20, 2021  --- original version
+#   Oct 13, 2024  --- Fixed logic so alternate key type i.e. openssl works, use standard logging
+#
 
-os_name=`uname -s`
-my_name=`basename $0`
-options="s:ivlh"
+
+# ensure paths so we don't need to deal with location of tools
+export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/opt/homebrew/bin:$PATH"
+
+# version format YY.MM.DD
+version=24.10.13
+my_name="`basename $0`"
+my_version="`basename $0` v$version"
+my_title="Decrypt/View encrypted secret file content"
+my_dirname=`dirname $0`
+my_path=$(cd $my_dirname; pwd -P)
+my_logfile="/tmp/$(echo $my_name|cut -d. -f1).log"
+default_scripts_github=$HOME/src/scripts.github
+scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
+
+# commandline options
+options="s:iveh"
 
 do_log=0
 operation="view"
-log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
 encFileBaseName="kanakku.txt"
 search_string=""
 gpg_opt="-qd"
 openssl_opt="-pbkdf2 -md md5 -aes-256-cbc -a -salt"
 egrep_opt=""
-
-# ensure paths so we don't need to deal with location of tools
-export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/opt/homebrew/bin:$PATH"
-
+default_keys_home="$HOME/data/personal/keys"
+KEYS_HOME=${KEYS_HOME:-$default_keys_home}
 
 usage() {
   cat <<EOF
-  
-Usage: $my_name [options]
-  
-  -s <string> ==> decrypt and regex case-sensitive search for 'string'
-  -i          ==> search will be case-insensitive
-  -v          ==> decrypt and open the file w/ vi (view) [default view]
-  -l          ==> log [default: no logging].
+$my_title
 
-  example: $my_name -s foobar
+Usage: $my_name [options]
+  -s <string> ---> decrypt and regex case-sensitive search for 'string'
+  -i          ---> search will be case-insensitive
+  -e          ---> decrypt and open the file w/ vi editor in view mode.
+  -v          ---> enable verbose, otherwise just errors are printed
+  -h          ---> print usage/help
+
+example: $my_name -i -s foobar
+example: $my_name -e 
 
 EOF
   exit
 }
 
-log() {
-  local msg=$1
-
-  if [ $do_log -eq 0 ] ; then
-    return
-  fi
-  echo $msg |tee -a $log_file
-}
-
 # validate path, file etc.
 do_check() {
-  # directory where the encrypted files are stored
-  log "[INFO] checking KEYS_HOME in environment ..."
-  if [ -z $KEYS_HOME ] ; then
-    KEYS_HOME="$HOME/data/personal/keys"
-    log "[INFO] KEYS_HOME not found, defaulting to $KEYS_HOME"
-  else
-    log "[INFO] KEYS_HOME is $KEYS_HOME"
-  fi
 
+  # check keys_home directory
+  log.info "Using KEYS_HOME=$KEYS_HOME"
   if [ ! -d $KEYS_HOME ] ; then
-    log "[ERROR] KEYS_HOME=$KEYS_HOME does not exists!"
+    log.error "KEYS_HOME=$KEYS_HOME does not exists!"
     exit 1
   fi
+
+  # check enc files presense
   cd $KEYS_HOME || exit 2
-  if [[ ! -f $encFileBaseName.enc || ! -f $encFileBaseName.gpg ]] ; then
-    log "[ERROR] missing encrypted file(s) [$encFileBaseName.enc or $encFileBaseName.gpg]"
+  if [ ! -f ${encFileBaseName}.enc ] && [ ! -f ${encFileBaseName}.gpg ] ; then
+    log.error "missing encrypted file(s) [$encFileBaseName.enc or $encFileBaseName.gpg]"
     usage
   fi
 }
@@ -78,10 +82,10 @@ do_check() {
 do_view() {
   # prefere GPG if exists
   if [ -f $encFileBaseName.gpg ] ; then
-    log "[INFO] decrypting $encFileBaseName.gpg for view ..."
+    log.info "decrypting $encFileBaseName.gpg for view ..."
     gpg $gpg_opt $encFileBaseName.gpg | view -
   else
-    log "[INFO] decrypting $encFileBaseName.enc for view ..."
+    log.info "decrypting $encFileBaseName.enc for view ..."
     openssl enc -d $openssl_opt -in $encFileBaseName.enc | view -
   fi
   exit
@@ -89,23 +93,35 @@ do_view() {
 
 do_search() {
   if [ -z "$search_string" ] ; then
-    log "[ERROR] search string is missing!"
+    log.info "search string is missing!"
     usage
   fi
   # prefere GPG if exists
   if [ -f $encFileBaseName.gpg ] ; then
-    log "[INFO] decrypting $encFileBaseName.gpg for search ..."
+    log.info "decrypting $encFileBaseName.gpg for search ..."
     echo
     gpg $gpg_opt $encFileBaseName.gpg | egrep $egrep_opt $search_string
   else
     echo
-    log "[INFO] decrypting $encFileBaseName.enc for search ..."
+    log.info "decrypting $encFileBaseName.enc for search ..."
     openssl enc -d $openssl_opt -in $encFileBaseName.enc | egrep $egrep_opt $search_string
   fi
   exit
 }
 
-# ---------------- main entry --------------------
+# -------------------------------  main -------------------------------
+# First, make sure scripts root path is set, we need it to include files
+if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
+  # include logger, functions etc as needed 
+  source $scripts_github/utils/logger.sh
+  source $scripts_github/utils/functions.sh
+else
+  echo "ERROR: SCRIPTS_GITHUB env variable is either not set or has invalid path!"
+  echo "The env variable should point to root dir of scripts i.e. $default_scripts_github"
+  exit 1
+fi
+# init logs
+log.init $my_logfile
 
 # commandline parse
 while getopts $options opt; do
@@ -117,25 +133,19 @@ while getopts $options opt; do
     i)
       egrep_opt="-i"
       ;;
-    v)
+    e)
       operation="view"
       ;;
-    l)
-      do_log=1
+    v)
+      verbose=1
       ;;
-    ?)
-      usage
-      ;;
-    h)
+    ?|h|*)
       usage
       ;;
     esac
 done
 
-echo "" > $log_file
-log "[INFO] `date`: $my_name starting ..."
 do_check
-
 
 if [ $operation = "view" ] ; then
   do_view
