@@ -27,7 +27,7 @@ arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 options="c:i:n:avh?"
 
 command_name=""
-supported_commands="showip|showipexternal|showmac|showdhcp|scannetwork|showmem|showvmstat"
+supported_commands="ip|lanip|wanip|mac|dhcp|scannetwork|mem|vmstat|cpu"
 iface="en0"
 my_net="192.168.1.0/24"
 my_ip=""
@@ -40,15 +40,14 @@ usage() {
 $my_name --- $my_title
 
 Usage: $my_name [options]
-  -c <command>   ---> command to run
+  -c <command>   ---> command to run [see supported commands below]
   -i <interface> ---> network interface to use [Default: $iface]
   -n <network>   ---> CIDR address to scan for 'shownetwork' command [Default: $my_net]
-  -a             ---> show all details
   -v             ---> enable verbose, otherwise just errors are printed
   -h             ---> print usage/help
 
 Supported commands: $supported_commands
-example: $my_name -c showip
+example: $my_name -c ipexternal
 
   
 EOF
@@ -57,7 +56,7 @@ EOF
 
 function showmac() {
   mac_addr=`ifconfig $iface | grep ether| awk '{print $2;}'`
-  log.stat "MAC address of $iface is: $mac_addr"
+  log.stat "\tMAC address of $iface is: $mac_addr" $green
 }
 
 function showdhcp() {
@@ -65,7 +64,7 @@ function showdhcp() {
 }
 
 function scannetwork() {
-  nmap --host-timeout 3 -T5 $my_net >/dev/null 2>&1
+  nmap --host-timeout 10 -T5 $my_net >/dev/null 2>&1
   arp -an|egrep -v 'incomplete|ff:ff:ff:ff|169.254|224.|239.|.255)'> $arp_entries
 
   cat $arp_entries | while read -r line ; do
@@ -75,7 +74,7 @@ function scannetwork() {
     if [ -z "$host" ] ; then
       host="N/A"
     fi
-    log.stat "$ip\t $host\t # macaddress: $mac"
+    log.stat "  $ip\t $host\t # macaddress: $mac" $green
   done
 }
 
@@ -83,14 +82,23 @@ showmem() {
   hwmemsize=$(sysctl -n hw.memsize)
   ramsize=$(expr $hwmemsize / $((1024**3)))
   free_percent=$(memory_pressure|grep percentage|awk '{print $5;}')
-  log.stat "Physical Memory: ${ramsize}GB" $green
-  log.stat "Free Memory    : ${free_percent}" $green
+  log.stat "\tPhysical Memory: ${ramsize}GB" $green
+  log.stat "\tFree Memory    : ${free_percent}" $green
 }
 
 showvmstat() {
   log.stat "`vm_stat | perl -ne '/page size of (\d+)/ and $size=$1; /Pages\s+([^:]+)[^\d]+(\d+)/ and printf("%-16s % 16.2f MB\n", "$1:", $2 * $size / 1048576);'`" $green
 
 }
+
+showcpu() {
+  log.stat "\tVendor: `sysctl -a machdep.cpu.vendor|awk -F: '{print $2}'`"  $green
+  log.stat "\tBrand:  `sysctl -a machdep.cpu.brand_string|awk -F: '{print $2}'`" $green
+  log.stat "\tFamily: `sysctl -a machdep.cpu.extfamily|awk -F: '{print $2}'`" $green
+  log.stat "\tModel:  `sysctl -a machdep.cpu.model|awk -F: '{print $2}'`" $green
+  log.stat "\t#cores: `sysctl -a machdep.cpu.core_count|awk -F: '{print $2}'`" $green
+}
+
 
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
@@ -138,25 +146,33 @@ my_ip=`ipconfig getifaddr $iface`
 my_net=`echo $my_ip |awk -F. '{print $1"."$2"."$3".0/24"; }'` 
 
 case $command_name in 
-  showmac)
+  mac)
     showmac
     ;;
-  showip)
-    log.stat "LAN IP: $my_ip on interface: $iface"
+  ip)
+    log.stat "\tLAN IP: $my_ip on interface: $iface"
+    log.stat "\tWAN IP: `curl -s ifconfig.me`"
     ;;
-  showipexternal)
-    log.stat "WAN IP: `curl -s ifconfig.me`"
+  lanip)
+    log.stat "\tLAN IP: $my_ip on interface: $iface"
     ;;
-  showdhcp)
+  wanip)
+    log.stat "\tWAN IP: `curl -s ifconfig.me`"
+    ;;
+  dhcp)
     showdhcp
     ;;
   scannetwork)
+    log.stat "Scanning network $my_net using interface $iface ... [note: make sure $iface is correct]"
     scannetwork
     ;;
-  showmem)
+  mem)
     showmem
     ;;
-  showvmstat)
+  cpu)
+    showcpu
+    ;;
+  vmstat)
     showvmstat   
     ;;
   *)
