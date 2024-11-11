@@ -28,7 +28,7 @@ options="c:i:n:avh?"
 
 command_name=""
 supported_commands="ip|lanip|wanip|mac|dhcp|scannetwork|mem|vmstat|cpu"
-iface="en0"
+iface=""
 my_net="192.168.1.0/24"
 my_ip=""
 
@@ -52,6 +52,20 @@ example: $my_name -c ipexternal
   
 EOF
   exit 0
+}
+
+# detect active, IP assigned interface, first one matchign will be used
+function get_interface() {
+  local ipaddr
+  for iface in `ipconfig getiflist` ; do
+    ipaddr=`ipconfig getifaddr $iface`
+    if [ ! -z "$ipaddr" ] ; then
+      log.debug "Using interface: $iface"
+      return
+    fi
+  done
+  iface="en0"
+  log.debug "Using interface: $iface"
 }
 
 function showmac() {
@@ -140,6 +154,11 @@ done
 if [ -z "$command_name" ] ; then
   log.error "Missing arguments, see usage below"
   usage
+fi
+
+# determine the interface if one not provided.
+if [ -z "$iface" ] ; then
+  get_interface
 fi
 
 my_ip=`ipconfig getifaddr $iface`
