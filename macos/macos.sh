@@ -8,10 +8,11 @@
 #
 # Version History:
 #   Aug 25, 2024 --- Original version
+#   Nov 11, 2024 --- Added showipexternal command, show interface on showip command
 #
 
 # version format YY.MM.DD
-version=24.0825
+version=2024.10.11
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl tools for macOS all in one place"
@@ -26,7 +27,7 @@ arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 options="c:i:n:avh?"
 
 command_name=""
-supported_commands="showip|showmac|showdhcp|scannetwork|showmem|showvmstat"
+supported_commands="showip|showipexternal|showmac|showdhcp|scannetwork|showmem|showvmstat"
 iface="en0"
 my_net="192.168.1.0/24"
 my_ip=""
@@ -141,7 +142,10 @@ case $command_name in
     showmac
     ;;
   showip)
-    log.stat "My IP: $my_ip"
+    log.stat "LAN IP: $my_ip on interface: $iface"
+    ;;
+  showipexternal)
+    log.stat "WAN IP: `curl -s ifconfig.me`"
     ;;
   showdhcp)
     showdhcp
