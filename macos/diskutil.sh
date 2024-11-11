@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# format.sh --- wrapper script over diskutils to format disk on MacOS
+# diskutil.sh --- wrapper script over diskutils to format disk on MacOS
 #
 # Author:  Arul Selvan
 # Created: Oct 18, 2020
@@ -8,12 +8,13 @@
 # Version History:
 #   Oct 18, 2020 --- Original version
 #   Nov 2,  2024 --- Changed to use standard includes and additional options
+#   Nov 11, 2024 --- renamed to diskutil.sh to be consistent, check macOS version for -noEFI option
 
 # version format YY.MM.DD
 version=24.11.02
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
-my_title="Format wrapper using diskutil on macOS"
+my_title="Wrapper for diskutil on macOS"
 my_dirname=`dirname $0`
 my_path=$(cd $my_dirname; pwd -P)
 my_logfile="/tmp/$(echo $my_name|cut -d. -f1).log"
@@ -30,12 +31,13 @@ fat32_char_limit=8
 fs_types="JHFS+ HFS+ FAT32 ExFAT"
 disk_list=`diskutil list |grep dev| awk -F'/| ' '{print $3;}' |tr '\n' ' '`
 volume_name="MYDISK"
-fs_type=""
+fs_type="ExFAT"
 disk=""
 disk_location=""
 disk_type=""
 disk_size=""
 disk_virtual=""
+no_efi=""
 
 usage() {
   cat << EOF
@@ -68,7 +70,7 @@ list_available_disks() {
 
 check_disk() {
   if [ -z $disk ] ; then
-    echo "[ERROR] required disk argument is missing!" | tee -a $log_file
+    log.error "Required disk argument is missing!"
     usage
   fi
 
@@ -87,7 +89,7 @@ check_disk() {
 
 check_format() {
   if [ -z $fs_type ] ; then
-    log.error "equired format argument is missing!"
+    log.error "Required format argument is missing!"
     usage
   fi
 
@@ -151,7 +153,7 @@ while getopts "$options_list" opt; do
 done
 
 # validate required args
-if [[ -z $fs_type || -z $disk ]] ; then
+if [ -z "$disk" ] ; then
   log.error "missing required arguments!"
   usage
 fi
@@ -160,13 +162,22 @@ fi
 check_format
 check_disk
 
+# setup noEFI argument, only supported macOS 15+ (possibly earlier)
+mac_ver=`sw_vers --productVersion|awk -F. '{print $1}'`
+if [ $mac_ver -ge 15 ] ; then
+  log.debug "Running macOS version >= $mac_ver, using -noEFI option"
+  no_efi="-noEFI"
+else
+  log.debug "Running older macOS version i.e. $mac_ver, not using -noEFI option"
+fi
+
 # do the format after confirmation
 confirm_action "About to format disk '/dev/$disk'"
 if [ $? -eq 1 ] ; then
   log.stat "Formating ---> Disk: /dev/$disk; FileSystem: $fs_type; Volume Name: $volume_name"
   # note: the MBR argument avoids EFI partition automatically done by diskutil
   #diskutil eraseDisk $fs_type $volume_name MBR /dev/$disk 2>&1 | tee -a $mylog_file
-  diskutil eraseDisk -noEFI $fs_type $volume_name $disk 2>&1 | tee -a $mylog_file
+  diskutil eraseDisk $no_efi $fs_type $volume_name $disk 2>&1 | tee -a $mylog_file
 else
   log.warn "disk format cancelled"
 fi
