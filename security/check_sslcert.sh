@@ -16,7 +16,7 @@
 #
 
 # version format YY.MM.DD
-version=25.05.19
+version=24.05.19
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Download and validate SSL certs of a server"
@@ -53,7 +53,7 @@ Usage: $my_name [options]
   -c          ---> enable verbose, otherwise just errors are printed
   -h          ---> print usage/help
 
-example: $my_name -s google.com -o "-enddate -issuer -subject"
+example: $my_name -s google.com -o "-enddate -issuer"
   
 EOF
   exit 0
