@@ -63,26 +63,12 @@ EOF
   exit 0
 }
 
-# check if file is a media file that could support metadata
-is_media() {
-  local f=$1
-  local mtype=`file -b --mime-type $f | cut -d '/' -f 2`
-
-  case $mtype in 
-    jpg|jpeg|JPEG|JPG|PDF|pdf|mpeg|MPEG|MP3|mp3|mp4|MP4|png|PNG|mov|MOV|gif|GIF|TIFF|tiff)
-      return 0
-      ;;
-    *)
-      return 1 
-      ;;
-  esac
-}
-
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
 if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
   # include logger, functions etc as needed 
   source $scripts_github/utils/logger.sh
+  source $scripts_github/utils/functions.sh
 else
   echo "ERROR: SCRIPTS_GITHUB env variable is either not set or has invalid path!"
   echo "The env variable should point to root dir of scripts i.e. $default_scripts_github"

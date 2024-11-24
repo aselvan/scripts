@@ -161,6 +161,21 @@ strip_ansi_codes() {
   mv $tmp_file $in_file
 }
 
+# check if file is a media file that could support metadata
+is_media() {
+  local f=$1
+  local mtype=`file -b --mime-type $f | cut -d '/' -f 2`
+
+  case $mtype in 
+    jpg|jpeg|JPEG|JPG|PDF|pdf|mpeg|MPEG|MP3|mp3|mp4|MP4|png|PNG|mov|MOV|gif|GIF|TIFF|tiff|x-m4a)
+      return 0
+      ;;
+    *)
+      return 1 
+      ;;
+  esac
+}
+
 #--- system utilities ---
 # used for ctrl+c install in main function as shown below
 # trap 'signal_handler' SIGINT <other signal as needed>
