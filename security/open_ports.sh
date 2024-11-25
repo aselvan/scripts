@@ -108,6 +108,10 @@ while getopts $options opt ; do
   esac
 done
 
+# check for root, lsof etc
+check_root
+check_installed lsof
+
 case $list_option in 
   0)
     show_listen
