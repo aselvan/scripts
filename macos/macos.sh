@@ -84,11 +84,11 @@ function scannetwork() {
   cat $arp_entries | while read -r line ; do
     ip=$(echo $line|awk -F '[()]|at | on ' '{print $2}')
     mac=$(echo $line|awk -F '[()]|at | on ' '{print $4}')
-    host=`dig +short -x $ip|sed -e 's/\.$//'`
-    if [ -z "$host" ] ; then
+    host=`dig +short +timeout=1 +retry=0 +nostats -x $ip|sed -e 's/\.$//'`
+    if [[ $host == "" || $host == *"communications error"* || $host == *"connection timed out"* ]] ; then
       host="N/A"
     fi
-    log.stat "  $ip\t $host\t # macaddress: $mac" $green
+    log.stat "  $ip\t$host\t # macaddress: $mac" $green
   done
 }
 
