@@ -102,7 +102,7 @@ function get_ip_and_network() {
       my_ip=`ipconfig getifaddr $iface`
       ;;
     Linux)
-      not_implemented
+      my_ip=`hostname -I | awk '{print $1}'`
       ;;
     *)
       not_implemented
