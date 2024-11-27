@@ -1,167 +1,229 @@
 #!/usr/bin/env bash
 #
-# network_info.sh --- Print simple network info (IP, MAC ... etc) of wired or wireless interface
+# network.sh --- Wrapper for many useful network commands.
 #
-# Though these info are readily available with different commandline tools on a Mac, this script
-# is a handy one to use to get a simple output of all you need to know on your network device.
+# Though these info are readily available with different commandline tools, this script
+# is a hany wrapoper to get a simple output of all you need to know.
 #
 # Author:  Arul Selvan
 # Created: Jul 29, 2023
 #
+# Version History:
+#   Jul 29, 2023 --- Original version
+#   Nov 26, 2024 --- Renamed to network.sh (was network_info.sh) and added new functionality
+#
 
 # version format YY.MM.DD
-version=23.07.31
+version=2024.11.26
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
-os_name=`uname -s`
-dir_name=`dirname $0`
-my_path=$(cd $dir_name; pwd -P)
+my_title="Misl network tools wrapper all in one place"
+my_dirname=`dirname $0`
+my_path=$(cd $my_dirname; pwd -P)
+my_logfile="/tmp/$(echo $my_name|cut -d. -f1).log"
+default_scripts_github=$HOME/src/scripts.github
+scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
+arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 
-log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
-log_init=0
-options="i:ewvh?"
-verbose=0
-ssid=""
-net_dev="en0"
+# commandline options
+options="c:i:n:avh?"
+
+command_name=""
+supported_commands="info|ip|lanip|wanip|mac|dhcp|scannetwork"
+iface=""
+my_net="192.168.1.0/24"
+my_ip=""
+
 airport="/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport"
 
-# ensure path for cron runs
-export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
+# ensure path for cron runs (prioritize usr/local first)
+export PATH="/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
 
 usage() {
   cat << EOF
+$my_name --- $my_title
 
-  Usage: $my_name [options]
-     -i <interface> ---> show details of specified interface [example: en0, en1...etc]
-     -e             ---> show details of wired interface [on multi-homed, first device shown]
-     -w             ---> show details of wireless interface [on multi-homed, first device shown]
-     -v             ---> verbose mode prints info messages, otherwise just errors are printed
-     -h             ---> print usage/help
+Usage: $my_name [options]
+  -c <command>   ---> command to run [see supported commands below]  
+  -i <interface> ---> network interface to use [Default: $iface]
+  -n <network>   ---> CIDR address to scan for 'shownetwork' command [Default: $my_net]
+  -v             ---> enable verbose, otherwise just errors are printed
+  -h             ---> print usage/help
 
-  example: $my_name -w
+Supported commands: $supported_commands  
+example: $my_name -c info
   
 EOF
   exit 0
 }
 
-log.init() {
-  if [ $log_init -eq 1 ] ; then
-    return
-  fi
-
-  log_init=1
-  if [ -f $log_file ] ; then
-    rm -f $log_file
-  fi
-  echo -e "\e[0;34m$my_version, `date +'%m/%d/%y %r'` \e[0m" | tee -a $log_file
+function not_implemented() {
+  log.warn "Not implemented for $os_name OS yet, exiting..."
+  exit 99
 }
 
-log.info() {
-  if [ $verbose -eq 0 ] ; then
-    return;
-  fi
-  log.init
-  local msg=$1
-  echo -e "\e[0;32m$msg\e[0m" | tee -a $log_file 
-}
-log.debug() {
-  if [ $verbose -eq 0 ] ; then
-    return;
-  fi
-  log.init
-  local msg=$1
-  echo -e "\e[1;30m$msg\e[0m" | tee -a $log_file 
+function get_interface_linux() {
+  not_implemented
 }
 
-log.stat() {
-  log.init
-  local msg=$1
-  echo -e "\e[0;34m$msg\e[0m" | tee -a $log_file 
+# detect active, IP assigned interface. The first one is returned
+function get_interface_mac() {
+  local ipaddr
+  for iface in `ipconfig getiflist` ; do
+    ipaddr=`ipconfig getifaddr $iface`
+    if [ ! -z "$ipaddr" ] ; then
+      log.debug "Using interface: $iface"
+      return
+    fi
+  done
+  iface="en0"
+  log.debug "Using interface: $iface"
+}
+function get_interface() {
+  case $os_name in 
+    Darwin)
+      get_interface_mac
+      ;;
+    Linux)
+      get_interface_linux
+      ;;
+    *)
+      not_implemented
+      ;;
+  esac
 }
 
-log.warn() {
-  log.init
-  local msg=$1
-  echo -e "\e[1;33m$msg\e[0m" | tee -a $log_file 
-}
-log.error() {
-  log.init
-  local msg=$1
-  echo -e "\e[1;31m$msg\e[0m" | tee -a $log_file 
+# get current IP and network CIDR
+function get_ip_and_network() {
+  my_ip=`ipconfig getifaddr $iface`
+
+  case $os_name in 
+    Darwin)
+      my_ip=`ipconfig getifaddr $iface`
+      ;;
+    Linux)
+      not_implemented
+      ;;
+    *)
+      not_implemented
+      ;;
+  esac
+  my_net=`echo $my_ip |awk -F. '{print $1"."$2"."$3".0/24"; }'` 
+  
 }
 
-get_interface() {
+
+function info_mac() {
   local dev_string=$1
-  net_dev=$(networksetup -listallhardwareports| awk "/Hardware Port: ${dev_string}/ {getline; print \$2}")
-  if [ -z "$net_dev" ] ; then
-    log.error "Not able to determine your network interface!"
-    exit 2
-  fi
-  log.info "The network interface is '$net_dev'"
-}
-
-print_info() {
-  local dev_string=$1
-  lease_secs=`ipconfig getoption $net_dev lease_time`
+  lease_secs=`ipconfig getoption $iface lease_time`
   log.stat "Total number of interfaces available: `ipconfig ifcount`"
   # read IP, MAC ... etc
-  echo "    Interface:    $net_dev"
-  echo "    Type:         $dev_string"
-  echo "    Status:       `ifconfig $net_dev|awk '/status/ {print $2}'`"
-  echo "    MAC Address:  `ifconfig $net_dev  | awk '/ether/ {print $2}'`"
-  echo "    IP Address:   `ipconfig getifaddr $net_dev`"
-  echo "    Mask:         `ipconfig getoption $net_dev subnet_mask`"
-  echo "    DNS:          `ipconfig getoption $net_dev domain_name_server`"
-  echo "    Gateway:      `ipconfig getoption $net_dev router`"
-  echo "    Broadcast:    `ipconfig getoption $net_dev broadcast_address`"
-  echo "    DHCP Lease:   `ipconfig getoption $net_dev lease_time` seconds"
-  echo "    `networksetup -getMTU $net_dev`"
+  log.stat "\tInterface:    $iface" $green
+  log.stat "\tStatus:       `ifconfig $iface|awk '/status/ {print $2}'`" $green
+  log.stat "\tMAC Address:  `ifconfig $iface  | awk '/ether/ {print $2}'`" $green
+  log.stat "\tIP Address:   `ipconfig getifaddr $iface`" $green
+  log.stat "\tMask:         `ipconfig getoption $iface subnet_mask`" $green
+  log.stat "\tDNS:          `ipconfig getoption $iface domain_name_server`" $green
+  log.stat "\tGateway:      `ipconfig getoption $iface router`" $green
+  log.stat "\tBroadcast:    `ipconfig getoption $iface broadcast_address`" $green
+  log.stat "\tDHCP Lease:   `ipconfig getoption $iface lease_time` seconds" $green
+  log.stat "\t`networksetup -getMTU $iface`" $green
 
-  # if device is WiFi print additional info
-  if [ "$dev_string" = "Wi-Fi" ] ; then
-    rssi=`$airport -I |awk '/ agrCtlRSSI:/ {print $2}'`
-    noise=`$airport -I |awk '/ agrCtlNoise:/ {print $2}'`
-    echo "    `networksetup -getairportpower $net_dev`"
-    echo "    Wi-Fi Name:         `$airport -I |awk '/ SSID:/ {print $2}'`"
-    echo "    Wi-Fi Channel:      `$airport -I |awk '/ channel:/ {print $2}'`"
-    echo "    Wi-Fi Auth:         `$airport -I |awk '/ link auth:/ {print $3}'`"
-    echo "    Wi-Fi Channel:      `$airport -I |awk '/ channel:/ {print $2}'`"
-    echo "    Wi-FI RSSI:         $rssi [range: (-100,0) note: closer to 0 is better, ex: -55 is pretty damn good]"
-    echo "    Wi-Fi Noise:        $noise [range: (-120,0) note: closer to -120 is better]"
-    echo "    Wi-Fi Quality:      $((rssi - noise)) [should be at least 20 or greater]"
-    echo "    Wi-Fi Last TxnRate: `$airport -I |awk '/ lastTxRate:/ {print $2}'` mbps"
+  # if this is a Wi-Fi interface get Wi-Fi details
+  networksetup -getairportnetwork $iface 2>&1 >/dev/null
+  if [ $? -eq 0 ] ; then
+    log.stat "\r`system_profiler SPAirPortDataType | grep -A 20 $iface`"
+    
+    #rssi=`$airport -I |awk '/ agrCtlRSSI:/ {print $2}'`
+    #noise=`$airport -I |awk '/ agrCtlNoise:/ {print $2}'`
+    #log.stat "\t`networksetup -getairportpower $iface`" $green
+    #log.stat "\tWi-Fi Name:         `$airport -I |awk '/ SSID:/ {print $2}'`" $green
+    #log.stat "\tWi-Fi Channel:      `$airport -I |awk '/ channel:/ {print $2}'`" $green
+    #log.stat "\tWi-Fi Auth:         `$airport -I |awk '/ link auth:/ {print $3}'`" $green
+    #log.stat "\tWi-Fi Channel:      `$airport -I |awk '/ channel:/ {print $2}'`" $green
+    #log.stat "\tWi-FI RSSI:         $rssi [range: (-100,0) note: closer to 0 is better, ex: -55 is pretty damn good]" $green
+    #log.stat "\tWi-Fi Noise:        $noise [range: (-120,0) note: closer to -120 is better]" $green
+    #log.stat "\tWi-Fi Quality:      $((rssi - noise)) [should be at least 20 or greater]" $green
+    #log.stat "\tWi-Fi Last TxnRate: `$airport -I |awk '/ lastTxRate:/ {print $2}'` mbps" $green
   fi
-
-  exit 0
 }
 
-# ----------  main --------------
-log.init
-if [ "$os_name" != "Darwin" ] ; then
-  log.error "This script is intended to run on MacOS!"
+function info() {
+  case $os_name in 
+    Darwin)
+      info_mac
+      ;;
+    Linux)
+      not_implemented
+      ;;
+    *)
+      not_implemented
+      ;;
+  esac
+}
+
+function showmac() {
+  mac_addr=`ifconfig $iface | grep ether| awk '{print $2;}'`
+  log.stat "\tMAC address of $iface is: $mac_addr" $green
+}
+
+function showdhcp() {
+  case $os_name in 
+    Darwin)
+      log.stat "\t`ipconfig getpacket $iface`"
+      ;;
+    Linux)
+      not_implemented
+      ;;
+    *)
+      not_implemented
+      ;;
+  esac
+}
+
+function scannetwork() {
+  nmap --host-timeout 10 -T5 $my_net >/dev/null 2>&1
+  arp -an|egrep -v 'incomplete|ff:ff:ff:ff|169.254|224.|239.|.255)'> $arp_entries
+
+  log.stat "\tIP\t\tHost\tMAC Address"
+  cat $arp_entries | while read -r line ; do
+    ip=$(echo $line|awk -F '[()]|at | on ' '{print $2}')
+    mac=$(echo $line|awk -F '[()]|at | on ' '{print $4}')
+    host=`dig +short +timeout=1 +retry=0 +nostats -x $ip|sed -e 's/\.$//'`
+    if [[ $host == "" || $host == *"communications error"* || $host == *"connection timed out"* ]] ; then
+      host="N/A"
+    fi
+    log.stat "\t$ip\t$host\t$mac" $green
+  done
+}
+
+
+# -------------------------------  main -------------------------------
+# First, make sure scripts root path is set, we need it to include files
+if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
+  # include logger, functions etc as needed 
+  source $scripts_github/utils/logger.sh
+  source $scripts_github/utils/functions.sh
+else
+  echo "SCRIPTS_GITHUB env variable is either not set or has invalid path!"
+  echo "The env variable should point to root dir of scripts i.e. $default_scripts_github"
+  echo "See INSTALL instructions at: https://github.com/aselvan/scripts?tab=readme-ov-file#setup"
   exit 1
 fi
+# init logs
+log.init $my_logfile
 
 # parse commandline options
 while getopts $options opt ; do
   case $opt in
-    w)
-      get_interface "Wi-Fi"
-      print_info "Wi-Fi"
-      ;;
-    e)
-      get_interface "Ethernet"
-      print_info "Ethernet"
+    c)
+      command_name="$OPTARG"
       ;;
     i)
-      net_dev="$OPTARG"
-      # see if this is a wired or wireless
-      networksetup -getairportnetwork $net_dev 2>&1 >/dev/null
-      if [ $? -eq 0 ] ; then
-        print_info "Wi-Fi"
-      else
-        print_info "Ethernet/Other"
-      fi
+      iface="$OPTARG"
+      ;;
+    n)
+      network="$OPTARG"
       ;;
     v)
       verbose=1
@@ -172,6 +234,46 @@ while getopts $options opt ; do
   esac
 done
 
-# if no argument is provided, just show wifi
-get_interface "Wi-Fi"
-print_info "Wi-Fi"
+# check for any commands
+if [ -z "$command_name" ] ; then
+  log.error "Missing arguments, see usage below"
+  usage
+fi
+
+if [ -z $iface ] ; then
+  get_interface
+fi
+get_ip_and_network
+
+# run different wrappes depending on the command requested
+case $command_name in
+  info)
+    info
+    ;;
+  mac)
+    showmac
+    ;;
+  ip)
+    log.stat "\tLAN IP: $my_ip on interface: $iface"
+    log.stat "\tWAN IP: `curl -s ifconfig.me`"
+    ;;
+  lanip)
+    log.stat "\tLAN IP: $my_ip on interface: $iface"
+    ;;
+  wanip)
+    log.stat "\tWAN IP: `curl -s ifconfig.me`"
+    ;;
+  dhcp)
+    showdhcp
+    ;;
+  scannetwork)
+    log.stat "Scanning network $my_net using interface $iface ... [NOTE: make sure $iface is correct]"
+    scannetwork
+    ;;
+  *)
+    log.error "Invalid command: $command_name"
+    log.stat "Available commands: $supported_commands"
+    exit 1
+    ;;
+esac
+
