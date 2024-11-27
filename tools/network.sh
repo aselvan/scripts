@@ -26,13 +26,17 @@ scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 
 # commandline options
-options="c:i:n:avh?"
+options="c:i:n:s:H:d:vh?"
 
 command_name=""
-supported_commands="info|ip|lanip|wanip|mac|dhcp|scannetwork"
+supported_commands="info|ip|lanip|wanip|mac|dhcp|scan|testsvc|testfw|interfaces|traceroute|dnsperf|multidnsperf"
 iface=""
 my_net="192.168.1.0/24"
 my_ip=""
+host_port=""
+traceroute_count=15
+multidnsperf_hosts="yahoo.com microsoft.com ibm.com google.com chase.com fidelity.com citi.com capitalone.com selvans.net selvansoft.com"
+dns_server=""
 
 airport="/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport"
 
@@ -44,11 +48,14 @@ usage() {
 $my_name --- $my_title
 
 Usage: $my_name [options]
-  -c <command>   ---> command to run [see supported commands below]  
-  -i <interface> ---> network interface to use [Default: $iface]
-  -n <network>   ---> CIDR address to scan for 'shownetwork' command [Default: $my_net]
-  -v             ---> enable verbose, otherwise just errors are printed
-  -h             ---> print usage/help
+  -c <command>     ---> command to run [see supported commands below]  
+  -i <interface>   ---> network interface to use [Default: $iface]
+  -n <network>     ---> optional CIDR address to scan [used in 'scan' command Default: $my_net]
+  -s <host:[port]> ---> Host and port to test [Needed for commnans like "testsvc|textfw|traceroute|dnsperf" etc]
+  -H <hostlist>    ---> List of hosts to perform dns lookup performance [used in multidnsperf command]
+  -d <dnsserver>   ---> Custom DNS server to use for resolving insead of default [used in multidnsperf]
+  -v               ---> enable verbose, otherwise just errors are printed
+  -h               ---> print usage/help
 
 Supported commands: $supported_commands  
 example: $my_name -c info
@@ -100,6 +107,9 @@ function get_ip_and_network() {
   case $os_name in 
     Darwin)
       my_ip=`ipconfig getifaddr $iface`
+      if [ -z $my_ip ] ; then
+        my_ip="N/A"
+      fi
       ;;
     Linux)
       my_ip=`hostname -I | awk '{print $1}'`
@@ -197,6 +207,92 @@ function scannetwork() {
   done
 }
 
+function testsvc() {
+  if [ -z $host_port ] ; then
+    log.error "Need host:port for testsvc function, see usage"
+    usage
+  fi
+  host="${host_port%%:*}"
+  port="${host_port##*:}"
+  log.debug "Checking service on $host at port $port ..."
+  result=$(nc -zv -w10 -G10 $host $port 2>&1)
+  log.stat "\t$result" $green
+}
+
+# list all the interfaces in this host
+function list_interfaces() {
+  for i in `ipconfig getiflist` ; do
+    mac_addr=`ifconfig $i | grep ether| awk '{print $2;}'`  
+    ipaddr=`ipconfig getifaddr $i`
+    if [ ! -z "$ipaddr" ] ; then
+      log.stat "\t$i : active ; MAC: $mac_addr; IP: $ipaddr" $blue
+    else
+      log.stat "\t$i : inactive ; MAC: $mac_addr; IP: N/A" $green
+    fi
+  done
+}
+
+function testfw() {
+  if [ -z $host_port ] ; then
+    log.error "Need host:port for testfw function, see usage"
+    usage
+  fi
+  host="${host_port%%:*}"
+  port="${host_port##*:}"
+  log.debug "Checking port open on $host at port $port ..."
+  result=$(nmap -Pn -sT -p $port $host | grep -E '^[0-9]+/(tcp|udp)' | awk '{print $1, $2, $3}')
+  log.stat "\t$result" $green
+}
+
+function traceroute() {
+  # check for root access
+  check_root
+
+  if [ -z $host_port ] ; then
+    log.error "Need host:port for traceroute function, see usage"
+    usage
+  fi
+  host="${host_port%%:*}"
+  port="${host_port##*:}"
+  log.stat "Traceroute to $host:$port via TCP ..."
+  tcptraceroute $host $port
+
+  # just make sure the log file is writable for next run which is likely non-sudo
+  chown $SUDO_USER $my_logfile
+  if [ -f $ ] ; then
+    chmod $SUDO_USER $arp_entries
+  fi
+}
+
+function dnsperf() {
+  if [ -z $host_port ] ; then
+    log.error "Need host:port for traceroute function, see usage"
+    usage
+  fi
+  host="${host_port%%:*}"
+  log.stat "Running dnsperf to resolve host $host ..."
+  result=$(dig $host +noall +answer +stats | awk '$3 == "IN" && $4 == "A"{ip=$5}/Query time:/{t=$4 " " $5}END{print ip, t}')
+  log.stat "\t$result" $green
+}
+
+function multidnsperf() {
+  # Run dig for all hostnames at once and extract query times
+  local total_time=0
+  if [ -z $dns_server ] ; then
+    log.stat "Using default DNS resolver ..."
+    output=$(dig +noall +answer +stats $multidnsperf_hosts | grep "Query time:" | awk '{print $4}')
+  else
+    log.stat "Using custom DNS resolver: $dns_server ..."
+    output=$(dig +noall +answer +stats $multidnsperf_hosts @$dns_server | grep "Query time:" | awk '{print $4}')
+  fi
+
+  # Sum up the query times
+  for time in $output; do
+    total_time=$((total_time + time))
+  done
+
+  log.stat "\tTotal time for resolving all hostnames: $total_time ms" $green
+}
 
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
@@ -222,8 +318,17 @@ while getopts $options opt ; do
     i)
       iface="$OPTARG"
       ;;
+    s)
+      host_port="$OPTARG"
+      ;;
     n)
       network="$OPTARG"
+      ;;
+    H)
+      multidnsperf_hosts="$OPTARG"
+      ;;
+    d)
+      dns_server="$OPTARG"
       ;;
     v)
       verbose=1
@@ -266,9 +371,27 @@ case $command_name in
   dhcp)
     showdhcp
     ;;
-  scannetwork)
+  scan)
     log.stat "Scanning network $my_net using interface $iface ... [NOTE: make sure $iface is correct]"
     scannetwork
+    ;;
+  testsvc)
+    testsvc
+    ;;
+  interfaces)
+    list_interfaces
+    ;;
+  testfw)
+    testfw
+    ;;
+  traceroute)
+    traceroute
+    ;;
+  dnsperf)
+    dnsperf
+    ;;
+  multidnsperf)
+    multidnsperf
     ;;
   *)
     log.error "Invalid command: $command_name"
