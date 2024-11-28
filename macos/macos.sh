@@ -25,10 +25,11 @@ scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 
 # commandline options
-options="c:vh?"
+options="c:l:vh?"
 
 command_name=""
-supported_commands="mem|vmstat|cpu"
+supported_commands="mem|vmstat|cpu|version|system|serial|volume"
+volume_level=""
 
 # ensure path for cron runs (prioritize usr/local first)
 export PATH="/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
@@ -39,12 +40,12 @@ $my_name --- $my_title
 
 Usage: $my_name [options]
   -c <command>   ---> command to run [see supported commands below]
+  -l <number>    ---> volume level [used by 'volume' command range: 1-100]
   -v             ---> enable verbose, otherwise just errors are printed
   -h             ---> print usage/help
 
 Supported commands: $supported_commands
 example: $my_name -c mem
-
   
 EOF
   exit 0
@@ -72,6 +73,15 @@ showcpu() {
   #log.stat "\tCores:  `sysctl -a machdep.cpu.core_count|awk -F: '{print $2}'`" $green
 }
 
+volume() {
+  # if level is provided use to set (otherwise, just show)
+  if [ ! -z $volume_level ] ; then
+    log.stat "\tSetting output volume to $volume_level" $green
+    osascript -e "set volume output volume $volume_level"
+  else
+    log.stat "\tCurrent output volume is: `osascript -e "output volume of (get volume settings)"`" $green
+  fi
+}
 
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
@@ -94,11 +104,8 @@ while getopts $options opt ; do
     c)
       command_name="$OPTARG"
       ;;
-    i)
-      iface="$OPTARG"
-      ;;
-    n)
-      network="$OPTARG"
+    l)
+      volume_level="$OPTARG"
       ;;
     v)
       verbose=1
@@ -124,6 +131,18 @@ case $command_name in
     ;;
   vmstat)
     showvmstat   
+    ;;
+  version)
+    sw_vers   
+    ;;
+  system)
+    system_profiler SPSoftwareDataType   
+    ;;
+  serial)
+    ioreg -c IOPlatformExpertDevice -d 2 | awk -F\" '/IOPlatformSerialNumber/{print $(NF-1)}'  
+    ;;
+  volume)
+    volume  
     ;;
   *)
     log.error "Invalid command: $command_name"

@@ -29,7 +29,7 @@ arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 options="c:i:n:s:H:d:vh?"
 
 command_name=""
-supported_commands="info|ip|lanip|wanip|mac|dhcp|scan|testsvc|testfw|interfaces|traceroute|dnsperf|multidnsperf"
+supported_commands="info|ip|lanip|wanip|mac|dhcp|scan|testsvc|testfw|interfaces|traceroute|dnsperf|multidnsperf|allports|ports"
 iface=""
 my_net="192.168.1.0/24"
 my_ip=""
@@ -249,13 +249,13 @@ function traceroute() {
   check_root
 
   if [ -z $host_port ] ; then
-    log.error "Need host:port for traceroute function, see usage"
+    log.error "Need host for traceroute function, see usage"
     usage
   fi
   host="${host_port%%:*}"
-  port="${host_port##*:}"
-  log.stat "Traceroute to $host:$port via TCP ..."
-  tcptraceroute $host $port
+
+  log.stat "Traceroute to $host using nmap ..."
+  nmap -sn --traceroute $host
 
   # just make sure the log file is writable for next run which is likely non-sudo
   chown $SUDO_USER $my_logfile
@@ -392,6 +392,12 @@ case $command_name in
     ;;
   multidnsperf)
     multidnsperf
+    ;;
+  ports)
+    lsof -i tcp -P -n
+    ;;
+  allports)
+    lsof -i -P -n
     ;;
   *)
     log.error "Invalid command: $command_name"
