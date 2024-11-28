@@ -26,10 +26,10 @@ scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 
 # commandline options
-options="c:i:n:s:H:d:vh?"
+options="c:i:n:s:H:d:m:vh?"
 
 command_name=""
-supported_commands="info|ip|lanip|wanip|mac|dhcp|scan|testsvc|testfw|interfaces|traceroute|dnsperf|multidnsperf|allports|ports"
+supported_commands="info|ip|lanip|wanip|mac|dhcp|scan|testsvc|testfw|interfaces|traceroute|dnsperf|multidnsperf|allports|ports|spoofmac"
 iface=""
 my_net="192.168.1.0/24"
 my_ip=""
@@ -37,6 +37,7 @@ host_port=""
 traceroute_count=15
 multidnsperf_hosts="yahoo.com microsoft.com ibm.com google.com chase.com fidelity.com citi.com capitalone.com selvans.net selvansoft.com"
 dns_server=""
+mac_to_spoof=""
 
 airport="/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport"
 
@@ -54,6 +55,7 @@ Usage: $my_name [options]
   -s <host:[port]> ---> Host and port to test [Needed for commnans like "testsvc|textfw|traceroute|dnsperf" etc]
   -H <hostlist>    ---> List of hosts to perform dns lookup performance [used in multidnsperf command]
   -d <dnsserver>   ---> Custom DNS server to use for resolving insead of default [used in multidnsperf]
+  -m <macaddress>  ---> Required argument for spoofmac command i.e. mac address to spoof
   -v               ---> enable verbose, otherwise just errors are printed
   -h               ---> print usage/help
 
@@ -67,6 +69,14 @@ EOF
 function not_implemented() {
   log.warn "Not implemented for $os_name OS yet, exiting..."
   exit 99
+}
+
+reset_logfile_perm() {
+  # just make sure the log file is writable for next run which is likely non-sudo
+  chown $SUDO_USER $my_logfile
+  if [ -f $ ] ; then
+    chmod $SUDO_USER $arp_entries
+  fi
 }
 
 function get_interface_linux() {
@@ -174,7 +184,7 @@ function info() {
 
 function showmac() {
   mac_addr=`ifconfig $iface | grep ether| awk '{print $2;}'`
-  log.stat "\tMAC address of $iface is: $mac_addr" $green
+  log.stat "\tCurrent MAC address of $iface is: $mac_addr" $green
 }
 
 function showdhcp() {
@@ -257,11 +267,7 @@ function traceroute() {
   log.stat "Traceroute to $host using nmap ..."
   nmap -sn --traceroute $host
 
-  # just make sure the log file is writable for next run which is likely non-sudo
-  chown $SUDO_USER $my_logfile
-  if [ -f $ ] ; then
-    chmod $SUDO_USER $arp_entries
-  fi
+  reset_logfile_perm
 }
 
 function dnsperf() {
@@ -293,6 +299,30 @@ function multidnsperf() {
 
   log.stat "\tTotal time for resolving all hostnames: $total_time ms" $green
 }
+
+function spoofmac() {
+  # check for root access
+  check_root
+  
+  if [ -z $mac_to_spoof ] ; then
+    log.error "Need a mac address to spoof, see usage"
+    usage
+  fi
+ 
+  showmac
+  log.stat "\tSpoof MAC address of $iface to: $mac_to_spoof" $red
+ 
+  ifconfig $iface down
+  sleep 2
+  ifconfig $iface ether $mac_to_spoof >/dev/null 2>&1
+  if [ $? -ne 0 ] ; then
+    log.error "\tFailed, to spoof mac address!"
+  fi
+  ifconfig $iface up
+  showmac
+  reset_logfile_perm
+}
+
 
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
@@ -329,6 +359,9 @@ while getopts $options opt ; do
       ;;
     d)
       dns_server="$OPTARG"
+      ;;
+    m)
+      mac_to_spoof="$OPTARG"
       ;;
     v)
       verbose=1
@@ -398,6 +431,9 @@ case $command_name in
     ;;
   allports)
     lsof -i -P -n
+    ;;
+  spoofmac)
+    spoofmac
     ;;
   *)
     log.error "Invalid command: $command_name"
