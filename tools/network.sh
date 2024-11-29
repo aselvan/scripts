@@ -309,17 +309,20 @@ function spoofmac() {
     usage
   fi
  
-  showmac
-  log.stat "\tSpoof MAC address of $iface to: $mac_to_spoof" $red
- 
-  ifconfig $iface down
-  sleep 2
+  local cur_mac=`ifconfig $iface | grep ether| awk '{print $2;}'`
+  log.stat "\tCurrent  MAC on $iface: $cur_mac"
+  log.stat "\tSpoofing MAC on $iface: $mac_to_spoof"
+
+  networksetup -setairportpower en0 off
+  sleep 1
+  networksetup -setairportpower en0 on
   ifconfig $iface ether $mac_to_spoof >/dev/null 2>&1
-  if [ $? -ne 0 ] ; then
-    log.error "\tFailed, to spoof mac address!"
+  local cur_mac=`ifconfig $iface | grep ether| awk '{print $2;}'`
+  if [ $cur_mac = "$mac_to_spoof" ] ; then
+    log.stat "\tSpoofed $mac_to_spoof succesfully!" $green
+  else
+    log.stat "\tSpoofing failed on $mac_to_spoof!" $red
   fi
-  ifconfig $iface up
-  showmac
   reset_logfile_perm
 }
 
