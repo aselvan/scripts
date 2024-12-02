@@ -26,12 +26,14 @@ scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 options="c:l:f:b:vh?"
 
 command_name=""
-supported_commands="pwgen|enc|dec|basicauth|unixhash"
+supported_commands="pwgen|usergen|enc|dec|basicauth|unixhash"
 pwgen_len=12
 pwgen_len_fixed=3
 enc_dec_file=""
 user_password=""
 password=""
+usergen_len=8
+usergen_supress_chars=",;{}[]o:#^+\|*()=-\"/\\.%&<>_'\`?"
 
 # ensure path for cron runs (prioritize usr/local first)
 export PATH="/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
@@ -65,6 +67,11 @@ function do_pwgen() {
   local rnd_char=${abc:$n:1}
   local len=$(($pwgen_len-$pwgen_len_fixed))
   log.stat "\tStrong $(($len+$pwgen_len_fixed)) char password is: $rnd_digit`pwgen -cny $len 1`@$rnd_char" $green
+}
+
+function do_usergen() {
+  local uname=a`pwgen --remove-chars=$usergen_supress_chars -cny $usergen_len 1`s
+  log.stat "\tUsername: $uname" $green
 }
 
 function do_enc() {
@@ -155,13 +162,16 @@ fi
 # run different wrappes depending on the command requested
 case $command_name in
   pwgen)
-    do_pwgen 
+    do_pwgen
+    ;;
+  usergen)
+    do_usergen
     ;;
   enc)
-    do_enc 
+    do_enc
     ;;
   dec)
-    do_dec 
+    do_dec
     ;;
   basicauth)
     do_basicauth

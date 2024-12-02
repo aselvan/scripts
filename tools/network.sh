@@ -29,7 +29,7 @@ arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 options="c:i:n:s:H:d:m:vh?"
 
 command_name=""
-supported_commands="info|ip|lanip|wanip|mac|dhcp|scan|testsvc|testfw|interfaces|traceroute|dnsperf|multidnsperf|allports|ports|spoofmac"
+supported_commands="info|ip|lanip|wanip|mac|dhcp|scan|testsvc|testfw|interfaces|traceroute|dnsperf|multidnsperf|allports|ports|spoofmac|genmac|route|dns"
 iface=""
 my_net="192.168.1.0/24"
 my_ip=""
@@ -326,6 +326,24 @@ function spoofmac() {
   reset_logfile_perm
 }
 
+function genmac() {
+  local random_mac=`openssl rand -hex 6 | sed "s/\(..\)/\1:/g; s/.$//"`
+  log.stat "\tRandomly generated MAC: $random_mac" $green
+}
+
+function do_route() {
+  check_installed ip
+  local default_route=`ip route show |grep default`
+  log.stat "\tDefault route: $default_route" $green
+
+}
+function do_dns() {
+  check_installed scutil
+  local dns_info=`scutil --dns |grep nameserver`
+  log.stat "\tDNS Servers: $dns_info" $green
+
+}
+
 
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
@@ -437,6 +455,15 @@ case $command_name in
     ;;
   spoofmac)
     spoofmac
+    ;;
+  genmac)
+    genmac
+    ;;
+  route)
+    do_route
+    ;;
+  dns)
+    do_dns
     ;;
   *)
     log.error "Invalid command: $command_name"
