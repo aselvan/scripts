@@ -21,16 +21,16 @@
 # Your run output should look like this below...
 #
 # $ ./symantec_vipaccess_key.sh 
-# [INFO] You may get multiple prompts for keychain password ...
-# [INFO] if so, copy and paste below password each time when asked.
+# [INFO] You will be asked 4 times for keychain password ...
+# [INFO] Just copy and paste the password below each time when asked.
 # [INFO] Password:  xxxxxxxxxxxxxxxxxxxxxxxx
-# [INFO] --- Press any key to continue ---
+# [INFO] --- Press enter to continue ---
 #
 # [INFO] Symantec VIPAccess ID     : xxxxxxxxxxxxxxxxxxxxx
 # [INFO] Symantec VIPAccess serect : xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 #
 # Grab the secret from about to create a QR code image as shown below to scan 
-# it in Google Authenticator
+# it in Google Authenticator.
 #
 # qrencode -o key.png "otpauth://totp/fidelity:loginusername?secret=xxxxxxxxxxxxxxxxxxxx&issuer=SymentacVIP"
 #
@@ -56,7 +56,8 @@ openssl_opt="enc -d -aes-256-cbc -a -in"
 AES_KEY=D0D0D0E0D0D0DFDFDF2C34323937D7AE
 
 # VIPAccess keychain location
-keychain="/Users/${USER}/Library/Keychains/VIPAccess.keychain"
+#keychain="/Users/${USER}/Library/Keychains/VIPAccess.keychain"
+keychain="/Users/${USER}/Library/Keychains/VIPAccess.keychain-db"
 
 usage() {
   cat <<EOF
@@ -94,10 +95,10 @@ do_extract() {
   # construct keychain password
   keychain_password="${serial_number}SymantecVIPAccess${USER}"
 
-  echo "[INFO] You may get multiple prompts for keychain password ..."
-  echo "[INFO] if so, copy and paste below password each time when asked."
+  echo "[INFO] You will be asked 4 times for keychain password ..."
+  echo "[INFO] Just copy and paste the password below each time when asked."
   echo "[INFO] Password:  $keychain_password"
-  echo "[INFO] --- Press any key to continue ---"
+  echo "[INFO] --- Press enter to continue ---"
   read
 
   # unlock keychain (may prompt multiple times so print the password so user can enter
