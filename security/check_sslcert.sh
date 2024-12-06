@@ -13,10 +13,11 @@
 # Version History:
 #   Aug 7,  2019 --- Orginal version (from ~/.bashrc) moved to standalone script
 #   May 19, 2024 --- Added options, validate chain, list chain error check etc.
+#   Dec 6,  2024 --- Added validation for CN/SAN.
 #
 
 # version format YY.MM.DD
-version=24.05.19
+version=24.12.06
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Download and validate SSL certs of a server"
@@ -85,7 +86,7 @@ list_ssl_chain() {
 }
 
 validate_ssl_chain() {
-  log.stat "  Validating SSL cert chain for server: $server"
+  log.stat "Validating SSL cert chain for server: $server"
 
   # make sure there aren't any old *.pem siting around from prev runs
   rm -f ${pem_path_prefix}*.pem
@@ -94,11 +95,9 @@ validate_ssl_chain() {
   status_list=( ${PIPESTATUS[*]} )
   if [ ${status_list[0]} -ne 0 ] ; then
     log.error "  Timeout connecting to server $server ... exiting"
-    echo
     exit 1
   elif [ ${status_list[1]} -ne 0 ] ; then
     log.error "  Error reading certs from server $server ... exiting"
-    echo
     exit 2
   fi
 
@@ -113,9 +112,36 @@ validate_ssl_chain() {
   # validate
   openssl verify ${pem_path_prefix}_all.pem >> $my_logfile 2>&1
   if [ $? -ne 0 ] ; then
-    log.error "  At least one intermediate cert in the cert chain is invalid!"
+    log.error "\tAt least one intermediate cert in the cert chain is invalid!"
   else
-    log.stat "  SSL certs are valid for: $server" $green
+    log.stat  "\tSSL certs are valid for: $server" $green
+  fi
+}
+
+# validate Subject Alternative Name (SAN)
+validate_san() {
+  log.stat "Validating SAN (subject alternative name) for server: $server"
+
+  local cert_info=$(openssl s_client -connect "${server}:443" -servername "${server}" </dev/null 2>/dev/null | openssl x509 -noout -subject -ext subjectAltName)
+  local subject=$(echo "${cert_info}" | grep "subject=" | sed 's/^subject= //')
+  local san=$(echo "${cert_info}" | grep -o "DNS:[^,]*" | sed 's/DNS://g')
+  local match_found=false
+
+  if [[ "${server}" == "$(echo ${subject} | grep -o 'CN=[^,]*' | sed 's/CN=//')" ]]; then
+    match_found=true
+  else
+    for name in ${san}; do
+      if [[ "${server}" == "${name}" || "${name}" == "*.${server#*.}" ]]; then
+        match_found=true
+        break
+      fi
+    done
+  fi
+
+  if [ "${match_found}" = true ]; then
+    log.stat  "\tThe CN name ($subject) matches $server" $green
+  else
+    log.error "\tThe CN name ($subject) failed to match $server !"
   fi
 }
 
@@ -182,6 +208,7 @@ check_openssl_version
 
 validate_ssl_chain
 list_ssl_chain
+validate_san
 additional_options
 
 
