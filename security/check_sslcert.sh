@@ -112,7 +112,7 @@ validate_ssl_chain() {
   # validate
   openssl verify ${pem_path_prefix}_all.pem >> $my_logfile 2>&1
   if [ $? -ne 0 ] ; then
-    log.error "\tAt least one intermediate cert in the cert chain is invalid!"
+    log.error "\tWARNING: At least one intermediate cert in the cert chain is invalid!"
   else
     log.stat  "\tSSL certs are valid for: $server" $green
   fi
@@ -120,7 +120,7 @@ validate_ssl_chain() {
 
 # validate Subject Alternative Name (SAN)
 validate_san() {
-  log.stat "Validating SAN (subject alternative name) for server: $server"
+  log.stat "Validatin CN (Common Name) for server: $server"
 
   local cert_info=$(openssl s_client -connect "${server}:443" -servername "${server}" </dev/null 2>/dev/null | openssl x509 -noout -subject -ext subjectAltName)
   local subject=$(echo "${cert_info}" | grep "subject=" | sed 's/^subject= //')
@@ -141,7 +141,7 @@ validate_san() {
   if [ "${match_found}" = true ]; then
     log.stat  "\tThe CN name ($subject) matches $server" $green
   else
-    log.error "\tThe CN name ($subject) failed to match $server !"
+    log.error "\tWARNING: CN ($subject) failed to match $server"
   fi
 }
 
