@@ -55,9 +55,10 @@ openssl_opt="enc -d -aes-256-cbc -a -in"
 # library calls that the Symantec VIP Access app makes.
 AES_KEY=D0D0D0E0D0D0DFDFDF2C34323937D7AE
 
-# VIPAccess keychain location
-#keychain="/Users/${USER}/Library/Keychains/VIPAccess.keychain"
-keychain="/Users/${USER}/Library/Keychains/VIPAccess.keychain-db"
+# VIPAccess keychain file
+keychain_old="/Users/${USER}/Library/Keychains/VIPAccess.keychain"
+keychain_new="/Users/${USER}/Library/Keychains/VIPAccess.keychain-db"
+keychain=""
 
 usage() {
   cat <<EOF
@@ -80,6 +81,17 @@ log() {
     return
   fi
   echo $msg |tee -a $log_file
+}
+
+check_keychain() {
+  if [ -f $keychain_old ] ; then
+    keychain="$keychain_old"
+  elif [ -f $keychain_new ] ; then
+    keychain="$keychain_new"
+  else
+    echo "[ERROR] keychain file missing!"
+    exit 2
+  fi
 }
 
 # extract ID and secret
@@ -157,5 +169,9 @@ done
 
 echo "" > $log_file
 log "[INFO] `date`: $my_name starting ..."
+
+# check for keychain file
+check_keychain
+
 do_extract
 
