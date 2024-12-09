@@ -9,6 +9,11 @@
 #
 # Author : Arul Selvan
 # Version: Jan 13, 2023
+#
+# Version History:
+#   Jan 13, 2023 --- Original version
+#
+
 
 # version format YY.MM.DD
 version=24.04.25
@@ -36,7 +41,8 @@ dir_name=""
 
 usage() {
   cat << EOF
-$my_title
+$my_name --- $my_title
+
 Usage: $my_name [options]
   -l  ---> check if lat/lon present as metadata
   -t  ---> check if createdate present as metadata
@@ -44,24 +50,9 @@ Usage: $my_name [options]
   -v  ---> verbose mode prints info messages, otherwise just errors are printed
   -h  ---> print usage/help
   
-  example: $my_name -l -p image.jpg
+example: $my_name -l -p image.jpg
 EOF
   exit 0
-}
-
-# check if file is a media file that could support metadata
-is_media() {
-  local f=$1
-  local mtype=`file -b --mime-type $f | cut -d '/' -f 2`
-
-  case $mtype in 
-    jpg|jpeg|JPEG|JPG|PDF|pdf|mpeg|MPEG|MP3|mp3|mp4|MP4|png|PNG|mov|MOV|gif|GIF|TIFF|tiff)
-      return 0
-      ;;
-    *)
-      return 1 
-      ;;
-  esac
 }
 
 has_camera() {
@@ -100,8 +91,9 @@ if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
   source $scripts_github/utils/logger.sh
   source $scripts_github/utils/functions.sh
 else
-  echo "ERROR: SCRIPTS_GITHUB env variable is either not set or has invalid path!"
+  echo "SCRIPTS_GITHUB env variable is either not set or has invalid path!"
   echo "The env variable should point to root dir of scripts i.e. $default_scripts_github"
+  echo "See INSTALL instructions at: https://github.com/aselvan/scripts?tab=readme-ov-file#setup"
   exit 1
 fi
 # init logs
