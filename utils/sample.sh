@@ -8,6 +8,7 @@
 #
 # Version History:
 #   Jul 19, 2022 --- Original version
+#   Dec 9,  2024 --- Updated usage function.
 #
 
 # version format YY.MM.DD
@@ -29,7 +30,8 @@ export PATH="/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
 
 usage() {
   cat << EOF
-$my_title
+$my_name --- $my_title
+
 
 Usage: $my_name [options]
   -e <email> ---> email address to send success/failure messages
