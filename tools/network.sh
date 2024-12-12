@@ -33,6 +33,7 @@ supported_commands="info|ip|lanip|wanip|mac|dhcp|scan|testsvc|testfw|interfaces|
 iface=""
 my_net="192.168.1.0/24"
 my_ip=""
+wan_ip=""
 host_port=""
 traceroute_count=15
 multidnsperf_hosts="yahoo.com microsoft.com ibm.com google.com chase.com fidelity.com citi.com capitalone.com selvans.net selvansoft.com"
@@ -112,7 +113,6 @@ function get_interface() {
 
 # get current IP and network CIDR
 function get_ip_and_network() {
-  my_ip=`ipconfig getifaddr $iface`
 
   case $os_name in 
     Darwin)
@@ -128,8 +128,9 @@ function get_ip_and_network() {
       not_implemented
       ;;
   esac
+
+  wan_ip=`curl -s ifconfig.me`
   my_net=`echo $my_ip |awk -F. '{print $1"."$2"."$3".0/24"; }'` 
-  
 }
 
 
@@ -184,6 +185,7 @@ function info() {
 
 function showmac() {
   mac_addr=`ifconfig $iface | grep ether| awk '{print $2;}'`
+  echo $mac_addr | $pbc
   log.stat "\tCurrent MAC address of $iface is: $mac_addr" $green
 }
 
@@ -334,13 +336,14 @@ function genmac() {
 function do_route() {
   check_installed ip
   local default_route=`ip route show |grep default`
+  echo $default_route | $pbc
   log.stat "\tDefault route: $default_route" $green
-
 }
+
 function do_dns() {
   check_installed scutil
   local dns_info=`scutil --dns |grep nameserver`
-  log.stat "\tDNS Servers: $dns_info" $green
+  log.stat "$dns_info" $green
 
 }
 
@@ -359,6 +362,14 @@ else
 fi
 # init logs
 log.init $my_logfile
+
+# pastebuffer depending on OS [note: used to copy certain things to paste buffer like ip, macc etc]
+if [ $os_name = "Darwin" ]; then
+  pbc='pbcopy'
+else
+  pbc='xsel --clipboard --input'
+fi
+
 
 # parse commandline options
 while getopts $options opt ; do
@@ -413,14 +424,17 @@ case $command_name in
     showmac
     ;;
   ip)
+    echo $my_ip | $pbc
     log.stat "\tLAN IP: $my_ip on interface: $iface"
     log.stat "\tWAN IP: `curl -s ifconfig.me`"
     ;;
   lanip)
+    echo $my_ip | $pbc
     log.stat "\tLAN IP: $my_ip on interface: $iface"
     ;;
   wanip)
-    log.stat "\tWAN IP: `curl -s ifconfig.me`"
+    echo $wan_ip | $pbc
+    log.stat "\tWAN IP: $wan_ip"
     ;;
   dhcp)
     showdhcp
