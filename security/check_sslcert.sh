@@ -14,10 +14,11 @@
 #   Aug 7,  2019 --- Orginal version (from ~/.bashrc) moved to standalone script
 #   May 19, 2024 --- Added options, validate chain, list chain error check etc.
 #   Dec 6,  2024 --- Added validation for CN/SAN.
+#   Dec 12, 2024 --- Option to save the SSL cert to a file
 #
 
 # version format YY.MM.DD
-version=24.12.06
+version=24.12.12
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Download and validate SSL certs of a server"
@@ -27,7 +28,7 @@ default_scripts_github=$HOME/src/scripts.github
 scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
 # commandline options
-options="s:d:o:lvh?"
+options="s:d:o:x:lvh?"
 
 optional_checks=""
 show_ssl_chain=0
@@ -38,6 +39,7 @@ openssl_version_30x=0
 ls_opt="-1t"
 first_cert_name=""
 last_cert_name=""
+ssl_cert_file=""
 
 # ensure path for cron runs (prioritize usr/local first)
 export PATH="/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
@@ -51,6 +53,7 @@ Usage: $my_name [options]
   -d <number> ---> chain depth [default: $chain_depth is sufficient for most cases]
   -o <flags>  ---> Any openssl x509 flags example "-enddate -issuer -subject -fingerprint"
   -l          ---> list ssl chain starting from root -> server cert
+  -x          ---> filename to store the extracted cert
   -c          ---> enable verbose, otherwise just errors are printed
   -h          ---> print usage/help
 
@@ -159,6 +162,11 @@ additional_options() {
   fi
 }
 
+extract_ssl_cert() {
+  echo | openssl s_client -connect ${server}:443 2>&1 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' >$ssl_cert_file
+}
+
+
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
 if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
@@ -190,6 +198,9 @@ while getopts $options opt ; do
     l)
       show_ssl_chain=1
       ;;
+    x)
+      ssl_cert_file="$OPTARG"
+      ;;
     v)
       verbose=1
       ;;
@@ -205,6 +216,12 @@ if [ -z "$server" ] ; then
 fi
 
 check_openssl_version
+
+# if this is just to extract, do the extract and exit
+if [ ! -z $ssl_cert_file ] ; then
+  extract_ssl_cert
+  exit 0
+fi
 
 validate_ssl_chain
 list_ssl_chain
