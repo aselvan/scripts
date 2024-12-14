@@ -49,7 +49,7 @@ skip_tag="-wm cg"
 # defaukt metadata
 artist="Arul Selvan"
 owner="Arul Selvan"
-copyright="Copyright (c) 2023-2024 SelvanSoft, LLC."
+copyright="Copyright (c) 2023-2025 SelvanSoft, LLC."
 description="Photo by SelvanSoft, LLC."
 
 usage() {
@@ -66,7 +66,7 @@ usage() {
     -v             ---> verbose mode prints info messages, otherwise just errors are printed
     -h             ---> print usage/help
 
-  example: $my_name -p "*.jpg" -o "Foobar" -c "Copyright (c) 2024, Foobar, allrights reserved"
+  example: $my_name -p "*.jpg" -o "Foobar" -c "Copyright (c) 2025, Foobar, allrights reserved"
 
   See Also: reset_file_timestamp.sh copy_metadata.sh exif_check.sh geocode_media_files.sh add_metadata.sh reset_media_timestamp.sh exif_check.sh
 
