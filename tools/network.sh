@@ -26,10 +26,10 @@ scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 
 # commandline options
-options="c:i:n:s:H:d:m:vh?"
+options="c:i:n:s:H:d:m:a:vh?"
 
 command_name=""
-supported_commands="info|ip|lanip|wanip|mac|dhcp|scan|testsvc|testfw|interfaces|traceroute|dnsperf|multidnsperf|allports|ports|spoofmac|genmac|route|dns"
+supported_commands="info|ip|lanip|wanip|mac|dhcp|scan|testsvc|testfw|interfaces|traceroute|dnsperf|multidnsperf|allports|ports|spoofmac|genmac|route|dns|netstat|appfirewall"
 iface=""
 my_net="192.168.1.0/24"
 my_ip=""
@@ -39,6 +39,10 @@ traceroute_count=15
 multidnsperf_hosts="yahoo.com microsoft.com ibm.com google.com chase.com fidelity.com citi.com capitalone.com selvans.net selvansoft.com"
 dns_server=""
 mac_to_spoof=""
+additional_args=""
+netstat_args="-f inet -a -p tcp"
+appfirewall="/usr/libexec/ApplicationFirewall/socketfilterfw"
+appfirewall_args="--listapps --getglobalstate --getblockall  --getstealthmode"
 
 airport="/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport"
 
@@ -57,6 +61,7 @@ Usage: $my_name [options]
   -H <hostlist>    ---> List of hosts to perform dns lookup performance [used in multidnsperf command]
   -d <dnsserver>   ---> Custom DNS server to use for resolving insead of default [used in multidnsperf]
   -m <macaddress>  ---> Required argument for spoofmac command i.e. mac address to spoof
+  -a <args>        ---> Additional args used for commands like netstat|appfirewall etc
   -v               ---> enable verbose, otherwise just errors are printed
   -h               ---> print usage/help
 
@@ -347,6 +352,22 @@ function do_dns() {
 
 }
 
+function do_netstat() {
+  local netstat_info=`netstat $netstat_args $additional_args`
+  log.stat "$netstat_info" $green
+
+}
+
+function do_appfirewall() {
+  if [ ! -x $appfirewall ] ; then
+    log.error "$appfirewall binary is missing..."
+    exit 10
+  fi
+  local appfirewall_info=`$appfirewall $appfirewall_args $additional_args`
+  log.stat "$appfirewall_info" $green
+
+}
+
 
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
@@ -394,6 +415,9 @@ while getopts $options opt ; do
       ;;
     m)
       mac_to_spoof="$OPTARG"
+      ;;
+    a)
+      additional_args="$OPTARG"
       ;;
     v)
       verbose=1
@@ -478,6 +502,12 @@ case $command_name in
     ;;
   dns)
     do_dns
+    ;;
+  netstat)
+    do_netstat
+    ;;
+  appfirewall)
+    do_appfirewall
     ;;
   *)
     log.error "Invalid command: $command_name"

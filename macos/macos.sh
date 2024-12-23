@@ -28,7 +28,7 @@ arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 options="c:l:vh?"
 
 command_name=""
-supported_commands="mem|vmstat|cpu|version|system|serial|volume"
+supported_commands="mem|vmstat|cpu|version|system|serial|volume|swap"
 volume_level=""
 
 # ensure path for cron runs (prioritize usr/local first)
@@ -143,6 +143,9 @@ case $command_name in
     ;;
   volume)
     volume  
+    ;;
+  swap)
+    log.stat "`sysctl vm.compressor_mode vm.swapusage`" $green
     ;;
   *)
     log.error "Invalid command: $command_name"

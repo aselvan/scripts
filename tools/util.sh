@@ -22,11 +22,13 @@ scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 
 # commandline options
-options="c:n::vh?"
+options="c:n:f:a:vh?"
 
 command_name=""
-supported_commands="tohex|todec"
+supported_commands="tohex|todec|toascii|calc"
 number=""
+file=""
+args=""
 
 # ensure path for cron runs (prioritize usr/local first)
 export PATH="/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
@@ -38,6 +40,8 @@ $my_name --- $my_title
 Usage: $my_name [options]
   -c <command>     ---> command to run [see supported commands below]  
   -n <number>      ---> used by all commands that requires a number argument.
+  -f <file>        ---> used by commands require an input file argument
+  -a <arg>         ---> args for commands like 'calc'
   -v               ---> enable verbose, otherwise just errors are printed
   -h               ---> print usage/help
 
@@ -65,6 +69,22 @@ function do_todec() {
   log.stat "\tHex:Decimal: $number:`printf "%d" $number`"
 }
 
+function do_toascii() {
+  check_installed iconv
+  if [ -z $file ] ; then
+    log.error "toascii needs a unicode file to convert to ascii, see usage"
+    usage
+  fi
+  iconv -t ASCII//TRANSLIT $file
+}
+
+function do_calc() {
+  if [ -z $args ] ; then
+    log.error "calc needs a expression argument, see usage"
+    usage
+  fi
+  log.stat "\t$args = `echo "scale=6; \"$args\""|bc`"
+}
 
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
@@ -81,14 +101,6 @@ fi
 # init logs
 log.init $my_logfile
 
-# pastebuffer depending on OS [note: used to copy certain things to paste buffer like ip, macc etc]
-if [ $os_name = "Darwin" ]; then
-  pbc='pbcopy'
-else
-  pbc='xsel --clipboard --input'
-fi
-
-
 # parse commandline options
 while getopts $options opt ; do
   case $opt in
@@ -97,6 +109,12 @@ while getopts $options opt ; do
       ;;
     n)
       number="$OPTARG"
+      ;;
+    f)
+      file="$OPTARG"
+      ;;
+    a)
+      args="$OPTARG"
       ;;
     v)
       verbose=1
@@ -120,6 +138,12 @@ case $command_name in
     ;;
   todec)
     do_todec
+    ;;
+  toascii)
+    do_toascii
+    ;;
+  calc)
+    do_calc
     ;;
   *)
     log.error "Invalid command: $command_name"
