@@ -29,7 +29,7 @@ arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 options="c:i:n:s:H:d:m:a:vh?"
 
 command_name=""
-supported_commands="info|ip|lanip|wanip|mac|dhcp|scan|testsvc|testfw|interfaces|traceroute|dnsperf|multidnsperf|allports|ports|spoofmac|genmac|route|dns|netstat|appfirewall"
+supported_commands="info|ip|lanip|wanip|mac|dhcp|scan|testsvc|testfw|interfaces|traceroute|dnsperf|multidnsperf|allports|ports|spoofmac|genmac|route|dns|netstat|appfirewall|dhcprenew"
 iface=""
 my_net="192.168.1.0/24"
 my_ip=""
@@ -43,6 +43,7 @@ additional_args=""
 netstat_args="-f inet -a -p tcp"
 appfirewall="/usr/libexec/ApplicationFirewall/socketfilterfw"
 appfirewall_args="--listapps --getglobalstate --getblockall  --getstealthmode"
+wait_time=5
 
 airport="/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport"
 
@@ -55,7 +56,7 @@ $my_name --- $my_title
 
 Usage: $my_name [options]
   -c <command>     ---> command to run [see supported commands below]  
-  -i <interface>   ---> network interface to use [Default: $iface]
+  -i <interface>   ---> network interface to use for various commands that need interface [Default: $iface]
   -n <network>     ---> optional CIDR address to scan [used in 'scan' command Default: $my_net]
   -s <host:[port]> ---> Host and port to test [Needed for commnans like "testsvc|textfw|traceroute|dnsperf" etc]
   -H <hostlist>    ---> List of hosts to perform dns lookup performance [used in multidnsperf command]
@@ -368,6 +369,26 @@ function do_appfirewall() {
 
 }
 
+function do_dhcprenew() {
+  # TODO: Need to find why the exclamation in wifi icon is stuck and then enable this feature.
+  log.stat "NOT IMPLEMENTED: need to fix the exclamation issue on wifi icon first"
+  return
+
+  # check for root access
+  check_root
+  
+  log.stat "Attempting to renew DHCP on interface $iface ..."
+  #echo "add State:/Network/Interface/$iface/RefreshConfiguration temporary" | sudo scutil
+  
+  sudo ipconfig set $iface BOOTP
+  log.stat "\tSwitched to bootp and waiting for $wait_time sec ..."
+  sleep $wait_time
+  log.stat "\tSwitch to DHCP now ..."
+  sudo ipconfig set $iface DHCP
+  log.stat "\tShould be renewed now."
+  reset_logfile_perm  
+}
+
 
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
@@ -508,6 +529,9 @@ case $command_name in
     ;;
   appfirewall)
     do_appfirewall
+    ;;
+  dhcprenew)
+    do_dhcprenew
     ;;
   *)
     log.error "Invalid command: $command_name"

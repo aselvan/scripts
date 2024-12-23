@@ -7,10 +7,11 @@
 #
 # Version History:
 #   Jan 10, 2012 --- Original version (moved from .bashrc)
+#   Dec 23, 2024 --- moved more from .bashrc
 #
 
 # version format YY.MM.DD
-version=2012.01.10
+version=2024.12.23
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl util tools wrapper all in one place"
@@ -22,13 +23,17 @@ scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 
 # commandline options
-options="c:n:f:a:vh?"
+options="c:n:i:o:a:q:vh?"
 
 command_name=""
-supported_commands="tohex|todec|toascii|calc"
+supported_commands="tohex|todec|toascii|calc|rsync|compresspdf|dos2unix"
 number=""
-file=""
+ifile=""
+ofile=""
 args=""
+rsync_log_file="/tmp/$(echo $my_name|cut -d. -f1)_rsync.log"
+rsync_opts="-rlptgoq --ignore-errors --no-specials --no-devices --delete-after --cvs-exclude --log-file=$rsync_log_file --temp-dir=/tmp --exclude=\"*.vmdk\""
+pdf_quality="/ebook"
 
 # ensure path for cron runs (prioritize usr/local first)
 export PATH="/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
@@ -40,8 +45,10 @@ $my_name --- $my_title
 Usage: $my_name [options]
   -c <command>     ---> command to run [see supported commands below]  
   -n <number>      ---> used by all commands that requires a number argument.
-  -f <file>        ---> used by commands require an input file argument
-  -a <arg>         ---> args for commands like 'calc'
+  -i <file/path>   ---> input for commands require an input argument like toascii|rsync|compresspdf etc
+  -o <file/path>   ---> output for commands require output argument like rsync
+  -a <arg>         ---> for commands like 'calc'
+  -q <quality>     ---> for 'compresspdf'; valid entries are "/printer|/ebook|/screen" [Default: $pdf_quality]
   -v               ---> enable verbose, otherwise just errors are printed
   -h               ---> print usage/help
 
@@ -51,7 +58,6 @@ example: $my_name -c tohex -n 1000
 EOF
   exit 0
 }
-
 
 function do_tohex() {
   if [ -z $number ] ; then
@@ -71,7 +77,7 @@ function do_todec() {
 
 function do_toascii() {
   check_installed iconv
-  if [ -z $file ] ; then
+  if [ -z $ifile ] ; then
     log.error "toascii needs a unicode file to convert to ascii, see usage"
     usage
   fi
@@ -85,6 +91,54 @@ function do_calc() {
   fi
   log.stat "\t$args = `echo "scale=6; \"$args\""|bc`"
 }
+
+function do_rsync() {
+  if [ -z $ifile ] || [ -z $ofile ] ; then
+    log.error "rsync needs input (source path) and output (destination path), see usage"
+    usage
+  fi
+  log.stat "Running \"rsync $rsync_opts $ifile $ofile\" ..."
+  log.stat "\tplease wait..."
+  rm -rf $rsync_log_file
+  rsync $rsync_opts $ifile $ofile
+  log.stat "\trsync completed."
+}
+
+function do_compresspdf() {
+  check_installed gs
+  
+  if [ -z $ifile ] ; then
+    log.error "compresspdf needs input PDF file to compress, see usage"
+    usage
+  fi
+
+  gs -sDEVICE=pdfwrite -dPDFSETTINGS="${pdf_quality}" -dNOPAUSE -dQUIET -dBATCH -sOutputFile=$ifile.compressed $ifile
+  if [ -f $ifile.compressed ] ; then
+    mv $ifile.compressed $ifile
+    log.stat "Compressed PDF file: $ifile"
+  else
+    log.error "Failed to compress: $ifile"
+  fi
+
+}
+
+
+function do_dos2unix() {
+  if [ -z $ifile ] ; then
+    log.error "dos2unix needs input file, see usage"
+    usage
+  fi
+
+  tr -d '\r' < $ifile > $ifile.dos2unix
+  if [ $? -eq 0 ] ; then
+    mv $ifile.dos2unix $ifile
+    log.stat "Dos2Unix conversion successful: $ifile"
+  else
+    rm -rf $ifile.dos2unix
+    log.error "Dos2Unix conversion failed: $ifile"
+  fi
+}
+
 
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
@@ -110,11 +164,17 @@ while getopts $options opt ; do
     n)
       number="$OPTARG"
       ;;
-    f)
-      file="$OPTARG"
+    i)
+      ifile="$OPTARG"
+      ;;
+    o)
+      ofile="$OPTARG"
       ;;
     a)
       args="$OPTARG"
+      ;;
+    q)
+      pdf_quality="$OPTARG"
       ;;
     v)
       verbose=1
@@ -144,6 +204,15 @@ case $command_name in
     ;;
   calc)
     do_calc
+    ;;
+  rsync)
+    do_rsync
+    ;;
+  compresspdf)
+    do_compresspdf
+    ;;
+  dos2unix)
+    do_dos2unix
     ;;
   *)
     log.error "Invalid command: $command_name"
