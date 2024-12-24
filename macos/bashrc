@@ -1,286 +1,98 @@
+################################################################################
 #
-# .bashrc
-#
-# Arul's customized bashrc for mac. Also, most of it should work for Linux as well.
+# .bashrc --- a customized bashrc for macOS
 #
 # Author:  Arul Selvan
-# Version: Jan 12, 2012
 #
+# Version History:
+#   Jan 4,  2012 --- Original version from UNIX
+#   Dec 23, 2024 --- Clean/move all functions to shell scripts in GitHub
+# 
+################################################################################
 
+# source system rc if present
 if [ -f /etc/bashrc ]; then
    . /etc/bashrc
 fi
 
-# os name for os specific stuff.
-os_name=`uname -s`
-
-# env
-#export PS1='\u@\H:\w$ '
+# ---------------------------- environment variables ---------------------------
 export PS1='\[\033]0;\u@\h: \w\007\]\u@\H$ '
 export EDITOR=vi
-#export PROMPT_COMMAND='echo -ne "\033]0;${USER}@${HOSTNAME}: ${PWD}\007"' 
-export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-10.0.1.jdk/Contents/Home
-export CLASSPATH="/Users/arul/src/java/lib/*:."
-export BREW_PATH="/usr/local/opt/sqlite/bin:/usr/local/opt/curl/bin:/usr/local/bin:/usr/local/sbin"
-export OPENSSL_HOME=/usr/local/Cellar/openssl/1.0.2s
-ANDROID_BASE=/Users/arul/tools/android
-WORK_BIN=/data/work/rpwork/bin
-HOME_SCRIPTS=/data/src/scripts
+export DATA_HOME="$HOME/data"
+
+# brew path --- setup old or new brew path
+if [ -d /opt/homebrew ] ; then
+  BREW_HOME="/opt/homebrew"
+else
+  BREW_HOME="/usr/local"
+fi
+export BREW_PATH="${BREW_HOME}/bin:${BREW_HOME}/sbin:${BREW_HOME}/opt/curl/bin"
+
+# home and github scripts
+HOME_SCRIPTS=${HOME}/data/src/scripts
 GITHUB_SCRIPTS_HOME="$HOME/src/scripts.github"
-GITHUB_SCRIPTS="$GITHUB_SCRIPTS_HOME/tools:$GITHUB_SCRIPTS_HOME/macos:$GITHUB_SCRIPTS_HOME/security"
-export ANDROID_HOME=${ANDROID_BASE}
-export PATH="${BREW_PATH}:${OPENSSL_HOME}/bin:${PATH}:/usr/libexec:${HOME_SCRIPTS}:$GITHUB_SCRIPTS:${WORK_BIN}:$ANDROID_BASE/tools:$ANDROID_BASE/platform-tools:."
+GITHUB_SCRIPTS="$GITHUB_SCRIPTS_HOME/tools:$GITHUB_SCRIPTS_HOME/macos:$GITHUB_SCRIPTS_HOME/security:$GITHUB_SCRIPTS_HOME/firewall:$GITHUB_SCRIPTS_HOME/andriod"
 
 # GO lang
 export GOPATH=$HOME/go-workspace
 export GOROOT=/usr/local/opt/go/libexec
-export PATH="${PATH}:${GOROOT}/bin"
+RUST_CARGO=$HOME/.cargo/bin
 
-# handy alias
-alias ll='ls -l'
+# Finally, "the PATH" --- includes everything from above
+export PATH="${BREW_PATH}:${PATH}:/usr/libexec:$GITHUB_SCRIPTS:${HOME_SCRIPTS}:${RUST_CARGO}:$GOPATH/bin:${GOROOT}/bin:."
+
+# python -- disable the __pychache__ directory when python code runs
+export PYTHONDONTWRITEBYTECODE=1
+
+# grab SSL premaster key from browser
+#export SSLKEYLOGFILE=/tmp/sslkeylogfile.txt
+
+# ---------------------------- aliases  ----------------------------
+alias ll='ls -lth'
 alias dir='ls -l'
-alias openssl_dec='openssl aes-256-cbc -a -d'
-alias openssl_enc='openssl aes-256-cbc -a -salt'
+alias psall='ps -u ${USER} -U 0 -r'
+alias gogit='cd $HOME/src/scripts.github'
+alias dec='${HOME}/src/scripts.github/security/secret.sh -e $*'
 alias random_word='gshuf -n 1 /usr/share/dict/words| tr -d "\n"; echo $(gshuf -i0-999 -n 1)'
-alias tracert='sudo nmap -sn --traceroute $*'
-alias h2d='printf "%d\n" ${1}'
-alias d2h='printf "0x%x\n" ${1}'
-alias dobrew='brew update; brew upgrade; brew cleanup'
-alias jvm-flags='java -XX:+PrintFlagsFinal -version'
+alias nmap_fullscan='sudo nmap -v -p1-65535 -sV -sS -T5 $*'
+alias libre='cd ${HOME}/data/work/rpwork/personal/libre-data; ${HOME/src/scripts.github/freestyle-libre/libre_app.pl'
+alias speed-test='${HOME}/src/testmynet-cli/testmynet-cli -I-WANT-TO-GET-BANNED -location tx -size 102400'
+alias dobrew='brew update; brew upgrade; brew upgrade --cask --greedy; brew cleanup --prune=0'
 alias time_sync='sudo ntpdate pool.ntp.org'
-# mount sample
-#alias mount_udrive='mount -t smbfs //hostname/sharename ~/mnt/localpath/'
-alias flush_dns='sudo killall -HUP mDNSResponder'
-alias dig='/usr/bin/dig -p443 @resolver1.opendns.com'
+alias dig443='/usr/bin/dig -p443 @resolver1.opendns.com'
 alias digall='/usr/bin/dig -p443 +nocmd $1 any +multiline +noall +answer @resolver1.opendns.com'
-alias firewall="sudo ${HOME_SCRIPTS}/firewall"
-alias myip='/usr/bin/dig -p443 +short myip.opendns.com @resolver1.opendns.com'
-alias myip2='curl -s http://selvans.net/main.shtml|grep "Your IP:"'
+
+# IP aliases
+# in case curl had issue w/ resolving, the following syntax used to 
+# use dig to resolv it first and have curl use it
+alias myip='curl -sL -w "\n" --resolve ifconfig.me:443:`dig +short ifconfig.me` https://ifconfig.me/ip'
+alias myip2='curl -sL http://selvans.net/main.shtml|grep "Your IP:"|sed -e "s/.*>//g"'
+alias myip3='echo `wget -qO- "\n" ifconfig.me/ip`'
 alias selvansip='dig +short selvans.net'
-alias pp_jason='cat $* |python -m json.tool'
-alias du-sort='du -xh -d 1 | sort -hr'
 
-# 
-# -------------------------------   functions --------------------------------------
-#
-# tailstring: tails a faile $1, with string ($2), optionally pass any grep args in $3
-function tailstring { /usr/bin/tail -f $1 | grep -i $3 --line-buffered $2;}
+# utils
+alias srm='rm -P'
+alias pp_jason='cat $* |python3 -m json.tool'
+alias du_sort='du -xh -d 1 | sort -hr'
+alias vscan='sudo ${HOME}/src/scripts.github/security/clamscan.sh -f $*'
+alias play='ffplay -hide_banner -nodisp -autoexit $*'
+alias fan_speed='sudo powermetrics -i10 -n1 --samplers smc|grep Fan'
+alias chrome_ps='sudo ps -ef |grep -i chrome | grep -vi drive|grep -v grep'
+alias pihole_check='ssh root@trex pihole -q $*'
+alias lastlog='log show --debug --style syslog --last 1m >/tmp/lastlog'
+alias boot_log='sudo log show --predicate "processID == 0" --last boot --debug'
+alias htop='sudo htop'
+alias ntop='nettop -nPx -m tcp -J  bytes_in,bytes_out -t wifi'
+alias gvim='mvim'
+alias pbp='pbpaste'
+alias pbc='pbcopy'
+alias pbt='pbpaste|pbcopy'
+alias pbz='echo -n "" |pbcopy'
+alias updatedb='sudo /usr/libexec/locate.updatedb'
+alias remote_color='echo "tell app \"Terminal\" to set current settings of first window to settings set \"rplinux\""|osascript'
+alias lc='echo "tell app \"Terminal\" to set current settings of first window to settings set \"Basic\""|osascript'
 
-# mspid: findout the pid of the managed server ($1)
-function mspid      { ps -eaf |grep "weblogic.Name=$1" |grep -v grep |awk '{print $2;}' ; }
-
-# lwpct: count number of lwps on a pid ($1)
-function lwpct      { ps -efT |awk '{print $2;}'| grep $1 |wc -l ; }
-
-# calc: usage: calc "(5+5)^2"
-function calc {
-  echo -n "$* = "
-  echo "scale=6; $*"|bc
-}
-
-# docker related
-function docker_rmi {
-  docker rmi $(docker images -q) 2>/dev/null || echo "No more images to remove."  
-  return
-}
-function docker_rm {
-  docker rm -vf $(docker ps -a -q) 2>/dev/null || echo "No more containers to remove."  
-}
-alias docker_clean='docker_rm; docker_rmi'
-
-
-function test_connectivity {
-  host=$1
-  port=$2
-  if [[ -z $host  || -z $port ]]; then
-    echo "Usage: test_connectivity <host> <port>"
-    return $?
-  else
-    netcat -zv -w 10 $host $port
-    return $?
-  fi
-}
-
-function ipinfo {
-  ip=$1
-  if [ -z $ip ]; then
-    echo "Usage: ipinfo <ip>"
-  fi
-  curl ipinfo.io/$ip
-}
-
-function dhcp_info() {
-  interface=$1
-  if [ -z "$interface" ] ; then
-    echo "Usage: dhcp_info <interface>"
-    return
-  fi
-  ipconfig getpacket $interface
-}
-
-function dhcp_renew() {
-  interface=$1
-  if [ -z "$interface" ] ; then
-    echo "Usage: dhcp_renew <interface>"
-    return
-  fi
-  sudo ipconfig set $interface BOOTP
-  echo "Waiting for 5 sec and renew IP ..."
-  sleep 5
-  sudo ipconfig set $interface DHCP
-}
-
-# this makes the panell blinking as if no wifi is available but it is working!
-#function dhcp_renew_soft() {
-#  interface=$1
-#  if [ -z "$interface" ] ; then
-#    echo "Usage: dhcp_renew <interface>"
-#    return
-#  fi
-#  echo "add State:/Network/Interface/$interface/RefreshConfiguration temporary" | sudo scutil
-# }
-
-function show_ip() {
-  interfaces=$1
-  if [ -z "$interfaces" ] ; then
-    echo "Looking up ip for all interfaces..."
-    interfaces=`ifconfig -a | sed -E 's/[[:space:]:].*//;/^$/d'`
-  fi
-  for iface in $interfaces ;  do 
-    echo "${iface}: `ipconfig getifaddr $iface`"
-  done
-}
-
-function traceroute_udp {
-  host=$1
-  port=$2
-  if [[ -z $host  || -z $port ]]; then
-    echo "Usage: traceroute_udp <host> <port>"
-    echo "   This tells where packets are dropped, i.e. watch where it stops"
-    return $?
-  else
-    sudo hping --traceroute -c 60 -V -S -p $port $host
-    return $?
-  fi
-}
-
-function traceroute_tcp {
-  host=$1
-  port=$2
-  if [[ -z $host  || -z $port ]]; then
-    echo "Usage: traceroute_tcp <host> <port>"
-    echo "   This tells where packets are dropped, i.e. watch where it stops"
-    return $?
-  else
-    sudo tcptraceroute $host $port
-    return $?
-  fi
-}
-
-
-function test_firewall {
-  host=$1
-  port=$2
-  if [[ -z $host  || -z $port ]]; then
-    echo "Usage: test_firewall <host> <port>"
-    return $?
-  else
-    nmap -Pn -sT -p $port $host
-    return $?
-  fi
-}
-
-function test_port_open {
-  host=$1
-  port=$2
-  if [[ -z $host  || -z $port ]]; then
-    echo "Usage: test_port_open <host> <port>"
-    return $?
-  else
-    nc -zvn $host $port
-    return $?
-  fi
-}
-
-function compress_pdf {
-  high_quality="/printer"
-  medium_quality="/ebook"
-  low_quality="/screen"
-  if [ -z $1 ]; then
-    echo "Usage: compress_pdf <file.pdf>"
-  else
-    gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=${medium_quality} -dNOPAUSE -dQUIET -dBATCH -sOutputFile=$1.compressed $1
-  fi
-}
-
-dos2unix() {
-  fname=$1
-  tmpName=/tmp/$1
-  tr -d '\r' < $fname > $tmpName
-  mv $tmpName $fname
-}
-
-# example of fwknop (must change host/port etc)
-knock_client() {
-    source=$1
-    if [ ! -z $2 ]; then
-      port=$2
-    else
-      port=XXX
-    fi
-
-    if [ -z $source ]; then
-        echo "Usage: knock_client <sourceIP> [port]"
-    else
-        echo "Open seseme!... open firwall for source IP ($source) ---> server:$port"
-        fwknop -A tcp/$port -a $source -D server
-    fi
-}
-
-# GIT/SVN
-# git_retag --- moves the tag to current HEAD
-git_retag() {
-  tag=$1
-  message=$2
-  if [ -z $tag ] ; then
-    echo "Usage: git_retag <tag> [message]"
-    return
-  fi
-  echo "Deleting tag $tag ..."
-  git push origin :refs/tags/$tag
-  echo "Retaging ..."
-  git tag -fa $tag -m "$message"
-  echo "pushing $tag to origin master"
-  git push origin master --tags
-}
-svn_update() {
-  top=$1
-  if [ -z $top ]; then
-    top=.
-  fi
-  cd $top
-  echo "Running SVN update at path: $top"
-  dir_list=`ls $top`
-  for name in $dir_list; do
-    if [ -d $name/.svn ]; then
-      echo "Updating SVN for: $name"
-      (cd $name; svn update >/dev/null 2>&1)
-    fi
-  done
-}
-
-# trap signal and do something on the handler
-#signal_handler() {
-#    . "$HOME/.bash_logout"
-#}
-#trap signal_handler SIGTERM
-
-#
-# ---------------------- SSH related stuff ---------------------------------
-#
-# run ~/bin/ssh that switches color before login and reverts back after log off
-alias ssh='~/bin/ssh'
-
+#  ----------------------------    functions ----------------------------
 # ssh completion (incorporates both known_hosts and config)
 _complete_ssh_hosts ()
 {
@@ -302,185 +114,40 @@ _complete_ssh_hosts ()
 complete -F _complete_ssh_hosts ssh
 #complete -F _complete_ssh_hosts scp
 
-alias enc_string='openssl enc -aes-256-cbc -a -salt'
-alias dec_string='openssl enc -d -aes-256-cbc -a'
-
-function enc_file() {
-   source=$1
-   if [ -z $source ]; then
-      echo "Usage: enc_file <plain_filename> >encrypted_file"
-   else
-      openssl enc -aes-256-cbc -a -salt -in $source
-   fi
-}
-function dec_file() {
-   source=$1
-   if [ -z $source ]; then
-      echo "Usage: dec_file <encrypted_filename> >plain__file"
-   else
-      openssl enc -d -aes-256-cbc -a -in $source
-   fi
-}
-
-function basic_auth() {
-  user=$1
-  passwd=$2
-  if [ -z $user ] ; then
-    echo "Usage: basic_auth <user> <password>"
-    return
-  fi
-  if [ -z $passwd ] ; then
-    echo "Usage: basic_auth <user> <assword>"
-    return
-  fi
-  ba=$(echo -n "$user:$passwd"|base64)
-  echo "Basic $ba"
-}
-
-# text message
-function txt_us() {
-  number=$1
-  txt=$2
-  # txt needs to be quoted otherwise you will get "bash: too many args"
-  if [ -z $number ] || [ -z "$txt" ]; then
-    echo "Usage: txt_us <number> <txt>"
-    echo "ex: txt_us 9726079680 \"this is a message\""
-  else
-    curl -X POST http://textbelt.com/text -d number=$number -d message="${txt}"
-  fi
-}
-
-function txt_int() {
-  number=$1
-  txt=$2
-  # txt needs to be quoted otherwise you will get "bash: too many args"
-  if [ -z $number ] || [ -z "$txt" ]; then
-    echo "Usage: txt_int <number> <txt>"
-    echo "ex: txt_us +919726079680 \"this is a message\""
-  else
-    curl -X POST http://textbelt.com/intl -d number=$number -d message="${txt}"
-  fi
-}
-
-# autojump (must be installed)
-if [ -f /usr/local/etc/autojump.sh ]; then
-  . /usr/local/etc/autojump.sh
+# use autojump if instaklled
+if [ -f ${BREW_HOME}/etc/autojump.sh ]; then
+  . ${BREW_HOME}/etc/autojump.sh
 fi
 
-# ------ ssl/openssl certificate related functions ------
-function get_server_cert() {
-  server=$1
-  file=$2
-  if [ -z $server ]; then
-    echo "Usage: get_server_cert <server_fqdn:port> [filename.pem]"
-    return
-  fi
-  if [ -z $file ]; then
-  echo "Extracting $server certificates to stderr ..." 
-    echo | openssl s_client -connect $server 2>&1 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' >&2
-  else
-  echo "Extracting $server certificates to $file ..." 
-    echo | openssl s_client -connect $server 2>&1 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' >$file
-  fi
+boot_log_today() {
+  log show --debug --predicate 'process == "kernel"' --start $(date "+%Y-%m-%d")
 }
 
-# ---------------------- functions only for MacOS -------------------------------------
-if [ $os_name = "Darwin" ]; then
-  alias ntop='nettop -m tcp -P'
-  alias gvim='mvim'
-  alias pbp='pbpaste'
-  alias pbc='pbcopy'
-  alias pbt='pbpaste|pbcopy'
-  alias pbz='echo -n "" |pbcopy'
-  alias airport='/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport'
-  alias updatedb='sudo /usr/libexec/locate.updatedb'
-  alias remote_color='echo "tell app \"Terminal\" to set current settings of first window to settings set \"rplinux\""|osascript'
-  alias lc='echo "tell app \"Terminal\" to set current settings of first window to settings set \"Basic\""|osascript'
-  alias netstat='netstat -f inet -a'
-  alias unicode2ascii='iconv -t ASCII//TRANSLIT'
-  alias srm='rm -P'
+boot_log_all() {
+  log show --debug --last boot --predicate 'process == "kernel"'
+}
 
-  # not working need to fix (log stream --predicate  '(process == "smtpd") || (process == "smtp")' --debug)
-  #alias mlog="log show -predicate process=="smtpd" -debug"
+wakeup_mac() {
+  ten_sec_from_now=`date -v +10S "+%m/%d/%Y %H:%M:%S"`
+  echo "Waking up mac at '$ten_sec_from_now'"
+  sudo pmset schedule wake "$ten_sec_from_now"
+}
+ 
+pidof() {
+  if [ -z $1 ] ; then
+    echo "Usage: pidof <appname> [note: appname can be regex]"
+    return
+  fi
+  ps axc|awk "\$5 ~ /$1/ {print \$1;}"
+}
 
-  # AD shotcut function (change <YOUR_DOMAIN_NAME> to match yours)
-  function ad-info {
-    user=$1
-    option=$2
+launchctl_running() {
+  launchctl list | awk '$1 != "-" {print $0;}'
+}
 
-    if [ -z $user ]; then
-      echo "Usage ad-list <username> [all]"
-      return
-    fi
-  
-    echo "--- Member info for: $1 ---"
-    dscl "/Active Directory/<YOUR_DOMAIN_NAME>/All Domains" -read Users/$user memberOf
-
-    if [[ ! -z $option && $option = "all" ]] ; then
-      echo "--- User Info for: $1 ---"
-      dscl "/Active Directory/<YOUR_DOMAIN_NAME>/All Domains" -read Users/$user
-    fi 
-  }
-
-  function ad-email {
-    user=$1
-    if [ -z "$user" ]; then
-      echo "Usage ad-email 'Firstname Lastname'"
-      return
-    fi
-    ad_user=`dscl "/Active Directory/<YOUR_DOMAIN_NAME>/All Domains" -search /Users RealName "$user" | awk 'NR==1{ print $1; }'`
-    dscl "/Active Directory/<YOUR_DOMAIN_NAME>/All Domains" -read Users/$ad_user EMailAddress
-  }
-
-  # just a sample (change hardcoded domain & user to match yours)
-  mount_smb_share() {
-    remote=$1;
-    local=$2
-    if [ -z $local ]; then
-       echo "Usage: mount_smb_share <remote_share> <local_path>"
-       echo "ex: mount_smb_share host/<sharename> ~/mnt/smbfs"
-    else
-       echo "Mounting domain\user@$remote at the mount point: $local"
-       mount -t smbfs //domain\;user@$remote $local
-    fi
-  }
-
-  vm_stat_info() {
-    vm_stat | perl -ne '/page size of (\d+)/ and $size=$1; /Pages\s+([^:]+)[^\d]+(\d+)/ and printf("%-16s % 16.2f MB\n", "$1:", $2 * $size / 1048576);'
-  }
-
-  wakeup_mac() {
-    ten_sec_from_now=`date -v +10S "+%m/%d/%Y %H:%M:%S"`
-    echo "Waking up mac at '$ten_sec_from_now'"
-    sudo pmset schedule wake "$ten_sec_from_now"
-  }
-
-  volume() {
-    v=$1
-    if [ ! -z $v ] ; then
-      echo "Setting output volume to $1"
-      osascript -e "set volume output volume $v"
-    else
-      echo -n "Current output volume is: "
-      osascript -e "output volume of (get volume settings)"
-    fi
-  }
-
-  enable_epsonjunk() {
-    sudo launchctl load -w /Library/LaunchAgents/com.epson.esua.launcher.plist
-    sudo launchctl load -w /Library/LaunchAgents/com.epson.eventmanager.agent.plist
-    sudo launchctl load -w /Library/LaunchAgents/com.epson.scannermonitor.plist
-  }
-
-  disable_epsonjunk() {
-    sudo launchctl unload -w /Library/LaunchAgents/com.epson.esua.launcher.plist
-    sudo launchctl unload -w /Library/LaunchAgents/com.epson.eventmanager.agent.plist
-    sudo launchctl unload -w /Library/LaunchAgents/com.epson.scannermonitor.plist
-  }
-else
-  # equivalant tools in Linux (must have x)
-  alias pbc='xsel --clipboard --input'
-  alias pbp='xsel --clipboard --output'
-  alias pbt='pbp|pbc'
-  alias pbz='echo -n ""|pbc'
+# ----------------------- custom entries ----------------------------
+# Finally, include any custom local bashrc that may have info you 
+# may not want to be in the public version of bashrc in github
+if [ -f ~/bashrc.custom ]; then
+   . ~/bashrc.custom
 fi
