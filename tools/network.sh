@@ -280,7 +280,7 @@ function traceroute() {
 
 function dnsperf() {
   if [ -z $host_port ] ; then
-    log.error "Need host:port for traceroute function, see usage"
+    log.error "Need host for dnsperf function, see usage"
     usage
   fi
   host="${host_port%%:*}"
