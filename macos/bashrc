@@ -2,8 +2,9 @@
 #
 # .bashrc --- a customized bashrc for macOS
 #
-# Author:  Arul Selvan
-#
+# Author: Arul Selvan
+# Source: https://github.com/aselvan/scripts/blob/master/macos/bashrc
+# 
 # Version History:
 #   Jan 4,  2012 --- Original version from UNIX
 #   Dec 23, 2024 --- Clean/move all functions to shell scripts in GitHub
