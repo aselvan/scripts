@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 #
-# check_sslcert.sh --- Download and validate SSL certs of a server
+# ssl.sh --- Download and/or validate SSL certs of a server
 #
 # Validation is done by downloading all the certificates in the certificate 
 # chain. Optionally, you print the expiration date, issuer etc. The script
 # uses openssl binary so it is a requirement but both Linux & MacOS should
-# have openssl
+# have openssl.
 #
 # Author:  Arul Selvan
 # Created: Aug 7, 2019
@@ -15,10 +15,11 @@
 #   May 19, 2024 --- Added options, validate chain, list chain error check etc.
 #   Dec 6,  2024 --- Added validation for CN/SAN.
 #   Dec 12, 2024 --- Option to save the SSL cert to a file
+#   Dec 26, 2024 --- Check for openSSL as opposed to LibreSSL. Also renamed to ssl.sh
 #
 
 # version format YY.MM.DD
-version=24.12.12
+version=24.12.26
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Download and validate SSL certs of a server"
@@ -28,7 +29,7 @@ default_scripts_github=$HOME/src/scripts.github
 scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
 # commandline options
-options="s:d:o:x:lvh?"
+options="c:s:d:o:x:lvh?"
 
 optional_checks=""
 show_ssl_chain=0
@@ -40,24 +41,28 @@ ls_opt="-1t"
 first_cert_name=""
 last_cert_name=""
 ssl_cert_file=""
+openssl_version_string="OpenSSL"
+command_name=""
+supported_commands="validate|extract"
 
-# ensure path for cron runs (prioritize usr/local first)
-export PATH="/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
 
 usage() {
   cat << EOF
 $my_title
 
 Usage: $my_name [options]
-  -s <server> ---> webserver who's SSL cert needs to be validated
-  -d <number> ---> chain depth [default: $chain_depth is sufficient for most cases]
-  -o <flags>  ---> Any openssl x509 flags example "-enddate -issuer -subject -fingerprint"
-  -l          ---> list ssl chain starting from root -> server cert
-  -x          ---> filename to store the extracted cert
-  -c          ---> enable verbose, otherwise just errors are printed
-  -h          ---> print usage/help
+  -c <command>  ---> command to run [see supported commands below].
+  -s <server>   ---> webserver who's SSL cert needs to be validated or extracted.
+  -x <certname> ---> Just extract the cert and save it. No validation performed.
+  -d <number>   ---> chain depth [default: $chain_depth is sufficient for most cases].
+  -o <flags>    ---> Any openssl x509 flags example "-enddate -issuer -subject -fingerprint"
+  -l            ---> list ssl chain starting from root -> server cert
+  -v            ---> enable verbose, otherwise just errors are printed
+  -h            ---> print usage/help
 
-example: $my_name -s google.com -o "-enddate -issuer"
+Supported commands: $supported_commands  
+example: $my_name -c validate -s google.com -o "-enddate -issuer"
+example: $my_name -c extract google.com -x ~/Desktop/cert.pem"
   
 EOF
   exit 0
@@ -67,7 +72,15 @@ EOF
 # at or below 3.0.10 lists order of certs starting with server,intermediate,root which 
 # doesn't work for openssl verify. Need to change sort order accordingly
 check_openssl_version() {
+
   local openssl_version=`openssl version |awk  '{ print $2; }'`
+  local openssl_name=`openssl version |awk  '{ print $1; }'`
+
+  if [ $openssl_name != $openssl_version_string ] ; then
+    log.error "  This script needs $openssl_version_string but found $openssl_name. Install $openssl_version_string and try again."
+    exit 98
+  fi
+
   if version_le "$openssl_version" "3.0.10" ; then
     log.warn "  Openssl version is old: v${openssl_version}"
     ls_opt="-1rt"
@@ -163,7 +176,9 @@ additional_options() {
 }
 
 extract_ssl_cert() {
-  echo | openssl s_client -connect ${server}:443 2>&1 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' >$ssl_cert_file
+  #echo | openssl s_client -connect ${server}:443 2>&1 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' >$ssl_cert_file
+  log.stat "\tExtracting the cert to the file: $ssl_cert_file"
+  echo | openssl s_client -connect ${server}:443 -showcerts 2>/dev/null >$ssl_cert_file
 }
 
 
@@ -186,6 +201,9 @@ check_installed "openssl"
 # parse commandline options
 while getopts $options opt ; do
   case $opt in
+    c)
+      command_name="$OPTARG"
+      ;;
     s)
       server="$OPTARG"
       ;;
@@ -210,22 +228,37 @@ while getopts $options opt ; do
   esac
 done
 
-if [ -z "$server" ] ; then
-  log.error "Required argument missing! See usage below"
+check_openssl_version
+
+# check for any commands
+if [ -z "$command_name" ] ; then
+  log.error "Missing arguments, see usage below"
   usage
 fi
 
-check_openssl_version
-
-# if this is just to extract, do the extract and exit
-if [ ! -z $ssl_cert_file ] ; then
-  extract_ssl_cert
-  exit 0
+if [ -z "$server" ] ; then
+  log.error "Server name is missing! See usage below"
+  usage
 fi
 
-validate_ssl_chain
-list_ssl_chain
-validate_san
-additional_options
-
+case $command_name in
+  validate)
+    validate_ssl_chain
+    list_ssl_chain
+    validate_san
+    additional_options
+    ;;
+  extract)
+    if [ -z $ssl_cert_file ] ; then
+      log.error "Extract requires filename to extract, See usage below"
+      usage
+    fi
+    extract_ssl_cert
+    ;;
+  *)
+    log.error "Invalid command: $command_name"
+    log.stat  "Available commands: $supported_commands"
+    exit 1
+    ;;
+esac
 
