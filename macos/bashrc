@@ -147,8 +147,9 @@ launchctl_running() {
 }
 
 # ----------------------- custom entries ----------------------------
-# Finally, include any custom local bashrc that may have info you 
-# may not want to be in the public version of bashrc in github
-if [ -f ~/bashrc.custom ]; then
-   . ~/bashrc.custom
+# Finally, include any custom local bashrc if present that may include 
+# env/alias/functions that may not be suitable for public version of 
+# bashrc in github
+if [ -f ~/.bashrc.custom ]; then
+   . ~/.bashrc.custom
 fi
