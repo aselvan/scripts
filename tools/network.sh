@@ -11,10 +11,11 @@
 # Version History:
 #   Jul 29, 2023 --- Original version
 #   Nov 26, 2024 --- Renamed to network.sh (was network_info.sh) and added new functionality
+#   Dec 25, 2024 --- Added wifi stats, ssid etc
 #
 
 # version format YY.MM.DD
-version=2024.11.26
+version=2024.12.25
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl network tools wrapper all in one place"
@@ -29,8 +30,9 @@ arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 options="c:i:n:s:H:d:m:a:vh?"
 
 command_name=""
-supported_commands="info|ip|lanip|wanip|mac|dhcp|scan|testsvc|testfw|interfaces|traceroute|dnsperf|multidnsperf|allports|ports|spoofmac|genmac|route|dns|netstat|appfirewall|dhcprenew"
+supported_commands="info|ip|lanip|wanip|mac|dhcp|scan|testsvc|testfw|interfaces|traceroute|dnsperf|multidnsperf|allports|ports|spoofmac|genmac|route|dns|netstat|appfirewall|dhcprenew|wifiint|ssid|wifistats"
 iface=""
+wifi_iface=""
 my_net="192.168.1.0/24"
 my_ip=""
 wan_ip=""
@@ -44,6 +46,7 @@ netstat_args="-f inet -a -p tcp"
 appfirewall="/usr/libexec/ApplicationFirewall/socketfilterfw"
 appfirewall_args="--listapps --getglobalstate --getblockall  --getstealthmode"
 wait_time=5
+ssid=""
 
 airport="/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport"
 
@@ -89,6 +92,17 @@ reset_logfile_perm() {
 function get_interface_linux() {
   not_implemented
 }
+function get_wifi_interface_linux() {
+  not_implemented
+}
+function get_ssid_linux() {
+  not_implemented
+}
+function get_wifistats_linux() {
+  not_implemented
+}
+
+
 
 # detect active, IP assigned interface. The first one is returned
 function get_interface_mac() {
@@ -110,6 +124,76 @@ function get_interface() {
       ;;
     Linux)
       get_interface_linux
+      ;;
+    *)
+      not_implemented
+      ;;
+  esac
+}
+
+function get_wifi_interface_mac() {
+  wifi_iface=`networksetup -listallhardwareports | awk '/Wi-Fi|AirPort/{getline; print $NF}'`
+  log.stat "\tWiFi interface: $wifi_iface"
+}
+
+function get_wifi_interface() {
+  case $os_name in 
+    Darwin)
+      get_wifi_interface_mac
+      ;;
+    Linux)
+      get_wifi_interface_linux
+      ;;
+    *)
+      not_implemented
+      ;;
+  esac
+}
+
+function get_ssid_mac() {
+  ssid=`system_profiler SPAirPortDataType | awk '/Current Network Information/ {getline; gsub(":", ""); print $NF; exit}'`
+  log.stat "\tSSID: $ssid"
+}
+
+function get_ssid() {
+  case $os_name in 
+    Darwin)
+      get_ssid_mac
+      ;;
+    Linux)
+      get_ssid_linux
+      ;;
+    *)
+      not_implemented
+      ;;
+  esac
+}
+
+function get_wifistats_mac() {
+  check_root
+
+  rssi=`wdutil info | grep 'RSSI'|awk -F: '{print $2}'`
+  noise=`wdutil info | grep 'Noise'|awk -F: '{print $2}'`
+  txrate=`wdutil info | grep 'Tx Rate'|awk -F: '{print $2}'`
+  enc_type=`wdutil info | grep 'Security'|awk -F: '{print $2}'`
+
+  get_ssid
+  log.stat "\tEncryption: $enc_type"
+  log.stat "\tRSSI:    $rssi [-50 to -60: Excellent; -70 to -80: Fair ; < -80: Poor]"
+  log.stat "\tNoise:   $noise [-120 to -90: Excellent; -90 to -70: Fair; > -70: Poor]" 
+  log.stat "\tTx Rate: $txrate"
+
+  reset_logfile_perm
+  
+}
+
+function get_wifistats() {
+  case $os_name in 
+    Darwin)
+      get_wifistats_mac
+      ;;
+    Linux)
+      get_wifistats_linux
       ;;
     *)
       not_implemented
@@ -532,6 +616,15 @@ case $command_name in
     ;;
   dhcprenew)
     do_dhcprenew
+    ;;
+  wifiint)
+    get_wifi_interface_mac
+    ;;
+  ssid)
+    get_ssid
+    ;;
+  wifistats)
+    get_wifistats
     ;;
   *)
     log.error "Invalid command: $command_name"
