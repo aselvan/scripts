@@ -24,10 +24,10 @@ scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 
 # commandline options
-options="c:n:i:o:a:q:vh?"
+options="c:n:i:o:a:q:d:vh?"
 
 command_name=""
-supported_commands="tohex|todec|toascii|calc|rsync|compresspdf|dos2unix|tx2mp3"
+supported_commands="tohex|todec|toascii|calc|rsync|compresspdf|dos2unix|tx2mp3|vid2gif"
 number=""
 ifile=""
 ofile=""
@@ -35,6 +35,7 @@ args=""
 rsync_log_file="/tmp/$(echo $my_name|cut -d. -f1)_rsync.log"
 rsync_opts="-rlptgoq --ignore-errors --no-specials --no-devices --delete-after --cvs-exclude --log-file=$rsync_log_file --temp-dir=/tmp --exclude=\"*.vmdk\""
 pdf_quality="/ebook"
+delay=3 # used for vid2gif
 
 # ensure path for cron runs (prioritize usr/local first)
 export PATH="/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
@@ -49,6 +50,7 @@ Usage: $my_name [options]
   -i <file/path> ---> input for commands require an input argument like toascii|rsync|compresspdf etc
   -o <file/path> ---> output for commands require output argument like rsync
   -a <arg>       ---> for commands like 'calc'
+  -d <delay>     ---> frame delay used for vid2gif [Default: $delay]
   -q <quality>   ---> for 'compresspdf'; valid entries are "/printer|/ebook|/screen" [Default: $pdf_quality]
   -v             ---> enable verbose, otherwise just errors are printed
   -h             ---> print usage/help
@@ -154,6 +156,20 @@ function do_txt2mp3() {
   rm $ofile.aiff
 }
 
+function do_vid2gif() {
+  check_installed lame
+  check_installed gifsicle
+
+  if [ -z $ifile ] || [ -z $ofile ] ; then
+    log.error "vid2gif needs input video file and name for output gif file, see usage"
+    usage    
+  fi
+
+  log.stat "\tCreating animated GIF: $ofile ..."
+  ffmpeg -i $ifile -pix_fmt rgb24 -r 15 -f gif - 2>/dev/null | gifsicle --optimize=3 --delay=$delay 2>/dev/null > $ofile 
+}
+
+
 
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
@@ -187,6 +203,9 @@ while getopts $options opt ; do
       ;;
     a)
       args="$OPTARG"
+      ;;
+    d)
+      delay="$OPTARG"
       ;;
     q)
       pdf_quality="$OPTARG"
@@ -231,6 +250,9 @@ case $command_name in
     ;;
   txt2mp3)
     do_txt2mp3
+    ;;
+  vid2gif)
+    do_vid2gif
     ;;
   *)
     log.error "Invalid command: $command_name"
