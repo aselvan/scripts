@@ -8,10 +8,11 @@
 # Version History:
 #   Jan 10, 2012 --- Original version (moved from .bashrc)
 #   Dec 23, 2024 --- moved more from .bashrc
+#   Dec 26, 2024 --- Added txt2mp3
 #
 
 # version format YY.MM.DD
-version=2024.12.23
+version=2024.12.26
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl util tools wrapper all in one place"
@@ -26,7 +27,7 @@ arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 options="c:n:i:o:a:q:vh?"
 
 command_name=""
-supported_commands="tohex|todec|toascii|calc|rsync|compresspdf|dos2unix"
+supported_commands="tohex|todec|toascii|calc|rsync|compresspdf|dos2unix|tx2mp3"
 number=""
 ifile=""
 ofile=""
@@ -43,14 +44,14 @@ usage() {
 $my_name --- $my_title
 
 Usage: $my_name [options]
-  -c <command>     ---> command to run [see supported commands below]  
-  -n <number>      ---> used by all commands that requires a number argument.
-  -i <file/path>   ---> input for commands require an input argument like toascii|rsync|compresspdf etc
-  -o <file/path>   ---> output for commands require output argument like rsync
-  -a <arg>         ---> for commands like 'calc'
-  -q <quality>     ---> for 'compresspdf'; valid entries are "/printer|/ebook|/screen" [Default: $pdf_quality]
-  -v               ---> enable verbose, otherwise just errors are printed
-  -h               ---> print usage/help
+  -c <command>   ---> command to run [see supported commands below]  
+  -n <number>    ---> used by all commands that requires a number argument.
+  -i <file/path> ---> input for commands require an input argument like toascii|rsync|compresspdf etc
+  -o <file/path> ---> output for commands require output argument like rsync
+  -a <arg>       ---> for commands like 'calc'
+  -q <quality>   ---> for 'compresspdf'; valid entries are "/printer|/ebook|/screen" [Default: $pdf_quality]
+  -v             ---> enable verbose, otherwise just errors are printed
+  -h             ---> print usage/help
 
 Supported commands: $supported_commands  
 example: $my_name -c tohex -n 1000
@@ -139,6 +140,20 @@ function do_dos2unix() {
   fi
 }
 
+function do_txt2mp3() {
+  check_installed lame
+  
+  if [ -z $ifile ] || [ -z $ofile ] ; then
+    log.error "txt2mp3 needs input text file and name for output mp3 file, see usage"
+    usage    
+  fi
+
+  log.stat "\tCreating MP3 file: $ofile.mp3 ..."
+  cat $ifile | say -v Daniel -o $ofile.aiff
+  lame $ofile.aiff $ofile.mp3 >> $my_logfile 2>&1
+  rm $ofile.aiff
+}
+
 
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
@@ -213,6 +228,9 @@ case $command_name in
     ;;
   dos2unix)
     do_dos2unix
+    ;;
+  txt2mp3)
+    do_txt2mp3
     ;;
   *)
     log.error "Invalid command: $command_name"
