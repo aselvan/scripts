@@ -25,10 +25,10 @@ scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 
 # commandline options
-options="c:n:i:o:a:q:d:s:vh?"
+options="c:n:i:o:a:q:Q:d:s:vh?"
 
 command_name=""
-supported_commands="tohex|todec|toascii|calc|rsync|knock|compresspdf|dos2unix|tx2mp3|vid2gif"
+supported_commands="tohex|todec|toascii|calc|rsync|knock|compresspdf|dos2unix|tx2mp3|vid2gif|resize"
 number=""
 ifile=""
 ofile=""
@@ -38,6 +38,8 @@ rsync_opts="-rlptgoq --ignore-errors --no-specials --no-devices --delete-after -
 pdf_quality="/ebook"
 delay=3 # for vid2gif
 host_port="" # for knock
+image_quality=100
+image_resize="75%"
 
 # ensure path for cron runs (prioritize usr/local first)
 export PATH="/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
@@ -49,12 +51,14 @@ $my_name --- $my_title
 Usage: $my_name [options]
   -c <command>   ---> command to run [see supported commands below]  
   -n <number>    ---> used by all commands that requires a number argument.
-  -i <file/path> ---> input for commands require an input argument like toascii|rsync|compresspdf etc
+  -i <file/path> ---> input file (wildcard must be quoted) for commands like toascii|rsync|compresspdf etc
   -o <file/path> ---> output for commands require output argument like rsync
   -a <arg>       ---> for commands like 'calc'
   -d <delay>     ---> frame delay used for vid2gif [Default: $delay]
   -s <host:port> ---> for 'knock'; need hostname and port knock open using fwknop client
-  -q <quality>   ---> for 'compresspdf'; valid entries are "/printer|/ebook|/screen" [Default: $pdf_quality]
+  -q <quality>   ---> for compresspdf: options are "/printer|/ebook|/screen" [Default: $pdf_quality]
+  -Q <quality>   ---> for resize: options are "50 - 100 [Default: $image_quality]
+  -r <percent>   ---> resize image [Default: $image_resize]
   -v             ---> enable verbose, otherwise just errors are printed
   -h             ---> print usage/help
 
@@ -190,6 +194,18 @@ function do_knock() {
   fwknop -A tcp/$port -a $myip -D $host
 }
 
+function do_resize() {
+  check_installed mogrify
+
+  if [ -z "$ifile" ] ; then
+    log.error "resize needs input image path/mask, see usage"
+    usage
+  fi
+
+  log.stat "\tresizing "$ifile" to $image_resize with quality $image_quality ..."
+  mogrify "$ifile" -quality $image_quality -resize $image_resize \*
+
+}
 
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
@@ -229,6 +245,12 @@ while getopts $options opt ; do
       ;;
     q)
       pdf_quality="$OPTARG"
+      ;;
+    Q)
+      image_quality="$OPTARG"
+      ;;
+    r)
+      resize="$OPTARG"
       ;;
     s)
       host_port="$OPTARG"
@@ -279,6 +301,9 @@ case $command_name in
     ;;
   knock)
     do_knock
+    ;;
+  resize)
+    do_resize
     ;;
   *)
     log.error "Invalid command: $command_name"
