@@ -146,8 +146,7 @@ do_create_thumbs() {
   echo "<blockquote> <hr align=\"center\" size=\"2\" noshade> <center><small> " >> $index_file
   echo "Copyright &copy; 1999-<script>document.write(new Date().getFullYear())</script>" >> $index_file
   echo " <a href=\"https://selvans.net/\" target=\"_blank\"> selvans.net</a> , " >> $index_file
-  echo " <a href=\"https://selvansoft.com/\" target=\"_blank\"> selvansoft.com</a> , " >> $index_file
-  echo " <a href=\"https://mypassword.us/\" target=\"_blank\"> mypassword.us</a><br> " >> $index_file
+  echo " <a href=\"https://selvansoft.com/\" target=\"_blank\"> selvansoft.com</a> <br> " >> $index_file
   echo "Last updated: <script>document.write(document.lastModified);</script> </small> </center></blockquote>" >> $index_file
   echo "</body></html>" >> $index_file
 
