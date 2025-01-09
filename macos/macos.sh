@@ -23,12 +23,13 @@ my_logfile="/tmp/$(echo $my_name|cut -d. -f1).log"
 default_scripts_github=$HOME/src/scripts.github
 scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
+arg=""
 
 # commandline options
-options="c:l:vh?"
+options="c:l:a:vh?"
 
 command_name=""
-supported_commands="mem|vmstat|cpu|version|system|serial|volume|swap"
+supported_commands="mem|vmstat|cpu|version|system|serial|volume|swap|bundle"
 volume_level=""
 
 # ensure path for cron runs (prioritize usr/local first)
@@ -41,11 +42,14 @@ $my_name --- $my_title
 Usage: $my_name [options]
   -c <command>   ---> command to run [see supported commands below]
   -l <number>    ---> volume level [used by 'volume' command range: 1-100]
+  -a <arg>       ---> used for commands like bundle to provide bundle name
   -v             ---> enable verbose, otherwise just errors are printed
   -h             ---> print usage/help
 
 Supported commands: $supported_commands
 example: $my_name -c mem
+example: $my_name -c bundle -a textedit
+example: $my_name -c volume -l 25
   
 EOF
   exit 0
@@ -107,6 +111,9 @@ while getopts $options opt ; do
     l)
       volume_level="$OPTARG"
       ;;
+    a)
+      arg="$OPTARG"
+      ;;
     v)
       verbose=1
       ;;
@@ -146,6 +153,14 @@ case $command_name in
     ;;
   swap)
     log.stat "`sysctl vm.compressor_mode vm.swapusage`" $green
+    ;;
+  bundle)
+    if [ -z "$arg" ] ; then
+      log.error "bundle requires argumement... see usage"
+      usage
+    fi
+    cmd="osascript -e 'id of app \"$arg\"'"
+    log.stat "\t`eval $cmd`" $green
     ;;
   *)
     log.error "Invalid command: $command_name"
