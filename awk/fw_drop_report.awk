@@ -11,7 +11,7 @@
 
 BEGIN {
    # any static stuff here
-   print "#pkts\t#bytes\ttarget\tsource";
+   print "#pkts\t#bytes\ttarget\tsource  ";
 }
 {
   pkts = $1;
@@ -19,8 +19,16 @@ BEGIN {
   target=$3;
   source=$8;
   source_details="";
-  "whois "source" |grep descr|head -n1|awk -F: '{print $2;}'" | getline source_details
-  print pkts "\t" bytes "\t" target "\t" source "\t--->" source_details; 
+  # only print if there are any packets
+  if ( pkts > 0 ) {
+    "whois "source" |grep descr|head -n1|awk -F: '{print $2;}'" | getline source_details
+    if ( source_details == "") {
+      "whois "source" |grep organisation| tail -n1|awk -F: '{print $2;}'" | getline source_details    
+    }
+    # trim leading spaces
+    sub(/^[ \t]+/, "", source_details)
+    print pkts "\t" bytes "\t" target "\t" source "  \t---> " source_details; 
+  }
 }
 
 END {
