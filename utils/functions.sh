@@ -209,13 +209,14 @@ check_installed() {
   local noexit=$2
   if [ ! `which $app` ]; then
     if [ ! -z "$noexit" ] ; then
-      log.warn "required binary \"$app\" is missing, skiping the task and continuing ..."
-      return
+      log.warn "required binary \"$app\" is missing, continuing w/out the binary ..."
+      return 1
     else
       log.error "required binary \"$app\" is missing, install it and try again, exiting."
       exit 2
     fi
   fi
+  return 0
 }
 
 #--- mail utilities ---
