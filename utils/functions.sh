@@ -209,7 +209,7 @@ check_installed() {
   local noexit=$2
   if [ ! `which $app` ]; then
     if [ ! -z "$noexit" ] ; then
-      log.warin "required binary \"$app\" is missing, skiping the task and continuing ..."
+      log.warn "required binary \"$app\" is missing, skiping the task and continuing ..."
       return
     else
       log.error "required binary \"$app\" is missing, install it and try again, exiting."
