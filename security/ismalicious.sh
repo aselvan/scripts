@@ -34,6 +34,7 @@ supported_commands="reputation|vulnerabilities|geolocation|whois"
 command_name=""
 api_key=""
 name=""
+http_output="/tmp/$(echo $my_name|cut -d. -f1).txt"
 
 
 usage() {
@@ -70,7 +71,7 @@ else
 fi
 # init logs
 log.init $my_logfile
-check_installed "jq"
+
 
 # read default api key
 if [ -f $api_key_file ] ; then
@@ -120,4 +121,14 @@ if [ -z "$api_key" ] ; then
 fi
 
 log.stat "$my_title for $command_name of $name ..."
-curl -s -H "X-API-KEY: $api_key" ${api_url_base}/${command_name}?query=$name | jq
+http_status=$(curl -s -o $http_output -w "%{http_code}" -H "X-API-KEY: $api_key" ${api_url_base}/${command_name}?query=$name)
+if [ "$http_status" -eq 200 ] ; then
+  check_installed jq noexit
+  if [ $? -eq 0 ] ; then
+    cat $http_output | jq
+  else
+    cat $http_output
+  fi
+else
+  log.error "API call failed! HTTP status = $http_status"
+fi
