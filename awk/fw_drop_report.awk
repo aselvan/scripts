@@ -11,7 +11,7 @@
 
 BEGIN {
    # any static stuff here
-   print "#pkts\t#bytes\ttarget\tsource  ";
+   print "#pkts\t#bytes\ttarget\tsource    ";
 }
 {
   pkts = $1;
@@ -27,7 +27,7 @@ BEGIN {
     }
     # trim leading spaces
     sub(/^[ \t]+/, "", source_details)
-    print pkts "\t" bytes "\t" target "\t" source "  \t---> " source_details; 
+    print pkts "\t" bytes "\t" target "\t" source "    \t---> " source_details; 
   }
 }
 
