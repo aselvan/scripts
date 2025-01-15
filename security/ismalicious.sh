@@ -31,7 +31,7 @@ options="c:n:k:vh?"
 api_url_base="https://ismalicious.com/api/check"
 api_key_file="$HOME/.ismalicious.com-apikey.txt"
 supported_commands="reputation|vulnerabilities|geolocation|whois"
-command_name=""
+command_name="reputation"
 api_key=""
 name=""
 http_output="/tmp/$(echo $my_name|cut -d. -f1).txt"
@@ -42,14 +42,14 @@ usage() {
 $my_title
 
 Usage: $my_name [options]
-  -c <command>  ---> command to run [see supported commands below].
+  -c <command>  ---> command to run [Default: $command_name]. See supported commands below
   -n <name>     ---> Domain/IP name to check
   -k <apikey>   ---> ismalicious.com API key [Default: read from $api_key_file]
   -v            ---> enable verbose, otherwise just errors are printed
   -h            ---> print usage/help
 
 Supported commands: $supported_commands  
-example: $my_name -c reputation -n 5.167.71.233
+example: $my_name -n 5.167.71.233
 example: $my_name -c whois -n qouv.fr 
  
 EOF
@@ -99,16 +99,12 @@ while getopts $options opt ; do
   esac
 done
 
-# check for any commands and validate valid commands
-if [ -z "$command_name" ] ; then
-  log.error "Missing command, see usage below"
+# check and validate valid command
+if [[ "|$supported_commands|" != *"|$command_name|"* ]] ; then
+  log.error "Unknown command: $command_name, see usage for valid commands"
   usage
-else
-  if [[ "|$supported_commands|" != *"|$command_name|"* ]] ; then
-    log.error "Unknown command: $command_name, see usage for valid commands"
-    usage
-  fi
 fi
+
 
 if [ -z "$name" ] ; then
   log.error "Missing name to query, see usage below"
