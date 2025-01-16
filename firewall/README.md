@@ -35,7 +35,7 @@ customizing it a bit. For my needs, by default, I allow certain things like
 want to do the same so you can modify them to fit your needs. The entries you need 
 to revise are in `pf_rules_simple.conf` as shown below.
 ```
-allowed_tcp_ports = "{ 22, 8080, 554, 3689 }"
+allowed_tcp_ports = "{ 22, 554, 3689 }"
 allowed_udp_ports = "{ 554, 5353 }"
 allowed_ips = "{ 192.168.1.0/24 }"
 ```
@@ -45,22 +45,24 @@ The ```firewall``` shell script can be used to allow/block specific IPs on the f
 This is useful if you want to allow access to a remote IP inbound or outbound temporarily 
 for whatever reason. This can be done as shown below.
 ```
+
 arul@lion$ sudo firewall addip 8.8.8.8
-Adding 8.8.8.8 to the dynamic_ips table...
-No ALTQ support in kernel
-ALTQ related functions disabled
-1/1 addresses added.
-arul@lion$ 
+Adding 8.8.8.8 to the dynamic_list table...
+
 arul@lion$ sudo firewall showtable
-Showing dynamic_ips table...
---- Allowed table: dynamic_ips ----
-No ALTQ support in kernel
-ALTQ related functions disabled
+Showing dynamic_list table...
+--- Allowed table: dynamic_list ----
    8.8.8.8
---- Blocked table: dynamic_blocked_ips ----
-No ALTQ support in kernel
-ALTQ related functions disabled
-pfctl: Table does not exist.
+--- Blocked table: blocked_list ----
+   120.192.0.0/10
+--- non-routable table: non_routable_list ----
+   10.0.0.0/8
+   172.16.0.0/12
+   192.168.0.0/16
+
+arul@lion$ sudo firewall deleteip 8.8.8.8
+Deleting 8.8.8.8 from the dynamic_list table..
+
 ```
 Finally, if you are familiar with packet filter rules, you can add more fine controls like rejecting 
 everything and stop responding to any specific OS, IP etc. For example, windows devices tend to be 
@@ -73,19 +75,14 @@ block in log quick proto tcp from any os "Windows"
 #### Check status
 ```
 arul@lion$ sudo firewall status
-Password:
 Listing firewall rules ...
 --- Global rules ---
-No ALTQ support in kernel
-ALTQ related functions disabled
 scrub-anchor "com.apple/*" all fragment reassemble
 anchor "com.apple/*" all
 anchor "com.selvansoft" all
 --- Anchor: com.selvansoft rules ---
-No ALTQ support in kernel
-ALTQ related functions disabled
 block return log all
-block return out quick from any to <dynamic_blocked_ips>
+block return out quick from any to <blocked_list>
 pass out quick all flags S/SA keep state
 pass in proto udp from any to any port = 53 keep state
 pass in proto udp from any to any port = 67 keep state
@@ -96,22 +93,22 @@ pass in inet proto icmp all icmp-type unreach keep state
 pass in inet proto icmp all icmp-type echoreq keep state
 pass in inet proto icmp all icmp-type timex keep state
 pass in inet proto tcp from 192.168.1.0/24 to any port = 22 flags S/SA keep state
-pass in inet proto tcp from 192.168.1.0/24 to any port = 8080 flags S/SA keep state
 pass in inet proto tcp from 192.168.1.0/24 to any port = 554 flags S/SA keep state
 pass in inet proto tcp from 192.168.1.0/24 to any port = 3689 flags S/SA keep state
 pass in inet proto udp from 192.168.1.0/24 to any port = 554 keep state
 pass in inet proto udp from 192.168.1.0/24 to any port = 5353 keep state
-pass in proto tcp from <dynamic_ips> to any port = 22 flags S/SA keep state
-pass in proto tcp from <dynamic_ips> to any port = 8080 flags S/SA keep state
-pass in proto tcp from <dynamic_ips> to any port = 554 flags S/SA keep state
-pass in proto tcp from <dynamic_ips> to any port = 3689 flags S/SA keep state
-pass in proto udp from <dynamic_ips> to any port = 554 keep state
-pass in proto udp from <dynamic_ips> to any port = 5353 keep state
+pass in proto tcp from <dynamic_list> to any port = 22 flags S/SA keep state
+pass in proto tcp from <dynamic_list> to any port = 554 flags S/SA keep state
+pass in proto tcp from <dynamic_list> to any port = 3689 flags S/SA keep state
+pass in proto udp from <dynamic_list> to any port = 554 keep state
+pass in proto udp from <dynamic_list> to any port = 5353 keep state
+block return in quick from <non_routable_list> to any
 --- Dynamic table list (if any) ---
-No ALTQ support in kernel
-ALTQ related functions disabled
-No ALTQ support in kernel
-ALTQ related functions disabled
-pfctl: Table does not exist.
-```
+--- Blocked table list (if any) ---
+   120.192.0.0/10
+--- non-routable table list (if any) ---
+   10.0.0.0/8
+   172.16.0.0/12
+   192.168.0.0/16
 
+```
