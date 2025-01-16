@@ -67,18 +67,20 @@ do
   elif [ "$1" = "status" ]; then
      echo "Listing firewall rules ..."
      echo "--- Global rules ---"
-     /sbin/pfctl -sr
+     /sbin/pfctl -sr 2>/dev/null
      echo "--- Anchor: $anchor_name rules ---"
-     /sbin/pfctl -a $anchor_name -sr
+     /sbin/pfctl -a $anchor_name -sr 2>/dev/null
      echo "--- Dynamic table list (if any) ---"
-     /sbin/pfctl -a $anchor_name -t dynamic_list -T show
-     /sbin/pfctl -a $anchor_name -t blocked_list -T show
-     /sbin/pfctl -a $anchor_name -t non_routable_list -T show
+     /sbin/pfctl -a $anchor_name -t dynamic_list -T show 2>/dev/null
+     echo "--- Blocked table list (if any) ---"
+     /sbin/pfctl -a $anchor_name -t blocked_list -T show 2>/dev/null
+     echo "--- non-routable table list (if any) ---"
+     /sbin/pfctl -a $anchor_name -t non_routable_list -T show 2>/dev/null
      break
   elif [ "$1" = "allstatus" ]; then
      echo "Listing firewall rules ..."
-     /sbin/pfctl -sa
-     /sbin/pfctl -a $anchor_name -sa
+     /sbin/pfctl -sa 2>/dev/null
+     /sbin/pfctl -a $anchor_name -sa 2>/dev/null
      break
   elif [ "$1" = "addip" ]; then
      shift 1
@@ -87,7 +89,7 @@ do
         usage
      fi
      echo "Adding $1 to the dynamic_list table..."
-     pfctl -a $anchor_name -t dynamic_list -T add $1
+     pfctl -a $anchor_name -t dynamic_list -T add $1 2>/dev/null
      break
   elif [ "$1" = "deleteip" ]; then
      shift 1
@@ -96,7 +98,7 @@ do
         usage
      fi
      echo "Deleting $1 from the dynamic_list table..."
-     pfctl -a $anchor_name -t dynamic_list -T delete $1
+     pfctl -a $anchor_name -t dynamic_list -T delete $1 2>/dev/null
      break
   elif [ "$1" = "blockip" ]; then
      shift 1
@@ -105,7 +107,7 @@ do
         usage
      fi
      echo "Adding $1 to the blocked_list table..."
-     pfctl -a $anchor_name -t blocked_list -T add $1
+     pfctl -a $anchor_name -t blocked_list -T add $1 2>/dev/null
      break
   elif [ "$1" = "unblockip" ]; then
      shift 1
@@ -114,20 +116,20 @@ do
         usage
      fi
      echo "Deleting $1 from the blocked_list table..."
-     pfctl -a $anchor_name -t blocked_list -T delete $1
+     pfctl -a $anchor_name -t blocked_list -T delete $1 2>/dev/null
      break
   elif [ "$1" = "flushtable" ]; then
      echo "Flushing the dynamic_list table..."
-     pfctl -a $anchor_name -t dynamic_list -T flush
+     pfctl -a $anchor_name -t dynamic_list -T flush 2>/dev/null
      break
   elif [ "$1" = "showtable" ]; then
      echo "Showing dynamic_list table..."
      echo "--- Allowed table: dynamic_list ----"
-     pfctl -a $anchor_name -t dynamic_list -T show
+     pfctl -a $anchor_name -t dynamic_list -T show 2>/dev/null
      echo "--- Blocked table: blocked_list ----"
-     pfctl -a $anchor_name -t blocked_list -T show
+     pfctl -a $anchor_name -t blocked_list -T show 2>/dev/null
      echo "--- non-routable table: non_routable_list ----"
-     pfctl -a $anchor_name -t non_routable_list -T show
+     pfctl -a $anchor_name -t non_routable_list -T show 2>/dev/null
      break
   else
      usage
