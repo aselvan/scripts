@@ -367,6 +367,18 @@ validate_ip() {
   return 0
 }
 
+# reverse_ip -- reverse ip for use in DNSBL checkes.
+#
+# usage:
+#   reversed_ip=$(reverse_ip 192.168.1.1)
+#
+reverse_ip() {
+  local ip=$1
+  IFS='.' read -r -a octets <<< "$ip"
+  local reversed_ip="${octets[3]}.${octets[2]}.${octets[1]}.${octets[0]}"
+  echo $reversed_ip
+}
+
 # returns 1 for YES, 0 for NO
 confirm_action() {
   local msg=$1
