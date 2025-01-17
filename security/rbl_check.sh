@@ -27,7 +27,7 @@ export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
 
 # default list of RBLs to check
 rbl_list="dnsbl-1.uceprotect.net dnsbl-2.uceprotect.net dnsbl-3.uceprotect.net bl.spamcop.net zen.spamhaus.org dnsbl.sorbs.net bl.tiopan.com cbl.abuseat.org dnsbl.njabl.org b.barracudacentral.org hostkarma.junkemailfilter.com truncate.gbudb.net dnsbl.proxybl.org"
-ip=`wget -qO- ifconfig.me/ip`
+ip=`wget -qO- https://ifconfig.me/ip`
 sed_args="-rn"
 
 usage() {
