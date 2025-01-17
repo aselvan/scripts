@@ -89,6 +89,72 @@
   222.95.175.237 is GOOD on RBL dnsbl.proxybl.org
 ```
 
+- #### /ssl.sh
+  Download and validate SSL certs of a server
+
+  **Usage:**
+```
+  arul@lion$ ./ssl.sh -h
+  ssl.sh v24.12.26, 01/17/25 10:19:59 AM 
+  Download and validate SSL certs of a server
+
+  Usage: ssl.sh [options]
+    -c <command>  ---> command to run [see supported commands below].
+    -s <server>   ---> webserver who's SSL cert needs to be validated or extracted.
+    -x <certname> ---> Just extract the cert and save it. No validation performed.
+    -d <number>   ---> chain depth [default: 5 is sufficient for most cases].
+    -o <flags>    ---> Any openssl x509 flags example "-enddate -issuer -subject -fingerprint"
+    -l            ---> list ssl chain starting from root -> server cert
+    -v            ---> enable verbose, otherwise just errors are printed
+    -h            ---> print usage/help
+
+  Supported commands: validate|extract  
+  example: ssl.sh -c validate -s google.com -o "-enddate -issuer"
+  example: ssl.sh -c extract google.com -x ~/Desktop/cert.pem"
+```
+
+- #### /security.sh
+  Wrapper for many useful security related commands
+
+  **Usage:**
+```
+  security.sh v24.11.27, 01/17/25 10:22:05 AM 
+  Missing arguments, see usage below
+  security.sh --- Wrapper for many useful security related commands
+
+  Usage: security.sh [options]
+    -c <command>  ---> command to run [see supported commands below]  
+    -l <len>      ---> length of password for pwgen command
+    -f <file>     ---> filename for enc/dec funcions
+    -b <user:pwd> ---> used for basicauth to encode user/password in base64 encoding
+    -v            ---> enable verbose, otherwise just errors are printed
+    -h            ---> print usage/help
+
+  Supported commands: pwgen|usergen|enc|dec|basicauth|unixhash  
+  example: security.sh -c pwgen
+```
+
+- #### /open_ports.sh
+  List open ports (established & listen) and apps responsible
+
+  **Usage:**
+```
+  arul@lion$ open_ports.sh -h
+  open_ports.sh v24.04.15, 01/17/25 10:23:25 AM 
+  open_ports.sh - List open ports (established & listen) and apps responsible
+
+  Usage: open_ports.sh [options]
+    -l  ---> Show only ports listening [default: all]
+    -e  ---> Show only ports with established connections [default: all]
+    -r  ---> Resolve remote address to hostname [WARN: this will take a while]
+    -v  ---> enable verbose, otherwise just errors are printed
+    -h  ---> print usage/help
+
+  example: open_ports.sh -e
+  example: open_ports.sh -e -r
+
+```
+
 - #### /certbot_renew.sh
   simple wrapper script certbot renewal of my domains.
   
