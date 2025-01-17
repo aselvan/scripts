@@ -78,6 +78,8 @@ check_ismalicious() {
     else
       cat $http_output
     fi
+  elif [ "$http_status" -eq 429 ] ; then
+    log.warn  "\tAPI returned: 'too many requests', retry again after few seconds."
   else
     log.error "\tAPI call failed! HTTP status = $http_status"
   fi
