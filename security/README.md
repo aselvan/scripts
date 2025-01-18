@@ -3,13 +3,18 @@
 ### Security, password, encryption related random scripts
 
 - #### /ismalicious.sh
-  wrapper over ismalicious.com API and projecthoneyport.org DNSBL to check malicious IP/domain
-
-  **Usage:**
+  wrapper over ismalicious.com API and projecthoneyport.org's DNSBL lookup to check malicious 
+  IP/domain. **Note:** To use this script, create a free acount account on ismalicious.com and/or 
+  projecthoneyport.org and place API/access keys in your home directory at filename shown below
+    
+    $HOME/.ismalicious.com-apikey.txt      --- ismalicious.com API key
+    $HOME/.projecthoneypot.org-apikey.txt  --- projecthoneypot.org access key
+  
+  <ins>**Usage:**</ins>
 ```
 
   Check IP:
-  --------
+  ========
   arul@lion$ ismalicious.sh -n 222.95.175.237
   ismalicious.sh v25.01.17, 01/17/25 09:43:05 AM 
   Checking reputation of 222.95.175.237 using ismalicious API ...
@@ -39,7 +44,7 @@
 	  Threat type:  1 [note: 0=searchengine; 1=suspicious, 2=harvester, 4=comment_spammer]
 
   Check Domain:
-  -------------
+  =============
   arul@lion$ ismalicious.sh -n qouv.fr
   ismalicious.sh v25.01.17, 01/17/25 09:51:33 AM 
   Checking reputation of qouv.fr using ismalicious API ...
