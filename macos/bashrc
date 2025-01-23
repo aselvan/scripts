@@ -144,6 +144,18 @@ launchctl_running() {
   launchctl list | awk '$1 != "-" {print $0;}'
 }
 
+# move git tag specified to latest commit i.e. HEAD
+git_move_tag() {
+  local tag=$1
+  if [ -z "$tag" ] ; then
+    echo "Usage: git_move_tag <tagname>"
+    return
+  fi
+  git push origin :refs/tags/${tag}
+  git tag -fa ${tag} HEAD -m "Moveing ${tag} to latest commit i.e. HEAD"
+  git push origin master --tags 
+}
+
 # ----------------------- custom entries ----------------------------
 # Finally, include any custom local bashrc if present that may include 
 # env/alias/functions that may not be suitable for public version of 
