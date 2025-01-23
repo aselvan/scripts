@@ -17,10 +17,11 @@
 # Version History:
 #   Jan 14,  2025 --- Orginal version
 #   Jan 17,  2025 --- Added additional check at ProjectHoneypot.org
+#   Jan 23,  2025 --- Option to select which service to use.
 #
 
 # version format YY.MM.DD
-version=25.01.17
+version=25.01.23
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Query ismalicious.com API and/or Project Honeypot API"
@@ -30,7 +31,7 @@ default_scripts_github=$HOME/src/scripts.github
 scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
 # commandline options
-options="c:n:k:K:vh?"
+options="c:n:s:k:K:vh?"
 
 supported_commands="reputation|vulnerabilities|geolocation|whois"
 ismalicious_api_url_base="https://ismalicious.com/api/check"
@@ -43,6 +44,7 @@ projecthoneypot_api_key=
 
 command_name="reputation"
 name=""
+service=0
 http_output="/tmp/$(echo $my_name|cut -d. -f1).txt"
 
 
@@ -53,6 +55,7 @@ $my_title
 Usage: $my_name [options]
   -c <command>  ---> command to run [Default: $command_name]. See supported commands below
   -n <name>     ---> Domain/IP name to check
+  -s <service>  ---> Service# to use. Accepted values: 0=both 1=ismalicious 2=projecthoneypot [Default: $service]
   -k <apikey>   ---> ismalicious.com API key [Default: read from $ismalicious_api_key_file]
   -K <apikey>   ---> ProjectHoneypot access key [Default: read from $projecthoneypot_api_key_file]
   -v            ---> enable verbose, otherwise just errors are printed
@@ -160,6 +163,13 @@ while getopts $options opt ; do
     n)
       name="$OPTARG"
       ;;
+    s)
+      service="$OPTARG"
+      if [[ ! "$service" =~ ^[0-2]$ ]] ; then
+        log.error "Invalid service! It must be between 0-2, see usage below ..."
+        usage
+      fi
+      ;;
     k)
       ismalicious_api_key="$OPTARG"
       ;;
@@ -175,7 +185,6 @@ while getopts $options opt ; do
   esac
 done
 
-
 # check and validate valid command
 if [[ "|$supported_commands|" != *"|$command_name|"* ]] ; then
   log.error "Unknown command: $command_name, see usage for valid commands"
@@ -188,16 +197,40 @@ if [ -z "$name" ] ; then
   usage
 fi
 
-if [ -z "$ismalicious_api_key" ] || [ -z $projecthoneypot_api_key ] ; then
-  log.error "Missing either (ismalicious.com or projecthoneyport.org) keys, see usage below"
-  usage
-fi
-
-# first check ismalicious.com
-check_ismalicious
-
-# if the command is "reputation" check ProjectHoneyPot as well
-if [ "$command_name" == "reputation" ] ; then
-  check_projecthoneypot
-fi
+case $service in
+  0)
+    if [ -z "$ismalicious_api_key" ] && [ -z $projecthoneypot_api_key ] ; then
+      log.error "Need API keys for service call, see usage below"
+      usage
+    fi
+    # check ismalicious.com
+    check_ismalicious
+    # if the command is "reputation" check ProjectHoneyPot as well
+    if [ "$command_name" == "reputation" ] ; then
+      check_projecthoneypot
+    fi
+    ;;
+  1)
+    if [ -z "$ismalicious_api_key" ] ; then
+      log.error "Need API keys for ismalicious.com, see usage below"
+      usage
+    fi
+    # check ismalicious.com
+    check_ismalicious
+    ;;
+  2)
+    if [ -z "$projecthoneypot_api_key" ] ; then
+      log.error "Need access keys for ProjectHoneypot, see usage below"
+      usage
+    fi
+    # if the command is "reputation" check ProjectHoneyPot as well
+    if [ "$command_name" == "reputation" ] ; then
+      check_projecthoneypot
+    fi
+    ;;
+  *)
+    log.error "Invalid service: $service"
+    usage
+    ;;
+esac
 
