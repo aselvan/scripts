@@ -5,7 +5,7 @@
 ## Overview
 This repo contains a large collection of random scripts that I have written over the years for automating repetitive things. I have the habit of scripting any tasks even if there is a slight chance that I may have to repeat the same task. While some are specific to my needs that can be customized for anyone, majority of them are parameterized so they work as is for anyone as a general handy tool. More than 90% of these are bash shell scripts but it also has some with perl, python and even PHP. While all of these run natively on Linux or MacOS, some require additional binaries installed on your OS with package managers like brew (on macOS) or apt/yum/other (on Linux). I usually mention at the top a script if it requires such binary packages that may or may not be part of the basic OS. I do use a lot of these on a day to day basis and some are old/obsolete etc. Follow the setup section below on how to set them up and use them.
 
-## Install
+## Setup 
 While many of these can run standalone, I started requiring common functions located in util/logger.sh & util/functions.sh as includes. So the best way to install them is to clone the entire repository (it is pretty small i.e. < 5Mb) instead of cherry picking one or more scripts. You can choose one of the following methods (manual or installer script) to install. Enjoy!
 
 #### Manual
