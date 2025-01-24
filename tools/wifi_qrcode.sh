@@ -52,7 +52,7 @@
 version=24.07.16
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
-my_title="Copy a disk partition by partion for making clone w/ disk_clone.sh."
+my_title="Create a QR Code to scan to connect to a Wi-Fi network."
 my_dirname=`dirname $0`
 my_path=$(cd $my_dirname; pwd -P)
 my_logfile="/tmp/$(echo $my_name|cut -d. -f1).log"
