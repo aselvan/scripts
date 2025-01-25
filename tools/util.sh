@@ -10,10 +10,11 @@
 #   Dec 23, 2024 --- moved more from .bashrc
 #   Dec 26, 2024 --- Added txt2mp3
 #   Dec 27, 2024 --- Added knock
+#   Jan 25, 2025 --- Added lstype, lsmedia etc.
 #
 
 # version format YY.MM.DD
-version=2024.12.27
+version=2025.01.25
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl util tools wrapper all in one place"
@@ -28,7 +29,7 @@ arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 options="c:n:i:o:a:q:Q:d:s:vh?"
 
 command_name=""
-supported_commands="tohex|todec|toascii|calc|rsync|knock|compresspdf|dos2unix|tx2mp3|vid2gif|resize"
+supported_commands="tohex|todec|toascii|calc|rsync|knock|compresspdf|dos2unix|tx2mp3|vid2gif|resize|lsmedia|lstype"
 number=""
 ifile=""
 ofile=""
@@ -40,6 +41,7 @@ delay=3 # for vid2gif
 host_port="" # for knock
 image_quality=100
 image_resize="75%"
+media_types="jpg jpeg png heic mov mp4 mpeg"
 
 # ensure path for cron runs (prioritize usr/local first)
 export PATH="/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
@@ -51,9 +53,9 @@ $my_name --- $my_title
 Usage: $my_name [options]
   -c <command>   ---> command to run [see supported commands below]  
   -n <number>    ---> used by all commands that requires a number argument.
-  -i <file/path> ---> input file (wildcard must be quoted) for commands like toascii|rsync|compresspdf etc
+  -i <file/path> ---> input file (wildcard must be quoted) for commands like toascii|rsync|compresspdf|lsmedia etc
   -o <file/path> ---> output for commands require output argument like rsync
-  -a <arg>       ---> for commands like 'calc'
+  -a <arg>       ---> for commands like calc|lstype
   -d <delay>     ---> frame delay used for vid2gif [Default: $delay]
   -s <host:port> ---> for 'knock'; need hostname and port knock open using fwknop client
   -q <quality>   ---> for compresspdf: options are "/printer|/ebook|/screen" [Default: $pdf_quality]
@@ -63,8 +65,11 @@ Usage: $my_name [options]
   -h             ---> print usage/help
 
 Supported commands: $supported_commands  
-example: $my_name -c tohex -n 1000
-  
+example: 
+  $my_name -c tohex -n 1000
+  $my_name -c lsmedia -i ~/Pictures/Photos
+  $my_name -c lstype  -i /path/ -a "pdf txt doc xlsx"
+
 EOF
   exit 0
 }
@@ -207,6 +212,34 @@ function do_resize() {
 
 }
 
+function do_lsmedia() {
+  if [ -z "$ifile" ] || [ ! -d "$ifile" ] ; then
+    log.error "lsmedia needs path, see usage"
+    usage
+  fi
+  filter=""
+  for m in $media_types ; do
+    filter="$filter -iname '*.$m' -o "
+  done
+  # remove trailing -o
+  filter="${filter%-o*}"
+  # need use eval to avoid shell interpreting paranthesis
+  eval "find $ifile -type f \( $filter \) -print"
+}
+function do_lstype() {
+  if [ -z "$ifile" ] || [ ! -d "$ifile" ] || [ -z "$args" ] ; then
+    log.error "lstype needs path and list of types, see usage"
+    usage
+  fi
+  for m in $args ; do
+    filter="$filter -iname '*.$m' -o "
+  done
+  # remove trailing -o
+  filter="${filter%-o*}"
+  # need use eval to avoid shell interpreting paranthesis
+  eval "find $ifile -type f \( $filter \) -print"
+}
+
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
 if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
@@ -304,6 +337,12 @@ case $command_name in
     ;;
   resize)
     do_resize
+    ;;
+  lsmedia)
+    do_lsmedia
+    ;;
+  lstype)
+    do_lstype
     ;;
   *)
     log.error "Invalid command: $command_name"
