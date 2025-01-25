@@ -8,6 +8,7 @@
 #   Oct 7,  2022 --- Initial version
 #   Nov 28, 2023 --- Misl changes
 #   Jan 2,  2024 --- Added url option to provide a large file list
+#   Jan 25, 2025 --- Calculate average of actual DNS query rather than system wall time.
 #
 #
 # version format YY.MM.DD
@@ -25,6 +26,7 @@ scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 options="s:f:u:d:vh?"
 
 default_host_list="/tmp/$(echo $my_name|cut -d. -f1).txt"
+raw_dnsquery_time_file="/tmp/$(echo $my_name|cut -d. -f1).out"
 host_list=""
 dns_server=""
 single_host=""
@@ -489,7 +491,7 @@ EOF
 
 do_single_host() {
   local host=$1
-  dig $host +noall +answer +stats $dns_server | awk '$3 == "IN" && $4 == "A"{ip=$5}/Query time:/{t=$4 " " $5}END{print ip, t}'
+  dig $host +noall +stats $dns_server |  awk '/Query time/ {printf "Query Time: %d msec(s)\n", $4 }' 
 }
 
 get_default_dns() {
@@ -552,24 +554,29 @@ if [ -z $dns_server ] ; then
 fi
 
 if [ ! -z $single_host ] ; then
-  log.stat "DNS performance test for single host: $single_host" $green
+  log.stat "DNS performance test for single domain: $single_host" 
   do_single_host
   exit 0
 fi
 
-log.stat "DNS perforamce test for list of hosts" $green
 if [ ! -z $host_list ] ; then
-  log.stat "Using host list file: $host_list"
-  time -p dig -f $host_list +noall +answer $dns_server  >/dev/null
+  log.stat "Using host list from file: $host_list"
+  dig -f $host_list +noall +stats $dns_server | awk '/Query time/ {print $4}' >$raw_dnsquery_time_file
 elif [ ! -z $url_host_list ] ; then
   # download the file first
-  log.stat "Downloading host list from: $url_host_list"
+  log.stat "Using host list from URL: $url_host_list"
   curl -s $url_host_list --output $default_host_list
-  time -p dig -f $default_host_list +noall +answer $dns_server >/dev/null
+  dig -f $default_host_list +noall +stats $dns_server | awk '/Query time/ {print $4}' >$raw_dnsquery_time_file
 else
   # no host list, use the built-in/hardcoded list
   create_default_host_list
-  log.stat "Using host list file: $default_host_list"
-  time -p dig -f $default_host_list +noall +answer $dns_server >/dev/null
+  log.stat "Using default host list: $default_host_list"
+  dig -f $default_host_list +noall +stats $dns_server | awk '/Query time/ {print $4}' >$raw_dnsquery_time_file
 fi
+
+# calculate raw time 
+log.stat "Calculating average DNS query times ..."
+awk '/^[0-9]+$/ { sum += $1; count++ } END { if (count > 0) { avg = int(sum / count + 0.5); printf "Average: %d msec(s) based on %d domain lookup(s)\n", avg, count }}' $raw_dnsquery_time_file
+
+log.stat "Total wall-clock time: $(elapsed_time)"
 
