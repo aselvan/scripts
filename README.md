@@ -6,20 +6,23 @@
 This repo contains a large collection of random scripts that I have written over the years for automating repetitive things. I have the habit of scripting any tasks even if there is a slight chance that I may have to repeat the same task. While some are specific to my needs that can be customized for anyone, majority of them are parameterized so they work as is for anyone as a general handy tool. More than 90% of these are bash shell scripts but it also has some with perl, python and even PHP. While all of these run natively on Linux or MacOS, some require additional binaries installed on your OS with package managers like brew (on macOS) or apt/yum/other (on Linux). I usually mention at the top a script if it requires such binary packages that may or may not be part of the basic OS. I do use a lot of these on a day to day basis and some are old/obsolete etc. Follow the setup section below on how to set them up and use them.
 
 ## Setup 
-While many of these can run standalone, I started requiring common functions located in util/logger.sh & util/functions.sh as includes. So the best way to install them is to clone the entire repository (it is pretty small i.e. < 5Mb) instead of cherry picking one or more scripts. You can choose one of the following methods (manual or installer script) to install. Enjoy!
+While many of these can run standalone, I started requiring common functions located in util/logger.sh & util/functions.sh as includes. So the best way to install them is to clone the entire repository (it is pretty small i.e. < 5Mb) instead of cherry picking one or more scripts. You can choose one of the following methods (homebrew, or installer script or manul) to install. Enjoy!
+
+#### Homebrew
+* If you are a homebrew user, you can use brew to install which is the easiest of all. Keep in mind you have to add the environment variable to your ~/.bashrc manually as brew does not recomend modifying users settings. With that said, do the following to install via brew.
+
+  - ```brew tap aselvan/formulas```
+  - ```brew install aselvan-scripts```
+
+#### Install script
+* Open a terminial on your machine and run install script exactly as shown below (just copy/paste). This script clones the repo and adds path variable to your .bashrc.
+  - ```curl -s https://raw.githubusercontent.com/aselvan/scripts/master/install.sh | bash -s```
 
 #### Manual
 * Clone to your HOME directory like shown below $HOME/src/scripts.github (or) clone to any other directory as long as you set a bash env variable SCRIPTS_GITHUB to point to the toplevel directory.
   - ```mkdir -p $HOME/src``` [ create if $HOME/src directory did not exist ]
   - ```git clone https://github.com/aselvan/scripts.git $HOME/src/scripts.github```
-#### Homebrew
-* If you are a homebrew user, you can use brew to install which is the easiest of all. Keep in mind you have to add the environment variable to your ~/.bashrc manually as brew does not recomend modifying users settings. With that said, do the following to install via brew.
 
-  -   ```brew tap aselvan/formulas```
-  -   ```brew install aselvan-scripts```
-#### Install script
-* Open a terminial on your machine and run install script exactly as shown below (just copy/paste). This script clones the repo and adds path variable to your .bashrc.
-  -   ```curl -s https://raw.githubusercontent.com/aselvan/scripts/master/install.sh | bash -s```
 
 ## Toplevel directories
 
