@@ -1,12 +1,17 @@
 # Install Guide
 
 #### Overview
-
 Simple Firewall script & rules to tighten your macOS with your own firewall. The setup is very 
 simple, just follow the instructions below. 
 
 #### Setup
-To load the rules on MacOS startup, copy ```pf_rules_simple.conf``` file to ```/etc/pf.anchors/``` and 
+First install this repo following the instruction [here](https://github.com/aselvan/scripts?tab=readme-ov-file#scripts). Next, install the firewall using one of the following methods (install script or manual). It is higly recommended to use the install script method.
+
+### Install script
+Run the ```firewall_install.sh``` script
+
+### Manual
+Copy ```pf_rules_simple.conf``` file to ```/etc/pf.anchors/``` and 
 edit ```/etc/pf.conf``` file and append the following lines below.
 
 ```
