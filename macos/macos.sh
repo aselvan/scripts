@@ -87,6 +87,16 @@ volume() {
   fi
 }
 
+showswap() {
+  log.stat "`sysctl vm.compressor_mode vm.swapusage`" $green
+  local swapprefix=`sysctl vm.swapfileprefix|awk '{print $2}'`
+  ls ${swapprefix}[0-9] 1>/dev/null 2>&1
+  if [ $? -eq 0 ] ; then
+    log.stat "swap file(s)" $green
+    log.stat "`ls -lh ${swapprefix}[0-9]|awk '{print "    ", $9," ",$5}'`" $green
+  fi
+}
+
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
 if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
@@ -152,7 +162,7 @@ case $command_name in
     volume  
     ;;
   swap)
-    log.stat "`sysctl vm.compressor_mode vm.swapusage`" $green
+    showswap
     ;;
   bundle)
     if [ -z "$arg" ] ; then
