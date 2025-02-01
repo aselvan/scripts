@@ -10,10 +10,11 @@
 #   Aug 25, 2024 --- Original version
 #   Nov 11, 2024 --- Added showipexternal command, show interface on showip command
 #   Nov 26, 2024 --- Moved all network functions related to tools/network.sh script
+#   Feb 1,  2025 --- Print swap filename/size, disk usage etc.
 #
 
 # version format YY.MM.DD
-version=2024.10.26
+version=2025.02.01
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl tools for macOS all in one place"
@@ -29,7 +30,7 @@ arg=""
 options="c:l:a:vh?"
 
 command_name=""
-supported_commands="mem|vmstat|cpu|version|system|serial|volume|swap|bundle"
+supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle"
 volume_level=""
 
 # ensure path for cron runs (prioritize usr/local first)
@@ -97,6 +98,13 @@ showswap() {
   fi
 }
 
+showdisk() {
+  local df_output=`df -h /System/Volumes/Data/|tail -1`
+
+  log.stat "`echo $df_output|awk '{print "  Total: ",$2,"\n  Used:  ",$3,"\n  Available: ",$4,"\n  Capacity:  ",$5}'`"
+}
+
+
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
 if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
@@ -163,6 +171,9 @@ case $command_name in
     ;;
   swap)
     showswap
+    ;;
+  disk)
+    showdisk
     ;;
   bundle)
     if [ -z "$arg" ] ; then
