@@ -15,14 +15,16 @@
 # Version History:
 #   Feb 7,  2015 --- original version
 #   Jan 16, 2025 --- update for table name change and additional tables
+#   Feb 4,  2025 --- added option to add/remove non-routables.
 #
 ################################################################################
 
 anchor_name="com.selvansoft"
 rule_set="/etc/pf.conf"
+non_routables="10.0.0.0/8 172.16.0.0/12 192.168.0.0/16"
 
 usage() {
-  echo "Usage: $0 <start|stop|status|allstatus|addip|deleteip|showtable|flushtable|blockip|unblockip>"
+  echo "Usage: $0 <start|stop|status|allstatus|addip|deleteip|showtable|flushtable|blockip|unblockip|block-nonroutables|unblock-nonroutables>"
   exit
 }
 
@@ -118,6 +120,18 @@ do
      echo "Deleting $1 from the blocked_list table..."
      pfctl -a $anchor_name -t blocked_list -T delete $1 2>/dev/null
      break
+  elif [ "$1" = "block-nonroutables" ]; then
+    echo "blocking inbound for all non-routable IPs ($non_routables) ..."
+    for c in $non_routables ; do
+      pfctl -a $anchor_name -t non_routable_list -T add $c 2>/dev/null
+    done
+    break
+  elif [ "$1" = "unblock-nonroutables" ]; then
+    echo "unblocking inbound for all non-routable IPs ($non_routables) ..."
+    for c in $non_routables ; do
+      pfctl -a $anchor_name -t non_routable_list -T delete $c 2>/dev/null
+    done
+    break
   elif [ "$1" = "flushtable" ]; then
      echo "Flushing the dynamic_list table..."
      pfctl -a $anchor_name -t dynamic_list -T flush 2>/dev/null
