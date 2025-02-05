@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+################################################################################
 #
 # add_metadata.sh --- add exif metadata to one or more destination files
 #
@@ -15,15 +16,21 @@
 # Author:  Arul Selvan
 # Created: Jun 24, 2023
 #
-# See Also: reset_file_timestamp.sh copy_metadata.sh exif_check.sh geocode_media_files.sh add_metadata.sh reset_media_timestamp.sh exif_check.sh
+# See Also: reset_file_timestamp.sh copy_metadata.sh exif_check.sh 
+#           geocode_media_files.sh add_metadata.sh reset_media_timestamp.sh 
+#           exif_check.sh
 #
+################################################################################
 # Version History
-# --------------
-#   23.09.17 --- Initial version
-#   24.03.31 --- Use standard includes for logging, added description metadata.
+#
+#   Sep 17, 2023 --- Initial version
+#   Mar 31, 2024 --- Use standard includes for logging, added desc metadata.
+#   Feb 5,  2025 --- Use use current date/time if missing from image file
+#
+################################################################################
 
 # version format YY.MM.DD
-version=24.03.31
+version=25.02.05
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="add metadata (for now just owner,artist,copyright) to one or more destination files"
@@ -50,7 +57,7 @@ skip_tag="-wm cg"
 artist="Arul Selvan"
 owner="Arul Selvan"
 copyright="Copyright (c) 2023-2025 SelvanSoft, LLC."
-description="Photo by SelvanSoft, LLC."
+description="Media by SelvanSoft, LLC."
 
 usage() {
   cat << EOF
@@ -66,9 +73,11 @@ usage() {
     -v             ---> verbose mode prints info messages, otherwise just errors are printed
     -h             ---> print usage/help
 
-  example: $my_name -p "*.jpg" -o "Foobar" -c "Copyright (c) 2025, Foobar, allrights reserved"
+example: $my_name -p "*.jpg" -o "Foobar" -c "Copyright (c) 2025, Foobar, allrights reserved"
 
-  See Also: reset_file_timestamp.sh copy_metadata.sh exif_check.sh geocode_media_files.sh add_metadata.sh reset_media_timestamp.sh exif_check.sh
+See Also: 
+  reset_file_timestamp.sh copy_metadata.sh exif_check.sh geocode_media_files.sh 
+  add_metadata.sh reset_media_timestamp.sh exif_check.sh
 
 EOF
   exit 0
@@ -82,10 +91,11 @@ reset_os_timestamp() {
   log.info "resetting OS timestamp to match create date of '$fname' ..."
   create_date=`exiftool -d "%Y%m%d%H%M.%S" -createdate $fname | awk -F: '{print $2;}'`
   if [ -z "$create_date" ] ; then
-    log.warn "metadata for $fname does not contain create date, skipping ..."
-    return
+    log.warn "$fname does not contain create date, using current date ..."
+    create_date=`date +"%Y%m%d%H%M.%S"`
+    exiftool $exiftool_opt -d "%Y%m%d%H%M.%S" -AllDates="$create_date" -overwrite_original $fname 2>&1 >> $my_logfile
   fi
- 
+
   # validate createdate since sometimes images contain create date but show " 0000"
   if [ "$create_date" = " 0000" ] ; then
     log.warn "Invalid create date ($create_date) for $fname, skipping ..."
