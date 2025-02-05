@@ -18,6 +18,7 @@
 #   Jan 14,  2025 --- Orginal version
 #   Jan 17,  2025 --- Added additional check at ProjectHoneypot.org
 #   Jan 23,  2025 --- Option to select which service to use.
+#   Feb 5,   2025 --- Added ipqualityscore.com API
 #
 
 # version format YY.MM.DD
@@ -31,17 +32,19 @@ default_scripts_github=$HOME/src/scripts.github
 scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
 # commandline options
-options="c:n:s:k:K:vh?"
+options="c:n:s:k:K:A:vh?"
 
 supported_commands="reputation|vulnerabilities|geolocation|whois"
 ismalicious_api_url_base="https://ismalicious.com/api/check"
+ipqualityscore_api_url_base="https://www.ipqualityscore.com/api/json/url"
 projecthoneypart_dns_suffix="dnsbl.httpbl.org"
 
 ismalicious_api_key_file="$HOME/.ismalicious.com-apikey.txt"
 projecthoneypot_api_key_file="$HOME/.projecthoneypot.org-apikey.txt"
+ipqualityscore_api_key_file="$HOME/.ipqualityscore-apikey.txt"
 ismalicious_api_key=
-projecthoneypot_api_key=
-
+projecthoneypot_api_key=""
+ipqualityscore_api_key=""
 command_name="reputation"
 name=""
 service=0
@@ -55,9 +58,11 @@ $my_title
 Usage: $my_name [options]
   -c <command>  ---> command to run [Default: $command_name]. See supported commands below
   -n <name>     ---> Domain/IP name to check
-  -s <service>  ---> Service# to use. Accepted values: 0=both 1=ismalicious 2=projecthoneypot [Default: $service]
+  -s <service>  ---> Service# to use [0-3] Accepted values are below [Default: $service]
+                     0=all 1=ismalicious 2=projecthoneypot 3=ipqualityscore 
   -k <apikey>   ---> ismalicious.com API key [Default: read from $ismalicious_api_key_file]
   -K <apikey>   ---> ProjectHoneypot access key [Default: read from $projecthoneypot_api_key_file]
+  -A <apikey>   ---> IPqualityscore API key [Default: read from $ipqualityscore_api_key_file]
   -v            ---> enable verbose, otherwise just errors are printed
   -h            ---> print usage/help
 
@@ -130,6 +135,25 @@ check_projecthoneypot() {
   fi
 }
 
+check_ipqualityscore() {
+  log.stat "Checking $command_name of $name using ipqualityscore.com API ..."
+  http_status=$(curl -s -o $http_output -w "%{http_code}" ${ipqualityscore_api_url_base}/${ipqualityscore_api_key}/${name})
+  log.debug "HTTP status: $http_status"
+  if [ "$http_status" -eq 200 ] ; then
+    check_installed jq noexit
+    if [ $? -eq 0 ] ; then
+      cat $http_output | jq
+    else
+      cat $http_output
+    fi
+  elif [ "$http_status" -eq 429 ] ; then
+    log.warn  "\tAPI returned: 'too many requests', retry again after few seconds."
+  else
+    log.error "\tAPI call failed! HTTP status = $http_status"
+  fi
+
+}
+
 
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
@@ -153,6 +177,9 @@ fi
 if [ -f $projecthoneypot_api_key_file ] ; then
   projecthoneypot_api_key=`cat $projecthoneypot_api_key_file`
 fi
+if [ -f $ipqualityscore_api_key_file ] ; then
+  ipqualityscore_api_key=`cat $ipqualityscore_api_key_file`
+fi
 
 # parse commandline options
 while getopts $options opt ; do
@@ -165,7 +192,7 @@ while getopts $options opt ; do
       ;;
     s)
       service="$OPTARG"
-      if [[ ! "$service" =~ ^[0-2]$ ]] ; then
+      if [[ ! "$service" =~ ^[0-3]$ ]] ; then
         log.error "Invalid service! It must be between 0-2, see usage below ..."
         usage
       fi
@@ -175,6 +202,9 @@ while getopts $options opt ; do
       ;;
     K)
       projecthoneypot_api_key="$OPTARG"
+      ;;
+    A)
+      ipqualityscore_api_key="$OPTARG"
       ;;
     v)
       verbose=1
@@ -199,7 +229,7 @@ fi
 
 case $service in
   0)
-    if [ -z "$ismalicious_api_key" ] && [ -z $projecthoneypot_api_key ] ; then
+    if [ -z "$ismalicious_api_key" ] && [ -z $projecthoneypot_api_key ] && [ -z $ipqualityscore_api_key] ; then
       log.error "Need API keys for service call, see usage below"
       usage
     fi
@@ -209,6 +239,8 @@ case $service in
     if [ "$command_name" == "reputation" ] ; then
       check_projecthoneypot
     fi
+    # check ipqualityscore
+    check_ipqualityscore
     ;;
   1)
     if [ -z "$ismalicious_api_key" ] ; then
@@ -227,6 +259,13 @@ case $service in
     if [ "$command_name" == "reputation" ] ; then
       check_projecthoneypot
     fi
+    ;;
+  3)
+    if [ -z "$ipqualityscore_api_key" ] ; then
+      log.error "Need access keys for IPqualityscore.com, see usage below"
+      usage
+    fi
+    check_ipqualityscore
     ;;
   *)
     log.error "Invalid service: $service"
