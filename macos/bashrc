@@ -31,7 +31,7 @@ export BREW_PATH="${BREW_HOME}/bin:${BREW_HOME}/sbin:${BREW_HOME}/opt/curl/bin"
 
 # home and github scripts
 HOME_SCRIPTS=${HOME}/data/src/scripts
-SCRIPTS_GITHUB="$HOME/src/scripts.github"
+export SCRIPTS_GITHUB="$HOME/src/scripts.github"
 SCRIPTS_GITHUB_PATH="$SCRIPTS_GITHUB/tools:$SCRIPTS_GITHUB/macos:$SCRIPTS_GITHUB/security:$SCRIPTS_GITHUB/firewall:$SCRIPTS_GITHUB/andriod"
 
 # GO lang
