@@ -186,8 +186,11 @@ signal_handler() {
 
 check_root() {
   if [ `id -u` -ne 0 ] ; then
-    log.error "root access needed to run this script, run with 'sudo $my_name' ... exiting."
+    log.error "root access needed to run this script, run with 'sudo -E $my_name' ... exiting."
     exit 1
+  elif [ -z "$SCRIPTS_GITHUB" ] ; then
+    log.error "missing SCRIPTS_GITHUB env variable, re-run with 'sudo -E $my_name' ... exiting"
+    exit 2
   fi
 }
 
