@@ -31,8 +31,8 @@ export BREW_PATH="${BREW_HOME}/bin:${BREW_HOME}/sbin:${BREW_HOME}/opt/curl/bin"
 
 # home and github scripts
 HOME_SCRIPTS=${HOME}/data/src/scripts
-GITHUB_SCRIPTS_HOME="$HOME/src/scripts.github"
-GITHUB_SCRIPTS="$GITHUB_SCRIPTS_HOME/tools:$GITHUB_SCRIPTS_HOME/macos:$GITHUB_SCRIPTS_HOME/security:$GITHUB_SCRIPTS_HOME/firewall:$GITHUB_SCRIPTS_HOME/andriod"
+SCRIPTS_GITHUB="$HOME/src/scripts.github"
+SCRIPTS_GITHUB_PATH="$SCRIPTS_GITHUB/tools:$SCRIPTS_GITHUB/macos:$SCRIPTS_GITHUB/security:$SCRIPTS_GITHUB/firewall:$SCRIPTS_GITHUB/andriod"
 
 # GO lang
 export GOPATH=$HOME/go-workspace
@@ -40,7 +40,7 @@ export GOROOT=/usr/local/opt/go/libexec
 RUST_CARGO=$HOME/.cargo/bin
 
 # Finally, "the PATH" --- includes everything from above
-export PATH="${BREW_PATH}:${PATH}:/usr/libexec:$GITHUB_SCRIPTS:${HOME_SCRIPTS}:${RUST_CARGO}:$GOPATH/bin:${GOROOT}/bin:."
+export PATH="${BREW_PATH}:${PATH}:/usr/libexec:$SCRIPTS_GITHUB_PATH:${HOME_SCRIPTS}:${RUST_CARGO}:$GOPATH/bin:${GOROOT}/bin:."
 
 # python -- disable the __pychache__ directory when python code runs
 export PYTHONDONTWRITEBYTECODE=1
