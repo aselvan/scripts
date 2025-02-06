@@ -8,22 +8,22 @@ simple, just follow the instructions below.
 First install this repo following the instruction [here](https://github.com/aselvan/scripts?tab=readme-ov-file#scripts). Next, install the firewall using one of the following methods (install script or manual). It is higly recommended to use the install script method.
 
 ### Install script
-Run the ```firewall_install.sh``` script
+Run the ```sudo -E firewall_install.sh``` script
 
 ### Manual
 Copy ```pf_rules_simple.conf``` file to ```/etc/pf.anchors/``` and 
 edit ```/etc/pf.conf``` file and append the following lines below.
 
 ```
-#
 # ------------------------ Custom firewall rules anchor ------------------------
 # Disclaimer: This is a free utility from selvansoft.com provided "as is" without 
-# warranty of any kind, express or implied. Use it at your own risk!
+# warranty of any kind, expressed or implied. Use it at your own risk!
 #
 # Source: https://github.com/aselvan/scripts/tree/master/firewall
 #
 anchor "com.selvansoft"
 load anchor "com.selvansoft" from "/etc/pf.anchors/pf_rules_simple.conf"
+# ------------------------ Custom firewall rules anchor ------------------------
 ```
 After the setup above, you now can run ```sudo firewall start``` for rules take effect immediately or 
 optionally, you can reboot your mac to validate if the rules survive after boot (they should).
@@ -31,13 +31,14 @@ optionally, you can reboot your mac to validate if the rules survive after boot 
 **Note:** Unfortunately, Apple wipes custom rules like these during every MacOS update 
 so you have to reapply the above change to ```/etc/pf.conf``` everytime after MacOS update! 
 To make it easy, there is a handy script ```firewall_install.sh``` available that can 
-be used to make this change instead of manually editing ```/etc/pf.conf```
+be used to make this change instead of manually editing ```/etc/pf.conf```. So everytime you have a
+macOS update, run this install script ```sudo -E firewall_install.sh``` 
 
 #### Customization (optional)
 Though these firewall rules work just fine *'as is'*, you might want to consider 
 customizing it a bit. For my needs, by default, I allow certain things like 
-**ssh** within a non-routable local network i.e. *192.168.1.0/24*. You may or may not 
-want to do the same so you can modify them to fit your needs. The entries you need 
+**ssh** within my local network i.e. *192.168.1.0/24*. You may or may not want to 
+do the same so you can modify them to fit your needs. The entries you need 
 to revise are in `pf_rules_simple.conf` as shown below.
 ```
 allowed_tcp_ports = "{ 22, 554, 3689 }"
