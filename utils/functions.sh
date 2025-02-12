@@ -184,11 +184,16 @@ signal_handler() {
   exit 99
 }
 
+# require root priv, if a additional arg is passed (dosent matter content), 
+# also require environments are inherited from the effective user i.e. sudo -E
+# usage: check_root 1 
 check_root() {
+  local require_user_env=$1
   if [ `id -u` -ne 0 ] ; then
     log.error "root access needed to run this script, run with 'sudo -E $my_name' ... exiting."
     exit 1
-  elif [ -z "$SCRIPTS_GITHUB" ] ; then
+  fi
+  if [ ! -z "$require_user_env" ] && [ -z "$SCRIPTS_GITHUB" ] ; then
     log.error "missing SCRIPTS_GITHUB env variable, re-run with 'sudo -E $my_name' ... exiting"
     exit 2
   fi

@@ -73,8 +73,8 @@ fi
 # init logs
 log.init $my_logfile
 
-# ensure root access
-check_root
+# ensure root access with inherited env
+check_root 1
 
 # parse commandline options
 while getopts $options opt ; do
