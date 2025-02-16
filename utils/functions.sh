@@ -9,6 +9,7 @@
 # Version History:
 #   Nov 14, 2023 --- Original version
 #   May 19, 2024 --- Added version_le, version_ge functions
+#   Feb 16, 2025 --- check_root message changed to include -E on sudo to inherit user env
 #
 
 # os and other vars
@@ -180,22 +181,15 @@ is_media() {
 # used for ctrl+c install in main function as shown below
 # trap 'signal_handler' SIGINT <other signal as needed>
 signal_handler() {
-  log.warn "Received Ctrl+c signal, exiting."
+  log.stat "${FUNCNAME[0]}(): Received Ctrl+c signal, exiting."
   exit 99
 }
 
-# require root priv, if a additional arg is passed (dosent matter content), 
-# also require environments are inherited from the effective user i.e. sudo -E
-# usage: check_root 1 
+# require root priv with inherited environment of the effective user
 check_root() {
-  local require_user_env=$1
   if [ `id -u` -ne 0 ] ; then
-    log.error "root access needed to run this script, run with 'sudo -E $my_name' ... exiting."
+    log.error "${FUNCNAME[0]}(): root access required to run this script, re-run with 'sudo -E $my_name'"
     exit 1
-  fi
-  if [ ! -z "$require_user_env" ] && [ -z "$SCRIPTS_GITHUB" ] ; then
-    log.error "missing SCRIPTS_GITHUB env variable, re-run with 'sudo -E $my_name' ... exiting"
-    exit 2
   fi
 }
 
@@ -203,7 +197,7 @@ check_linux() {
   if [ $os_name == "Linux" ] ; then
     return
   fi
-  log.error "This is Linux only function ... exiting."
+  log.error "${FUNCNAME[0]}(): This is Linux only function ... exiting."
   exit 1
 }
 
@@ -217,10 +211,10 @@ check_installed() {
   local noexit=$2
   if [ ! `which $app` ]; then
     if [ ! -z "$noexit" ] ; then
-      log.warn "required binary \"$app\" is missing, continuing w/out the binary ..."
+      log.warn "${FUNCNAME[0]}(): required binary \"$app\" is missing, continuing w/out the binary ..."
       return 1
     else
-      log.error "required binary \"$app\" is missing, install it and try again, exiting."
+      log.error "${FUNCNAME[0]}(): required binary \"$app\" is missing, install it and try again, exiting."
       exit 2
     fi
   fi
@@ -239,7 +233,7 @@ send_mail() {
   local data_file="$2"
 
   if [ -z $email_address ] ; then
-    log.debug "Required email address is missing, skipping email ..."
+    log.debug "${FUNCNAME[0]}(): Required email address is missing, skipping email ..."
     return;
   fi
 
