@@ -10,6 +10,7 @@
 #
 # Version History:
 #   Jan 31, 2025 --- Original version (moved from .bashrc)
+#   Feb 16, 2025 --- Added listtag
 #
 ################################################################################
 
@@ -29,7 +30,7 @@ arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 options="c:t:m:vh?"
 
 command_name=""
-supported_commands="createtag|deletetag|movetag"
+supported_commands="createtag|deletetag|movetag|listtag"
 tag=""
 comments=""
 
@@ -90,6 +91,9 @@ function do_move_tag() {
   git push origin master --tags 
 }
 
+do_list_tag() {
+  git tag -l -n
+}
 
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
@@ -143,6 +147,9 @@ case $command_name in
     ;;
   movetag)
     do_move_tag
+    ;;
+  listtag)
+    do_list_tag
     ;;
   *)
     log.error "Invalid command: $command_name"
