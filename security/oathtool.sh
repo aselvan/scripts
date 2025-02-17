@@ -1,7 +1,6 @@
-#!/bin/bash
-#
-#
-# oathtool.sh --- simple wrapper over oathtool to keep the secret keys in encrypted form
+#!/usr/bin/env bash
+##################################################################################
+# oathtool.sh --- oathtool wrapper to keep the secret keys in encrypted form.
 #
 # The script uses the encrypted secret keys and generates TOTP passwords and directly 
 # copies to the paste buffer continually as the key changes every 30 sec allowing you
@@ -14,50 +13,57 @@
 #
 # Author:  Arul Selvan
 # Version: Feb 8, 2020 
+##################################################################################
 #
+# Version History:
+#   Feb 8,  2020  --- Original Version
+#   Feb 17, 2025  --- Use standard functions, show code to console etc.
+#
+##################################################################################
 
-# default oathtool option
-oathtool_opt="--totp -b"
+
+# version format YY.MM.DD
+version=25.02.17
+my_name="`basename $0`"
+my_version="`basename $0` v$version"
+my_title="oathtool wrapper to keep the secret keys in encrypted form"
+my_dirname=`dirname $0`
+my_logfile="/tmp/$(echo $my_name|cut -d. -f1).log"
+default_scripts_github=$HOME/src/scripts.github
+scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
 # commandline options
 options="a:k:t:h"
+
+oathtool_opt="--totp -b"
 secret=""
 file=""
-add=0
-op_type=""
 secret_file_dir="$HOME/.oathtool"
-os_name=`uname -s`
-name=`basename $0`
 base32_error="base32 decoding failed"
 # how long to copy continually
 ttl=30
+otp=0
 
 # encyption type/tool (default is gpg w/ default key)
 enc_type=gpg
 
-# ctrl+c handler
-function ctrl_c() {
-  echo ""
-  echo "[INFO] $name exiting."
-  exit
-}
-
 # print usage
 function usage() {
   cat <<EOF
-  
-USAGE: $name -k <name> | -a <secret> -k <name> [-t <type>] 
-  
-  -k <name>   is the name of the file stored under $secret_file_dir directory that contains the secret key
-  -a <secret> content of secret key to be encrypted and stored by the <name> under $secret_file_dir
-  -t <type>   encryption tool or type, values can be gpg or openssl [default: gpg]
+$my_name --- $my_title
 
-  Examples:
+Usage: $my_name [options]
+
+  -k <name>   ---> name of the secret key file stored under $secret_file_dir directory
+  -a <secret> ---> content of secret key
+  -t <type>   ---> encryption type, values can be gpg or openssl [Default: $enc_type]
+
+Examples:
   # generate TOTP code and copy to paste buffer for the secret under the key 'gmail'
   $name -k gmail
   
   # adds the secret under the key 'gmail'
-  $name -k gmail -a 'sfwedfv835sdfjf453' [-t openssl]
+  $name -k gmail -a 'sfwedfv835sdfjf453'
 
   # extract the secret from my_gmail_qrcode_image.png and adds to keystore.
   $name -k gmail -a \$(zbarimg -q my_gmail_qrcode_image.png |awk -F':' '{print $2;}')
@@ -69,7 +75,7 @@ EOF
 add() {
   # encrypt and store the secret key
   if [[ -z $secret || -z $file ]]; then
-    echo "[ERROR] either secret or name is missing"
+    log.error "either secret or name is missing"
     usage
   fi
 
@@ -82,26 +88,26 @@ add() {
   if [ $enc_type = "gpg" ] ; then
     dummy=$(echo $secret | gpg -eaq >$secret_file_dir/$file.gpg)
     if [ $? -ne 0 ]; then
-      echo "[ERROR] encrypting secret key, try again ..."
+      log.error "encrypting secret key, try again ..."
       exit
     fi
   elif [ $enc_type = "openssl" ] ; then
     dummy=$(echo $secret | openssl enc -aes-256-cbc -a -salt >$secret_file_dir/$file)
     if [ $? -ne 0 ]; then
-      echo "[ERROR] encrypting secret key, try again ..."
+      log.error "encrypting secret key, try again ..."
       exit
     fi
   else
-    echo "[ERROR] invalid encryption type: $enc_type"
+    log.error "invalid encryption type: $enc_type"
     usage
   fi
-  echo "[INFO] encrypted secret key at $secret_file_dir/$file"
+  log.stat "encrypted secret key at $secret_file_dir/$file"
 }
 
 get() {
   # get OTP based on secret
   if [[ ! -f $secret_file_dir/$file && ! -f $secret_file_dir/$file.gpg  ]]; then
-    echo "[ERROR] encrypted secret key file missing, check $secret_file_dir/$file[.gpg]"
+    log.error "encrypted secret key file missing, check $secret_file_dir/$file[.gpg]"
     exit
   fi
 
@@ -114,38 +120,54 @@ get() {
 
   # validate the decrypted key
   if [ $? -ne 0 ]; then
-    echo "[ERROR] decrypting secret key, check your password and try again"
+    log.error "decrypting secret key, check your password and try again"
     exit
   fi
   if [ -z $decrypted_key ]; then
-    echo "[ERROR] decrypted key is empty: $decrypted_key"
+    log.error "decrypted key is empty: $decrypted_key"
     exit
   fi
 
   # go in a loop and continue to copy the key to paste buffer until $ttl sec  
-  echo "[INFO] OTP is continually copied to paste buffer for $ttl seconds, Ctrl+c to quit"
+  log.stat "OTP is continually copied to paste buffer for $ttl seconds, Ctrl+c to quit"
 
   # check once to determine if the key is hex or base32
   # Note: Symentac VIPAccess key is hex and google & others are base32 encoded
   oathtool_err=`oathtool $oathtool_opt $decrypted_key 2>&1 >/dev/null`
   if [[ "$oathtool_err" == *"$base32_error"* ]] ; then
-    echo "[INFO] secret key is not base32 encoded, adjusting oathtool option."
+    log.warn "secret key is not base32 encoded, adjusting oathtool option."
     oathtool_opt="--totp"
   fi
 
   # loop for $ttl min and generate code and copy to paste buffer.
   for (( i=0; i<$ttl; i++)) do
-    echo -n "."
-    oathtool $oathtool_opt $decrypted_key | tr -d '\n' | $pbc
+    otp=$(oathtool $oathtool_opt $decrypted_key | tr -d '\n')
+    # save to paste buffer
+    echo $otp|$pbc
+  
+    # display on console as well
+    echo -ne  "\r  OTP: $otp"
     sleep 1
   done
-  
   echo ""
-  echo "[INFO] $name completed."
 }
 
 
-# ----------- main entry -----------
+# -------------------------------  main -------------------------------
+# First, make sure scripts root path is set, we need it to include files
+if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
+  # include logger, functions etc as needed 
+  source $scripts_github/utils/logger.sh
+  source $scripts_github/utils/functions.sh
+else
+  echo "SCRIPTS_GITHUB env variable is either not set or has invalid path!"
+  echo "The env variable should point to root dir of scripts i.e. $default_scripts_github"
+  echo "See INSTALL instructions at: https://github.com/aselvan/scripts?tab=readme-ov-file#setup"
+  exit 1
+fi
+# init logs
+log.init $my_logfile
+
 # pastebuffer depending on OS
 if [ $os_name = "Darwin" ]; then
   pbc='pbcopy'
@@ -175,7 +197,7 @@ while getopts $options opt; do
 done
 
 # install ctrl+c handler
-trap ctrl_c INT
+trap signal_handler INT
 
 # add or get
 if [[ ! -z $secret && ! -z $file ]] ; then
