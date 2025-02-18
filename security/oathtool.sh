@@ -33,7 +33,7 @@ default_scripts_github=$HOME/src/scripts.github
 scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
 # commandline options
-options="a:k:t:h"
+options="a:k:t:s:vh?"
 
 oathtool_opt="--totp -b"
 secret=""
@@ -41,7 +41,7 @@ file=""
 secret_file_dir="$HOME/.oathtool"
 base32_error="base32 decoding failed"
 # how long to copy continually
-ttl=90
+ttl=60
 otp=0
 potp=0
 sec_left=30
@@ -59,6 +59,9 @@ Usage: $my_name [options]
   -k <name>   ---> name of the secret key file stored under $secret_file_dir directory
   -a <secret> ---> content of secret key
   -t <type>   ---> encryption type, values can be gpg or openssl [Default: $enc_type]
+  -s <secs>   ---> how long to continually run [Default: $ttl secs]
+  -v          ---> enable verbose, otherwise just errors are printed
+  -h          ---> print usage/help
 
 Examples:
   # generate TOTP code and copy to paste buffer for the secret under the key 'gmail'
@@ -71,7 +74,7 @@ Examples:
   $name -k gmail -a \$(zbarimg -q my_gmail_qrcode_image.png |awk -F':' '{print $2;}')
 
 EOF
-  exit
+  exit 1
 }
 
 add() {
@@ -83,7 +86,7 @@ add() {
 
   # just create the ~/.oathtool directory if it does not already exist
   if [ ! -f $secret_file_dir ]; then
-   mkdir -p $secret_file_dir || exit
+   mkdir -p $secret_file_dir || exit 2
   fi
 
   # create based on type (gpg or openssl)
@@ -91,13 +94,13 @@ add() {
     dummy=$(echo $secret | gpg -eaq >$secret_file_dir/$file.gpg)
     if [ $? -ne 0 ]; then
       log.error "encrypting secret key, try again ..."
-      exit
+      exit 3
     fi
   elif [ $enc_type = "openssl" ] ; then
     dummy=$(echo $secret | openssl enc -aes-256-cbc -a -salt >$secret_file_dir/$file)
     if [ $? -ne 0 ]; then
       log.error "encrypting secret key, try again ..."
-      exit
+      exit 4
     fi
   else
     log.error "invalid encryption type: $enc_type"
@@ -110,7 +113,7 @@ get() {
   # get OTP based on secret
   if [[ ! -f $secret_file_dir/$file && ! -f $secret_file_dir/$file.gpg  ]]; then
     log.error "encrypted secret key file missing, check $secret_file_dir/$file[.gpg]"
-    exit
+    exit 5
   fi
 
   # based on file type, use the correct encryption tool.
@@ -123,15 +126,16 @@ get() {
   # validate the decrypted key
   if [ $? -ne 0 ]; then
     log.error "decrypting secret key, check your password and try again"
-    exit
+    exit 6
   fi
   if [ -z $decrypted_key ]; then
     log.error "decrypted key is empty: $decrypted_key"
-    exit
+    exit 7
   fi
 
-  # go in a loop and continue to copy the key to paste buffer until $ttl sec  
-  log.stat "OTP is continually copied to paste buffer for $ttl seconds, Ctrl+c to quit"
+  # go in a loop and continue to copy the key to paste buffer until $ttl sec
+  log.stat "OTP for website key: $file"
+  log.stat "Generating continually & storing in paste buffer for $ttl seconds, ctrl+c to quit ..."
 
   # check once to determine if the key is hex or base32
   # Note: Symentac VIPAccess key is hex and google & others are base32 encoded
@@ -161,6 +165,9 @@ get() {
     echo -ne  "\r  OTP: $otp  |  Time Left: $sec_left sec(s)"
     sleep 1
   done
+
+  # clear paste buffer
+  echo -n "" |$pbc
   echo ""
 }
 
@@ -199,13 +206,16 @@ while getopts $options opt; do
     a)
       secret=$OPTARG
       ;;
-    ?)
+    s)
+      ttl=$OPTARG
+      ;;
+    v)
+      verbose=1
+      ;;
+    ?|h|*)
       usage
       ;;
-    h)
-      usage
-      ;;
-    esac
+  esac
 done
 
 # install ctrl+c handler
@@ -219,3 +229,5 @@ elif [ ! -z $file ] ; then
 else
   usage
 fi
+
+log.stat "All Done."
