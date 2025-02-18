@@ -181,7 +181,7 @@ is_media() {
 # used for ctrl+c install in main function as shown below
 # trap 'signal_handler' SIGINT <other signal as needed>
 signal_handler() {
-  log.stat "${FUNCNAME[0]}(): Received Ctrl+c signal, exiting."
+  log.stat "\n${FUNCNAME[0]}(): Received ctrl+c signal, exiting."
   exit 99
 }
 
