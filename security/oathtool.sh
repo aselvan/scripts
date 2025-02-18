@@ -41,8 +41,10 @@ file=""
 secret_file_dir="$HOME/.oathtool"
 base32_error="base32 decoding failed"
 # how long to copy continually
-ttl=30
+ttl=90
 otp=0
+potp=0
+sec_left=30
 
 # encyption type/tool (default is gpg w/ default key)
 enc_type=gpg
@@ -144,9 +146,19 @@ get() {
     otp=$(oathtool $oathtool_opt $decrypted_key | tr -d '\n')
     # save to paste buffer
     echo $otp|$pbc
-  
+    
+    if [ $potp -eq 0 ] ; then
+      potp=$otp
+    fi
+    if [ $potp -ne $otp ] ; then
+      potp=$otp
+      sec_left=30
+    else
+      let sec_left--
+    fi
+    
     # display on console as well
-    echo -ne  "\r  OTP: $otp"
+    echo -ne  "\r  OTP: $otp  |  Time Left: $sec_left sec(s)"
     sleep 1
   done
   echo ""
