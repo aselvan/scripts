@@ -1,20 +1,22 @@
 #!/usr/bin/env bash
-#
+################################################################################
 # macos.sh --- Misl tools for macOS all in one place
 #
 #
 # Author:  Arul Selvan
 # Created: Aug 25, 2024
 #
+################################################################################
+#
 # Version History:
 #   Aug 25, 2024 --- Original version
 #   Nov 11, 2024 --- Added showipexternal command, show interface on showip command
 #   Nov 26, 2024 --- Moved all network functions related to tools/network.sh script
 #   Feb 1,  2025 --- Print swap filename/size, disk usage etc.
-#
+################################################################################
 
 # version format YY.MM.DD
-version=2025.02.01
+version=25.02.01
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl tools for macOS all in one place"
@@ -23,12 +25,12 @@ my_path=$(cd $my_dirname; pwd -P)
 my_logfile="/tmp/$(echo $my_name|cut -d. -f1).log"
 default_scripts_github=$HOME/src/scripts.github
 scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
-arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
-arg=""
 
 # commandline options
 options="c:l:a:vh?"
 
+arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
+arg=""
 command_name=""
 supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle"
 volume_level=""
