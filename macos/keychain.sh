@@ -18,7 +18,7 @@
 ################################################################################
 # Version History:
 #   July 30, 2022 --- Original version
-#   Feb  20, 2025 --- Use standard includes and misl changes
+#   Feb  20, 2025 --- Use standard includes and copy password to pastebuffer
 # 
 ################################################################################
 
@@ -106,17 +106,19 @@ do_add() {
 
 do_delete() {
   log.stat "Deleting entry for website/username: $website/$username"
-  security delete-generic-password -s $website -a $username $keychain_file_name.keychain 2<&1 >>$my_logfile
+  security delete-generic-password -s $website -a $username $keychain_file_name.keychain >>$my_logfile 2>&1
   if [ $? -ne 0 ] ; then
     log.error "Error deleting $website/$username key. Are you sure the key is correct?"
   fi
 }
 
 do_show() {
-  log.stat "Password for website/username: $website/$username is below ..."
-  security find-generic-password -s $website -a $username -w $keychain_file_name.keychain
-  if [ $? -ne 0 ] ; then
-    log.error "The key $wesite/$username not found in keychain, check and try again"
+  local passwd=`security find-generic-password -s $website -a $username -w $keychain_file_name.keychain 2>>$my_logfile`
+  if [ ! -z "$passwd" ] ; then
+    log.stat "Password for $website/$username is: '$passwd'. For convenience, also copied to pastebuffer."
+    echo $passwd|pbcopy
+  else
+    log.error "The key $website/$username not found in keychain, check and try again"
   fi
 }
 
