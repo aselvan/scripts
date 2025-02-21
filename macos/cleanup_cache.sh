@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#
+################################################################################
 # cleanup_cache.sh --- Wipe MacOS cache, logs & document revisions etc 
 #
 # This script empties logs & cache. Especially cache directory in macOS tend to 
@@ -9,11 +9,14 @@
 #
 # Author:  Arul Selvan
 # Version: Jun 14, 2020
+################################################################################
 #
 # Version History:
 #   Jun 14, 2020 --- Original version
-#   May 4,  2024 --- delete document revisions wasting space, optionally remove spotlight index
-#
+#   May 4,  2024 --- delete document revisions wasting space, optionally remove 
+#                    spotlight index
+#   Feb 20, 2025 --- Remove spotlight indexing on / when cleanup requested
+#################################################################################
 
 # version format YY.MM.DD
 version=25.05.05
@@ -28,6 +31,7 @@ scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
 # commandline arguments
 options_list="u:saihv"
+
 current_user=""
 user_list="" # empty for current user i.e. no sudo needed
 do_system=0  # by default just do user level only
@@ -37,7 +41,7 @@ spolight_path="/System/Volumes/Data/.Spotlight-V100"
 
 usage() {
   cat << EOF
-$my_title
+$my_name --- $my_title
 
 Usage: $my_name [options]
   -u <list> ---> List of users to clean [default: only current users cache is cleaned]
@@ -46,13 +50,13 @@ Usage: $my_name [options]
   -i        ---> Clear spotlight (useful if lot of apps installed/removed orphaning index files) 
   -h        ---> print usage/help
 
-example: $my_name 
-example: $my_name -u "user1 user2 user3" -s
+example(s): 
+  $my_name 
+  $my_name -u "user1 user2 user3" -s -i
   
 EOF
   exit 0
 }
-
 
 clean_user() {
   local user=$1
@@ -62,18 +66,18 @@ clean_user() {
   
   # ensure the cache directory exists
   if [ ! -d $cache_dir ] ; then
-    log.error "  The user '$user' does not have cache dir, possibly non-existent user? skipping..."
+    log.error "    The user '$user' does not have cache dir, possibly non-existent user? skipping..."
     return
   fi
-  log.stat "  cleaning at user level $cache_dir ..."
+  log.stat "    cleaning at user level $cache_dir ..."
   rm -rf $cache_dir/*
 
  # ensure the cache directory exists
   if [ ! -d $log_dir ] ; then
-    log.error "  The user '$user' does not have log dir, possibly non-existent user? skipping..."
+    log.error "    The user '$user' does not have log dir, possibly non-existent user? skipping..."
     return
   fi
-  log.stat "  cleaning at user level $log_dir ..."
+  log.stat "    cleaning at user level $log_dir ..."
   rm -rf $log_dir/*
 }
 
@@ -81,10 +85,10 @@ clean_system() {
   cache_dir="/Library/Caches"
   log_dir="/Library/Logs"
   
-  log.stat "  cleaning at system level $cache_dir ..."
+  log.stat "    cleaning at system level $cache_dir ..."
   rm -rf $cache_dir/*
 
-  log.stat "  cleaning at system level $log_dir ..."
+  log.stat "    cleaning at system level $log_dir ..."
   rm -rf $log_dir/*
 }
 
@@ -93,13 +97,14 @@ clean_spotlight() {
   space_reclaimed=`du -sh $spolight_path |awk '{print $1}'`
   
   log.stat "  disabling spotlight indexing ..."
+  mdutil -i off /  >> $my_logfile 2>&1
   mdutil -i off /System/Volumes/Data  >> $my_logfile 2>&1
   
   log.stat "  removing spotlight index space ..."
   rm -rf $spolight_path
   
   log.stat "  Removed $space_reclaimed of spotlight index data!"
-  log.stat "  enabling spotlight indexing..."
+  log.stat "  enabling spotlight indexing ..."
   mdutil -i on /System/Volumes/Data  >> $my_logfile 2>&1
   log.stat "Spotlight indexing will start now as background process."
   log.stat "NOTE: indexing *will* take long time to complete, just let them (mds_store & mdworker) run."
