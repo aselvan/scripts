@@ -59,6 +59,9 @@ fi
 # init logs
 log.init $my_logfile
 
+# check pidof function
+echo "PIDS: $(pidof "bash")"
+
 #check_installed "required_binary"
 #check_root
 

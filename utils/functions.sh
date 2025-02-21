@@ -1,16 +1,19 @@
 #!/usr/bin/env bash
-#
-# functions.sh --- This script is meant to be included in main script for reusable functions.
+
+################################################################################
+# functions.sh --- This is meant to be included for reusable functions.
 #
 #
 # Author:  Arul Selvan
 # Created: Nov 14, 2023
 #
+################################################################################
 # Version History:
 #   Nov 14, 2023 --- Original version
 #   May 19, 2024 --- Added version_le, version_ge functions
-#   Feb 16, 2025 --- check_root message changed to include -E on sudo to inherit user env
-#
+#   Feb 16, 2025 --- check_root message changed to include -E to inherit user env
+#   Feb 21, 2025 --- added pidof function
+################################################################################
 
 # os and other vars
 host_name=`hostname`
@@ -220,6 +223,13 @@ check_installed() {
   fi
   return 0
 }
+
+# get pid of a process (note: may return an array if the match is multiple process)
+pidof() {
+  local pname=$1
+  echo $(ps axc|awk "\$5 ~ /$pname/ {print \$1;}")
+}
+
 
 #--- mail utilities ---
 # Function takes 2 arguments email status, file data to email. If none
