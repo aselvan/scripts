@@ -66,18 +66,18 @@ clean_user() {
   
   # ensure the cache directory exists
   if [ ! -d $cache_dir ] ; then
-    log.error "    The user '$user' does not have cache dir, possibly non-existent user? skipping..."
+    log.error "  The user '$user' does not have cache dir, possibly non-existent user? skipping..."
     return
   fi
-  log.stat "    cleaning at user level $cache_dir ..."
+  log.stat "  cleaning at user level $cache_dir ..."
   rm -rf $cache_dir/*
 
  # ensure the cache directory exists
   if [ ! -d $log_dir ] ; then
-    log.error "    The user '$user' does not have log dir, possibly non-existent user? skipping..."
+    log.error "  The user '$user' does not have log dir, possibly non-existent user? skipping..."
     return
   fi
-  log.stat "    cleaning at user level $log_dir ..."
+  log.stat "  cleaning at user level $log_dir ..."
   rm -rf $log_dir/*
 }
 
@@ -85,11 +85,11 @@ clean_system() {
   cache_dir="/Library/Caches"
   log_dir="/Library/Logs"
   
-  log.stat "    cleaning at system level $cache_dir ..."
-  rm -rf $cache_dir/*
+  log.stat "  cleaning at system level $cache_dir ..."
+  rm -rf $cache_dir/* >> $my_logfile 2>&1
 
-  log.stat "    cleaning at system level $log_dir ..."
-  rm -rf $log_dir/*
+  log.stat "  cleaning at system level $log_dir ..."
+  rm -rf $log_dir/* >> $my_logfile 2>&1
 }
 
 clean_spotlight() {
@@ -103,7 +103,7 @@ clean_spotlight() {
   log.stat "  removing spotlight index space ..."
   rm -rf $spolight_path
   
-  log.stat "  Removed $space_reclaimed of spotlight index data!"
+  log.stat "  removed $space_reclaimed of spotlight index data!"
   log.stat "  enabling spotlight indexing ..."
   mdutil -i on /System/Volumes/Data  >> $my_logfile 2>&1
   log.stat "Spotlight indexing will start now as background process."
@@ -130,15 +130,12 @@ while getopts "$options_list" opt; do
   case $opt in
     u)
       user_list="$OPTARG"
-      check_root
       ;;
     s)
       do_system=1
-      check_root
       ;;
     i)
       do_spotlight=1
-      check_root
       ;;
     v)
       verbose=1
@@ -149,23 +146,26 @@ while getopts "$options_list" opt; do
    esac
 done
 
+# ensure root access
+check_root
+
 # if user list is not provided, user current user by default
 if [ -z "$user_list" ] ; then
   user_list=$(get_current_user)
 fi
 
 for user in $user_list ; do
-  log.stat "  cleaning cache, logs for user: $user ..." $green
+  log.stat "cleaning cache, logs for user: $user ..." $green
   clean_user $user
 done
 
 # clean system level (only if requested)
 if [ $do_system -eq 1 ] ; then
-  log.stat "  cleaning cache, logs at system level ..." $green
+  log.stat "cleaning cache, logs at system level ..." $green
   clean_system
 
   # clean the document revisions. (note: this would remove the ability to restore previous versions (mostly preview app)
-  log.stat "  cleaning document versions at system level... (reboot at your convenience)"
+  log.stat "cleaning document versions at system level... (reboot at your convenience)"
   rm -rf $document_rev_path
 fi
 
@@ -176,7 +176,7 @@ if [ $do_spotlight -eq 1 ] ; then
   if [ $? -eq 1 ] ; then
     clean_spotlight
   else
-    log.warn "  skipping spotlight cleanup"
+    log.warn "skipping spotlight cleanup"
   fi
 fi
 
