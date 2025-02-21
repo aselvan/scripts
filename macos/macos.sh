@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
 ################################################################################
-# macos.sh --- Misl tools for macOS all in one place
-#
+# macos.sh --- Misl handy system utils for macOS all in one place
 #
 # Author:  Arul Selvan
 # Created: Aug 25, 2024
-#
 ################################################################################
 #
 # Version History:
@@ -14,10 +12,11 @@
 #   Nov 26, 2024 --- Moved all network functions related to tools/network.sh script
 #   Feb 1,  2025 --- Print swap filename/size, disk usage etc.
 #   Feb 20, 2025 --- Added spotlight info
+#   Feb 21, 2025 --- Added kill command for macOS cpu hogs we can't get rid of.
 ################################################################################
 
 # version format YY.MM.DD
-version=25.02.20
+version=25.02.21
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl tools for macOS all in one place"
@@ -33,10 +32,17 @@ options="c:l:a:vh?"
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 arg=""
 command_name=""
-supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight"
+supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight|kill"
 volume_level=""
 spolight_path="/System/Volumes/Data/.Spotlight-V100"
 spotlight_volumes="/ /System/Volumes/Data"
+
+# default kill list for kill command
+# Note: these items in the kill list are pigs that we can't get rid of w/ out 
+# doing risky things like deleting or moving files in root '/' partition to 
+# get rid of the corresponding launchctl pllist files. The only thing you can 
+# do is kill these every few minutes w/ cron job.
+kill_list="mediaanalysisd mediaanalysisd-access photoanalysisd photolibraryd"
 
 # ensure path for cron runs (prioritize usr/local first)
 export PATH="/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
@@ -48,14 +54,16 @@ $my_name --- $my_title
 Usage: $my_name [options]
   -c <command>   ---> command to run [see supported commands below]
   -l <number>    ---> volume level [used by 'volume' command range: 1-100]
-  -a <arg>       ---> used for commands like bundle to provide bundle name
+  -a <arg>       ---> arguments for commands like bundle or kill etc.
   -v             ---> enable verbose, otherwise just errors are printed
   -h             ---> print usage/help
 
 Supported commands: $supported_commands
-example: $my_name -c mem
-example: $my_name -c bundle -a textedit
-example: $my_name -c volume -l 25
+examples(s)
+  $my_name -c mem
+  $my_name -c bundle -a textedit
+  $my_name -c volume -l 25
+  $my_name -c kill -a "$kill_list"
   
 EOF
   exit 0
@@ -114,6 +122,27 @@ showspotlight() {
   log.stat "Spotlight Using: $space_used"
 }
 
+dokill() {
+  local klist="$kill_list"
+  if [ ! -z "$arg" ] ; then
+    klist="$arg"
+    log.debug "Using kill list from commandline: $klist"
+  fi
+  for pname in $klist ; do
+    pid=$(pidof $pname)
+    if [ ! -z "$pid" ] ; then
+      # be nice first, then kill with force
+      log.debug "Kill: $pname ($pid)"
+      kill -2 $pid
+      if [ $? -ne 0 ] ; then
+        log.debug "Forcing w/ SIGKILL as $pname ($pid) is refusing to die!"
+        kill -9 $pid
+      fi
+    else
+      log.debug "No process running with name: $pname"
+    fi
+  done
+}
 
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
@@ -196,6 +225,9 @@ case $command_name in
   spotlight)
     check_root
     showspotlight
+    ;;
+  kill)
+    dokill
     ;;
   *)
     log.error "Invalid command: $command_name"
