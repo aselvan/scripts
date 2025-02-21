@@ -13,10 +13,11 @@
 #   Nov 11, 2024 --- Added showipexternal command, show interface on showip command
 #   Nov 26, 2024 --- Moved all network functions related to tools/network.sh script
 #   Feb 1,  2025 --- Print swap filename/size, disk usage etc.
+#   Feb 20, 2025 --- Added spotlight info
 ################################################################################
 
 # version format YY.MM.DD
-version=25.02.01
+version=25.02.20
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl tools for macOS all in one place"
@@ -32,8 +33,10 @@ options="c:l:a:vh?"
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 arg=""
 command_name=""
-supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle"
+supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight"
 volume_level=""
+spolight_path="/System/Volumes/Data/.Spotlight-V100"
+spotlight_volumes="/ /System/Volumes/Data"
 
 # ensure path for cron runs (prioritize usr/local first)
 export PATH="/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
@@ -102,8 +105,13 @@ showswap() {
 
 showdisk() {
   local df_output=`df -h /System/Volumes/Data/|tail -1`
-
   log.stat "`echo $df_output|awk '{print "  Total: ",$2,"\n  Used:  ",$3,"\n  Available: ",$4,"\n  Capacity:  ",$5}'`"
+}
+
+showspotlight() {
+  log.stat "`mdutil -s $spotlight_volumes`"
+  local space_used=`du -sh $spolight_path |awk '{print $1}'`  
+  log.stat "Spotlight Using: $space_used"
 }
 
 
@@ -184,6 +192,10 @@ case $command_name in
     fi
     cmd="osascript -e 'id of app \"$arg\"'"
     log.stat "\t`eval $cmd`" $green
+    ;;
+  spotlight)
+    check_root
+    showspotlight
     ;;
   *)
     log.error "Invalid command: $command_name"
