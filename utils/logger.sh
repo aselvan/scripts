@@ -34,6 +34,13 @@ log.init() {
   if [ -f "$logger_file" ] ; then
     rm -f $logger_file
   fi
+  
+  # ensure log file is owned by effective user $SUDO_USER
+  touch $logger_file
+  if [ ! -z $SUDO_USER ] ; then
+    chown $SUDO_USER $logger_file
+  fi
+  
   if [ ! -z "$logger_file" ] ; then
     echo -e "\e[0;${blue}m$my_version, `date +'%m/%d/%y %r'` \e[0m" | tee -a $logger_file
   else
