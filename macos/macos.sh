@@ -38,12 +38,13 @@ volume_level=""
 spolight_path="/System/Volumes/Data/.Spotlight-V100"
 spotlight_volumes="/ /System/Volumes/Data"
 
-# default kill list for kill command
+# default kill list
+#
 # Note: these items in the kill list are pigs that we can't get rid of w/ out 
 # doing risky things like deleting or moving files in root '/' partition to 
 # get rid of the corresponding launchctl pllist files. The only thing you can 
-# do is kill these every few minutes w/ cron job.
-kill_list="mediaanalysisd mediaanalysisd-access photoanalysisd photolibraryd"
+# do is kill these hogs every few minutes w/ cron job.
+kill_list="mediaanalysisd mediaanalysisd-access photoanalysisd photolibraryd cloudphotod Stocks StocksKitService StocksWidget StocksDetailIntents"
 
 # ensure path for cron runs (prioritize usr/local first)
 export PATH="/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
