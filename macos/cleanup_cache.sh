@@ -16,10 +16,11 @@
 #   May 4,  2024 --- delete document revisions wasting space, optionally remove 
 #                    spotlight index
 #   Feb 20, 2025 --- Remove spotlight indexing on / when cleanup requested
+#   Feb 22, 2025 --- Remove spotlight indexing on *all* volumes
 #################################################################################
 
 # version format YY.MM.DD
-version=25.05.05
+version=25.02.22
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Wipe macOS cache, logs, revision backup, spotlight etc."
@@ -37,7 +38,8 @@ user_list="" # empty for current user i.e. no sudo needed
 do_system=0  # by default just do user level only
 document_rev_path="/System/Volumes/Data/.DocumentRevisions-V100"
 do_spotlight=0
-spolight_path="/System/Volumes/Data/.Spotlight-V100"
+spotlight_path="/System/Volumes/Data/.Spotlight-V100"
+spotlight_volume="/System/Volumes/Data"
 
 usage() {
   cat << EOF
@@ -94,18 +96,17 @@ clean_system() {
 
 clean_spotlight() {
   log.stat "  cleaning spotlight indexes"
-  space_reclaimed=`du -sh $spolight_path |awk '{print $1}'`
+  space_reclaimed=`du -sh $spotlight_path |awk '{print $1}'`
   
-  log.stat "  disabling spotlight indexing ..."
-  mdutil -i off /  >> $my_logfile 2>&1
-  mdutil -i off /System/Volumes/Data  >> $my_logfile 2>&1
+  log.stat "  disabling spotlight indexing for all volumes & stores ..."
+  mdutil -adE -i off  >> $my_logfile 2>&1
   
   log.stat "  removing spotlight index space ..."
-  rm -rf $spolight_path
+  rm -rf $spotlight_path
   
   log.stat "  removed $space_reclaimed of spotlight index data!"
-  log.stat "  enabling spotlight indexing ..."
-  mdutil -i on /System/Volumes/Data  >> $my_logfile 2>&1
+  log.stat "  enabling spotlight indexing on $spotlight_volume only ..."
+  mdutil -i on $spotlight_volume >> $my_logfile 2>&1
   log.stat "Spotlight indexing will start now as background process."
   log.stat "NOTE: indexing *will* take long time to complete, just let them (mds_store & mdworker) run."
 }
