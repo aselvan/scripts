@@ -13,10 +13,11 @@
 #   Feb 1,  2025 --- Print swap filename/size, disk usage etc.
 #   Feb 20, 2025 --- Added spotlight info
 #   Feb 21, 2025 --- Added kill command for macOS cpu hogs we can't get rid of.
+#   Feb 22, 2025 --- Added disablespotlight
 ################################################################################
 
 # version format YY.MM.DD
-version=25.02.21
+version=25.02.22
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl tools for macOS all in one place"
@@ -32,7 +33,7 @@ options="c:l:a:vh?"
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 arg=""
 command_name=""
-supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight|kill"
+supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight|kill|disablespotlight"
 volume_level=""
 spolight_path="/System/Volumes/Data/.Spotlight-V100"
 spotlight_volumes="/ /System/Volumes/Data"
@@ -117,12 +118,16 @@ showdisk() {
 }
 
 showspotlight() {
-  log.stat "`mdutil -s $spotlight_volumes`"
-  local space_used=`du -sh $spolight_path |awk '{print $1}'`  
-  log.stat "Spotlight Using: $space_used"
+  log.stat "Spotlight status:" 
+  log.stat "  `mdutil -as`"
+  local space_used="None"
+  if [ -d $spolight_path ] ; then
+    space_used=`du -sh $spolight_path |awk '{print $1}'`
+  fi
+  log.stat "Spotlight storage space: $space_used"
 }
 
-dokill() {
+do_kill() {
   local klist="$kill_list"
   if [ ! -z "$arg" ] ; then
     klist="$arg"
@@ -142,6 +147,11 @@ dokill() {
       log.debug "No process running with name: $pname"
     fi
   done
+}
+
+do_disablespotlight() {
+  log.stat "Disabling Spotlight completely!"
+  mdutil -adE -i off
 }
 
 # -------------------------------  main -------------------------------
@@ -226,8 +236,11 @@ case $command_name in
     check_root
     showspotlight
     ;;
+  disablespotlight)
+    do_disablespotlight
+    ;;
   kill)
-    dokill
+    do_kill
     ;;
   *)
     log.error "Invalid command: $command_name"
