@@ -132,17 +132,18 @@ do_kill() {
   local klist="$kill_list"
   if [ ! -z "$arg" ] ; then
     klist="$arg"
-    log.debug "Using kill list from commandline: $klist"
   fi
+  log.debug "Kill list: $klist"
   for pname in $klist ; do
     pid=$(pidof $pname)
     if [ ! -z "$pid" ] ; then
-      # be nice first, then kill with force
-      log.debug "Kill: $pname ($pid)"
+      # be nice first by using SIGINT, if not dying kill with SIGKILL
       kill -2 $pid
       if [ $? -ne 0 ] ; then
-        log.debug "Forcing w/ SIGKILL as $pname ($pid) is refusing to die!"
+        log.warn "Forcing w/ SIGKILL as $pname ($pid) is refusing to die!"
         kill -9 $pid
+      else
+        log.stat "Killed: $pname ($pid)"
       fi
     else
       log.debug "No process running with name: $pname"
