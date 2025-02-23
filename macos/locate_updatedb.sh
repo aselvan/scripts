@@ -80,6 +80,9 @@ check_root
 
 log.stat "Building locatedb: $locate_database ..."
 
+# note: the locate.updatedb script is stupid and doesn't work if we aren't in that directory!
+cd /usr/libexec/
+
 $locate_updatedb_bin >> $my_logfile 2>&1
 
 log.stat "Total runtime: $(elapsed_time)"
