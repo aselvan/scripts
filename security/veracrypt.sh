@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 #
-# veracrypt.sh --- simple wrapper over veracrypt to mount/unmount encrypted volumes
+################################################################################
+# veracrypt.sh --- Wrapper over veracrypt to mount/unmount encrypted volumes
 #
 # Note: If no password is provided, script will look for password in the environment 
 # variable VERACRYPT_PASSWORD but -p <password> argument will override password. 
@@ -8,14 +9,17 @@
 # PreReq: veracrypt software must be installed (https://www.veracrypt.fr/en/Downloads.html)
 #
 # Author:  Arul Selvan
+# Version: Mar 18. 2023
+################################################################################
 #
 # Version History
 #   Mar 18, 2023 --- original version
 #   Jan 17, 2024 --- modified to use logger and function includes
-#
+#   Feb 26, 2025 --- added flag to allow mount over-ride dir that are in path
+################################################################################
 
 # version format YY.MM.DD
-version=24.01.17
+version=25.02.26
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Wrapper over veracrypt to mount/unmount encrypted volumes."
@@ -28,13 +32,13 @@ scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 # commandline options
 options="c:p:m:u:lvh?"
 
-verbose=1
 password="${VERACRYPT_PASSWORD:-}"
 # volume will be mounted at $mount_point/$container_file 
 container_file=""
 mount_point="/mnt/veracrypt"
 container_file="$HOME/data/encrypted/vc56g_exfat.hc"
 veracrypt_bin="/usr/bin/veracrypt"
+veracrypt_opt="--allow-insecure-mount "
 
 # ensure path for cron runs
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
@@ -52,7 +56,7 @@ Usage: $my_name [options]
   -v             ---> enable verbose, otherwise just errors are printed
   -h             ---> print usage/help
 
-  example: 
+example(s): 
   $my_name -m $mount_point -c $container_file -p "password123"
   $my_name -u $mount_point
   
@@ -148,7 +152,7 @@ fi
 
 # mount the volume
 log.stat "Mounting $container_file at mount point $mount_point ..."
-$veracrypt_bin -t -k "" --pim=0 --protect-hidden=no --slot 1 --password "$password" --mount-options=timestamp --mount $container_file $mount_point
+$veracrypt_bin -t -k "" --pim=0 --protect-hidden=no --slot 1 --mount-options=timestamp $veracrypt_opt --password "$password" --mount $container_file $mount_point
 if [ $? -eq 0 ] ; then
   log.stat "Successfully mounted volume at $mount_point"
   exit 0
