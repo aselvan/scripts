@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+################################################################################
 #
 # create_thumbs.sh --- wrapper script to create thumbnail of html of images
 #
@@ -7,22 +8,35 @@
 #   brew install tidy imagemagick (macOS)
 #
 # Author:  Arul Selvan
+# Version: Dec 6, 2008
+################################################################################
 #
 # Version History:
 #   Dec 6,  2008 --- Original version
 #   Mar 14, 2021 --- Added FB, whatsAPP links?
-#   Feb 25, 2024 --- Updated footer to include dynamic date and all our owned domains.
+#   Feb 25, 2024 --- Updated footer to include dynamic date & all our domains.
 #   Apr 23, 2024 --- Added image_link classes and hard-code font size
+#   Feb 27, 2025 --- Standard includes, remove .DS_Store, index.html thumb/ etc
+################################################################################
 
-os_name=`uname -s`
-my_name=`basename $0`
+# version format YY.MM.DD
+version=2025.02.27
+my_name="`basename $0`"
+my_version="`basename $0` v$version"
+my_title="Wrapper for some git commands"
+my_dirname=`dirname $0`
+my_path=$(cd $my_dirname; pwd -P)
+my_logfile="/tmp/$(echo $my_name|cut -d. -f1).log"
+default_scripts_github=$HOME/src/scripts.github
+scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
+# commandline options
 options="e:t:d:h"
-log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
+
 extensions="JPG|jpg|JPEG|jpeg|PNG|png"
 thumbs_per_row=6
-title="title"
-desc="thumbnail pictures"
+title=""
+desc=""
 convert_opt="-quality 75 -scale 100x75"
 site_name="https://selvans.net/photos"
 text_color="#000000"
@@ -34,36 +48,49 @@ index_file="index.html"
 today=`date +%D`
 root_dir=$(basename `pwd`)
 abs_url="https://selvans.net/php/fetch_photo.php?data=$root_dir"
+remove_file_list="index.html thumb .DS_Store"
 
 usage() {
   cat <<EOF
-  
-Usage: $my_name 
-  -t <title>  ==> title string to use for generated images
-  -d <desc>   ==> brief description to use for generated images
-  -e <ext>    ==> extenstion list ex: "jpg|png" etc. [Default: "$extensions"]
+$my_name --- $my_title
+ 
+Usage: $my_name [options]
+  -t <title>  ==> title string to use for generated images [Required]
+  -d <desc>   ==> brief description to use for generated images [Required]
+  -e <ext>    ==> optional extenstion list ex: "jpg|png" etc. [default: "$extensions"]
 
-  example: $my_name -t "Title" -d "Our vacation pics" -e "JPG|png|jpeg"
+example: 
+  $my_name -t "Title" -d "Our vacation pics" -e "JPG|png|jpeg"
 
 EOF
   exit 1
 }
 
+remove_files() {
+  log.debug "Removing files that will be regenerated ..."
+  for f in $remove_file_list ; do
+    log.warn "  Removing $f ..."
+    rm -rf $f
+  done
+}
+
 check_prereq() {
   prereq_msg="  Linux: apt-get install tidy graphicsmagick-imagemagick-compat (or) macOS: brew install tidy imagemagick"
   if [[ ! -x /usr/local/bin/convert && ! -x /usr/bin/convert ]] ; then
-    echo "[ERROR] required tool 'convert' does not exist, install with following" | tee -a $log_file
-    echo "$prereq_msg" | tee -a $log_file
+    log.error "required tool 'convert' does not exist, install with following"
+    log.error "$prereq_msg"
     exit 1
   fi
   if [ ! -x /usr/bin/tidy ] ; then
-    echo "[ERROR] required tool 'tidy' does not exist, install with following" | tee -a $log_file
-    echo "$prereq_msg" | tee -a $log_file
+    log.error "required tool 'tidy' does not exist, install with following"
+    log.error "$prereq_msg"
     exit 1
   fi
 }
 
 do_create_thumbs() {
+  log.stat "Creating thumbnails..."
+
   # write header
   mobile_friendly="<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
 
@@ -115,8 +142,9 @@ do_create_thumbs() {
 	  echo "<td width=\"100\">" >> $index_file
 
 	  thumb_fname=`basename $fname |cut -f 1 -d '.'`thumb.jpg
-		echo "[INFO] convert $convert_opt $fname thumb/$thumb_fname ..." | tee -a $log_file
-		convert $convert_opt $fname thumb/$thumb_fname >> $log_file 2>&1
+
+		log.stat "  converting $fname thumb/$thumb_fname ..."
+		convert $convert_opt $fname thumb/$thumb_fname >> $my_logfile 2>&1
     
     echo "<p align=\"center\">" >> $index_file
     echo "<a href=\"$fname\" class=\"image-link\"><img src=\"thumb/$thumb_fname\"" >> $index_file
@@ -151,11 +179,25 @@ do_create_thumbs() {
   echo "</body></html>" >> $index_file
 
   # tidy up html to be radable
-  tidy -wrap 120 -m -i -q -raw --drop-empty-elements no $index_file >> $log_file 2>&1
+  tidy -wrap 120 -m -i -q -raw --drop-empty-elements no $index_file >> $my_logfile 2>&1
 }
 
-# ---------------- main entry --------------------
-echo "[INFO] $my_name starting ..." | tee $log_file
+# -------------------------------  main -------------------------------
+# First, make sure scripts root path is set, we need it to include files
+if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
+  # include logger, functions etc as needed 
+  source $scripts_github/utils/logger.sh
+  source $scripts_github/utils/functions.sh
+else
+  echo "SCRIPTS_GITHUB env variable is either not set or has invalid path!"
+  echo "The env variable should point to root dir of scripts i.e. $default_scripts_github"
+  echo "See INSTALL instructions at: https://github.com/aselvan/scripts?tab=readme-ov-file#setup"
+  exit 1
+fi
+# init logs
+log.init $my_logfile
+
+# ensure we have the helper bins installed
 check_prereq
 
 # commandline parse
@@ -170,14 +212,23 @@ while getopts $options opt; do
     e)
       extenstions="$OPTARG"
       ;;
-    ?)
-      usage
+    v)
+      verbose=1
       ;;
-    h)
+    ?|h|*)
       usage
       ;;
     esac
 done
+
+# check for required args
+if [ "$title" == "" ] || [ "$desc" == "" ] ; then
+  log.error "Missing required args! See usage below"
+  usage
+fi
+
+# get rid of index, thumb & .DS_Store files
+remove_files
 
 # create thumnail htmls
 do_create_thumbs
