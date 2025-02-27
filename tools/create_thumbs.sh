@@ -143,7 +143,7 @@ do_create_thumbs() {
 
 	  thumb_fname=`basename $fname |cut -f 1 -d '.'`thumb.jpg
 
-		log.stat "  converting $fname thumb/$thumb_fname ..."
+		log.stat "  $fname -> thumb/$thumb_fname ..."
 		convert $convert_opt $fname thumb/$thumb_fname >> $my_logfile 2>&1
     
     echo "<p align=\"center\">" >> $index_file
