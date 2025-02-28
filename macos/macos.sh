@@ -18,7 +18,7 @@
 ################################################################################
 
 # version format YY.MM.DD
-version=25.02.22
+version=25.02.28
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl tools for macOS all in one place"
@@ -162,7 +162,24 @@ show_cpu_temp() {
   if [ $t == "Intel" ] ; then
     log.stat "CPU Temp: `sudo powermetrics --samplers smc -n1|grep -i "CPU die"|awk '{print $4,$5}'`"
   elif [ $t == "Apple" ] ; then
-    log.stat "CPU Temp: `sudo powermetrics -s thermal -n1|awk '/Current pressure/ {print $4}'` [Nominal|Fair|Serious|Critical]"
+    local tvalue=`sudo powermetrics -s thermal -n1|awk '/Current pressure/ {print $4}'`
+    case $tvalue in
+      Nominal)
+        log.stat "CPU Temp: $tvalue" $green
+        ;;
+      Fair)
+        log.stat "CPU Temp: $tvalue"
+        ;;
+      Serious)
+        log.stat "CPU Temp: $tvalue" $yellow
+        ;;
+      Critical)
+        log.stat "CPU Temp: $tvalue" $red
+        ;;
+      *)
+        log.stat "CPU Temp: Unknown" $red
+        ;;
+    esac
   else
     log.stat "CPU Temp: Unknown"
   fi
