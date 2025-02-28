@@ -14,6 +14,7 @@
 #   Feb 20, 2025 --- Added spotlight info
 #   Feb 21, 2025 --- Added kill command for macOS cpu hogs we can't get rid of.
 #   Feb 22, 2025 --- Added disablespotlight
+#   Feb 28, 2025 --- Added type, cputemp etc
 ################################################################################
 
 # version format YY.MM.DD
@@ -33,7 +34,7 @@ options="c:l:a:vh?"
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 arg=""
 command_name=""
-supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight|kill|disablespotlight"
+supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight|kill|disablespotlight|type|cputemp"
 volume_level=""
 spolight_path="/System/Volumes/Data/.Spotlight-V100"
 spotlight_volumes="/ /System/Volumes/Data"
@@ -156,6 +157,18 @@ do_disablespotlight() {
   mdutil -adE -i off
 }
 
+show_cpu_temp() {
+  local t=$(macos_type)
+  if [ $t == "Intel" ] ; then
+    log.stat "CPU Temp: `sudo powermetrics --samplers smc -n1|grep -i "CPU die"|awk '{print $4,$5}'`"
+  elif [ $t == "Apple" ] ; then
+    log.stat "CPU Temp: `sudo powermetrics -s thermal -n1|awk '/Current pressure/ {print $4}'` [Nominal|Fair|Serious|Critical]"
+  else
+    log.stat "CPU Temp: Unknown"
+  fi
+}
+
+
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
 if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
@@ -243,6 +256,14 @@ case $command_name in
     ;;
   kill)
     do_kill
+    ;;
+  type)
+    log.stat "MacOS type: `get_macos_type`"
+    ;;
+  cputemp)
+    # need root access
+    check_root
+    show_cpu_temp
     ;;
   *)
     log.error "Invalid command: $command_name"
