@@ -13,11 +13,13 @@
 #   May 19, 2024 --- Added version_le, version_ge functions
 #   Feb 16, 2025 --- check_root message changed to include -E to inherit user env
 #   Feb 21, 2025 --- added pidof function
+#   Feb 28, 2025 --- added macos_type, check_mac functions.
 ################################################################################
 
 # os and other vars
 host_name=`hostname`
 os_name=`uname -s`
+cpu_arch=`uname -mo`
 cmdline_args=`printf "%s " $@`
 current_timestamp=`date +%s`
 
@@ -196,12 +198,34 @@ check_root() {
   fi
 }
 
+# require if the OS is Linux (no action), otherwise exit with message
 check_linux() {
   if [ $os_name == "Linux" ] ; then
     return
   fi
-  log.error "${FUNCNAME[0]}(): This is Linux only function ... exiting."
+  log.error "${FUNCNAME[0]}(): This script is Linux only ... exiting."
   exit 1
+}
+
+# require if the OS is MacOS (no action), otherwise exit with message
+check_mac() {
+  if [ $os_name == "Darwin" ] ; then
+    return
+  fi
+  log.error "${FUNCNAME[0]}(): This script is MacOS only ... exiting."
+  exit 1
+}
+
+# returns "Intel" or "Apple" or "Unknown"
+macos_type() {
+  local t=`sysctl -n machdep.cpu.brand_string`
+  if [[ $t == *"Intel"* ]] ; then
+    echo "Intel"
+  elif [[ $t == *"Apple M"* ]] ; then
+    echo "Apple"
+  else
+    echo "Unknown"
+  fi
 }
 
 get_current_user() {
