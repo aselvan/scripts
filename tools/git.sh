@@ -15,7 +15,7 @@
 ################################################################################
 
 # version format YY.MM.DD
-version=2025.01.31
+version=25.02.16
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Wrapper for some git commands"
