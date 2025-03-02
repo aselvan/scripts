@@ -1,9 +1,15 @@
 #!/usr/bin/env bash
+################################################################################
 #
 # util.sh --- Wrapper for many useful utility commands.
 #
 # Author:  Arul Selvan
 # Created: Jan 10, 2012
+#
+# See also: 
+#   process.sh
+#
+################################################################################
 #
 # Version History:
 #   Jan 10, 2012 --- Original version (moved from .bashrc)
@@ -11,10 +17,10 @@
 #   Dec 26, 2024 --- Added txt2mp3
 #   Dec 27, 2024 --- Added knock
 #   Jan 25, 2025 --- Added lstype, lsmedia etc.
-#
+################################################################################
 
 # version format YY.MM.DD
-version=2025.01.25
+version=25.01.25
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl util tools wrapper all in one place"
@@ -64,12 +70,13 @@ Usage: $my_name [options]
   -v             ---> enable verbose, otherwise just errors are printed
   -h             ---> print usage/help
 
-Supported commands: $supported_commands  
-example: 
+Supported commands: 
+  $supported_commands  
+
+example(s): 
   $my_name -c tohex -n 1000
   $my_name -c lsmedia -i ~/Pictures/Photos
   $my_name -c lstype  -i /path/ -a "pdf txt doc xlsx"
-
 EOF
   exit 0
 }
