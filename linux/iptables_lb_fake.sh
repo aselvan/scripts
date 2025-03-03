@@ -13,15 +13,16 @@
 
 # change as needed
 PORT=80
-REAL_DEST=10.34.210.5
-INTERFACE=eth0
+REAL_DEST=192.168.1.11
+INTERFACE=wlan0
 
 echo "1" > /proc/sys/net/ipv4/ip_forward
-/sbin/iptables -F
-/sbin/iptables -t nat -F
-/sbin/iptables -t nat -A POSTROUTING -p tcp --dport $PORT -j MASQUERADE
-/sbin/iptables -t nat -A PREROUTING -p tcp -i $INTERFACE --dport $PORT -m state --state NEW -m statistic --mode nth --every 3 --packet 0 -j DNAT --to-destination $REAL_DEST:$PORT
-/sbin/iptables -t nat -A PREROUTING -p tcp -i $INTERFACE --dport $PORT -m state --state NEW -m statistic --mode nth --every 3 --packet 1 -j DNAT --to-destination $REAL_DEST:$PORT
-/sbin/iptables -t nat -A PREROUTING -p tcp -i $INTERFACE --dport $PORT -m state --state NEW -m statistic --mode nth --every 3 --packet 2 -j REDIRECT --to-ports $PORT
-/sbin/iptables -A INPUT -p tcp -i $INTERFACE --dport $PORT -j LOG --log-prefix "[DROP $PORT]: " --log-level 2
-#/sbin/iptables -A INPUT -p tcp -i $INTERFACE --dport $PORT -j REJECT
+iptables -F
+iptables -t nat -F
+iptables -t nat -A POSTROUTING -p tcp --dport $PORT -j MASQUERADE
+iptables -t nat -A PREROUTING -p tcp -i $INTERFACE --dport $PORT -m state --state NEW -m statistic --mode nth --every 3 --packet 0 -j DNAT --to-destination $REAL_DEST:$PORT
+iptables -t nat -A PREROUTING -p tcp -i $INTERFACE --dport $PORT -m state --state NEW -m statistic --mode nth --every 3 --packet 1 -j DNAT --to-destination $REAL_DEST:$PORT
+iptables -t nat -A PREROUTING -p tcp -i $INTERFACE --dport $PORT -m state --state NEW -m statistic --mode nth --every 3 --packet 2 -j REDIRECT --to-ports $PORT
+iptables -A INPUT -p tcp -i $INTERFACE --dport $PORT -m state --state NEW -j LOG --log-prefix "[DROP'ing $PORT]: " --log-level 2
+iptables -A INPUT -p tcp -i $INTERFACE --dport $PORT -m state --state NEW -j REJECT
+
