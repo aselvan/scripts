@@ -31,7 +31,7 @@ arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 # commandline options
 options="c:p:n:vh?"
 
-command_name="myprocess"
+command_name=""
 supported_commands="pid|info|myprocess|listen"
 name=""
 pid=-1
@@ -55,9 +55,11 @@ Supported commands:
   $supported_commands  
 
 example(s): 
-  $my_name -c tohex -n 1000
-  $my_name -c lsmedia -i ~/Pictures/Photos
-  $my_name -c lstype  -i /path/ -a "pdf txt doc xlsx"
+  $my_name -c info -p 37747
+  $my_name -c listen -p 443
+  $my_name -c myprocess
+  $my_name -c pid -n bash
+
 EOF
   exit 0
 }
@@ -77,6 +79,10 @@ show_info() {
   fi
   log.stat "List of resources owned by PID: $pid"
   sudo lsof -p $pid |awk '{print $1,$3, $5, $9}'
+
+  log.stat "Process Info:"
+  log.stat "%memory    %CPU    RSS(MB)    VSZ (MB)"
+  ps -p$pid -opmem=,pcpu=,rss=,vsz= |awk '{print $1,"    ", $2, "    ", $3/1024,"    ", $4/1024}'
 }
 
 show_listen() {
@@ -84,7 +90,7 @@ show_listen() {
     log.error "info command needs a port. See usage below"
     usage
   fi
-  log.stat "The process listening on port $port are below"
+  log.stat "The process at listening state port $port are below"
   sudo lsof -i :$port -s TCP:LISTEN
 }
 
@@ -138,6 +144,11 @@ while getopts $options opt ; do
       ;;
   esac
 done
+
+if [ -z "$command_name" ] ; then
+  log.error "command argument is required! See usage below"
+  usage
+fi
 
 # run different wrappes depending on the command requested
 case $command_name in
