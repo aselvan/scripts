@@ -126,36 +126,15 @@ boot_log_all() {
   log show --debug --last boot --predicate 'process == "kernel"'
 }
 
+launchctl_running() {
+  launchctl list | awk '$1 != "-" {print $0;}'
+}
+
 wakeup_mac() {
   ten_sec_from_now=`date -v +10S "+%m/%d/%Y %H:%M:%S"`
   echo "Waking up mac at '$ten_sec_from_now'"
   sudo pmset schedule wake "$ten_sec_from_now"
 }
- 
-pidof() {
-  if [ -z $1 ] ; then
-    echo "Usage: pidof <appname> [note: appname can be regex]"
-    return
-  fi
-  ps axc|awk "\$5 ~ /$1/ {print \$1;}"
-}
-
-launchctl_running() {
-  launchctl list | awk '$1 != "-" {print $0;}'
-}
-
-# move git tag specified to latest commit i.e. HEAD
-git_move_tag() {
-  local tag=$1
-  if [ -z "$tag" ] ; then
-    echo "Usage: git_move_tag <tagname>"
-    return
-  fi
-  git push origin :refs/tags/${tag}
-  git tag -fa ${tag} HEAD -m "Moveing ${tag} to latest commit i.e. HEAD"
-  git push origin master --tags 
-}
-
 # ----------------------- custom entries ----------------------------
 # Finally, include any custom local bashrc if present that may include 
 # env/alias/functions that may not be suitable for public version of 
