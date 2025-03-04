@@ -1,18 +1,19 @@
 #!/usr/bin/env bash
-#
+################################################################################
 # sample.sh --- handy generic sample template to create new script
 #
 #
 # Author:  Arul Selvan
 # Created: Jul 19, 2022
-#
+################################################################################
 # Version History:
 #   Jul 19, 2022 --- Original version
 #   Dec 9,  2024 --- Updated usage function.
-#
+#   Mar 4,  2025 --- Scripts no longer need to set PATH override
+################################################################################
 
 # version format YY.MM.DD
-version=24.05.19
+version=25.03.04
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Sample script"
@@ -25,20 +26,17 @@ scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 # commandline options
 options="e:vh?"
 
-# ensure path for cron runs (prioritize usr/local first)
-export PATH="/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
-
 usage() {
   cat << EOF
 $my_name --- $my_title
-
 
 Usage: $my_name [options]
   -e <email> ---> email address to send success/failure messages
   -v         ---> enable verbose, otherwise just errors are printed
   -h         ---> print usage/help
 
-example: $my_name -h -v
+example(s): 
+  $my_name -h -v
   
 EOF
   exit 0

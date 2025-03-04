@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-
 ################################################################################
 # functions.sh --- This is meant to be included for reusable functions.
 #
@@ -14,6 +13,7 @@
 #   Feb 16, 2025 --- check_root message changed to include -E to inherit user env
 #   Feb 21, 2025 --- added pidof function
 #   Feb 28, 2025 --- added macos_type, check_mac functions.
+#   Mar 4,  2025 --- Scripts no longer need to set PATH overrides
 ################################################################################
 
 # os and other vars
@@ -39,6 +39,15 @@ declare -A unit_table=(
     ["celsius_to_fahrenheit"]=$(echo "scale=2; 9/5" | bc)
     ["fahrenheit_to_celsius"]=$(echo "scale=2; 5/9" | bc)
 )
+
+# enforce PATH so that brew binaries override others in the path
+# assumptions: brew binary must be in path in the first place.
+if command -v brew >/dev/null 2>&1 ; then
+  export PATH="`brew --prefix`/bin:/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
+else
+  # must be Linux
+  export PATH="/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
+fi
 
 # -------------------- disk manipulation (linux only) --------------------
 # when dd out image to a target disk of different size, we need to fix size mismatch
