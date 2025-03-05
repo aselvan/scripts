@@ -1,18 +1,21 @@
 #!/usr/bin/env bash
-#
+###############################################################################
 # security.sh --- Wrapper for many useful security related commands
 #
-# Though these info are readily available with different commandline tools, this script
-# is a hany wrapoper to get a simple output of all you need to know.
+# Though these info are readily available with different commandline tools, 
+# this script is a wrapper to get a simple output of all you need to know.
 #
 # Author:  Arul Selvan
 # Created: Nov 27, 2024 
 #
+################################################################################
 # Version History:
 #   Nov 27, 2024 --- Original version
+#   Mar 5,  2025 --- Supress additional char for pwgen, added openssl_opt
+################################################################################
 
 # version format YY.MM.DD
-version=24.11.27
+version=25.03.05
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Wrapper for many useful security related commands"
@@ -23,7 +26,7 @@ default_scripts_github=$HOME/src/scripts.github
 scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
 # commandline options
-options="c:l:f:b:vh?"
+options="c:l:f:bs::vh?"
 
 command_name=""
 supported_commands="pwgen|usergen|enc|dec|basicauth|unixhash"
@@ -34,9 +37,9 @@ user_password=""
 password=""
 usergen_len=8
 usergen_supress_chars=",;{}[]o:#^+\|*()=-\"/\\.%&<>_'\`?"
-
-# ensure path for cron runs (prioritize usr/local first)
-export PATH="/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
+pwgen_supress_chars="olO:#*()<>'\`\\"
+suppress_chars=""
+openssl_opt="-pbkdf2 -md md5 -aes-256-cbc -a -salt"
 
 usage() {
   cat << EOF
@@ -45,32 +48,39 @@ $my_name --- $my_title
 Usage: $my_name [options]
   -c <command>  ---> command to run [see supported commands below]  
   -l <len>      ---> length of password for pwgen command
+  -s <chars>    ---> list of chars to exclude from passwords
   -f <file>     ---> filename for enc/dec funcions
   -b <user:pwd> ---> used for basicauth to encode user/password in base64 encoding
   -v            ---> enable verbose, otherwise just errors are printed
   -h            ---> print usage/help
 
-Supported commands: $supported_commands  
-example: $my_name -c pwgen
+Supported commands: 
+  $supported_commands  
+
+example(s): 
+  $my_name -c pwgen
+  $my_name -c pwgen -s "],-."
+  $my_name -c enc -f /tmp/plain.txt
+  $my_name -c dec -f /tmp/plain.txt [don't include .enc extension]
 
 EOF
   exit 0
 }
 
 function do_pwgen() {
-  
   check_installed pwgen
-  
   local rnd_digit=$(( $RANDOM % 10 ))
   local abc=ABCDEFGHIJKLMNOPQRSTUVXWYZ
   local n=$(( $RANDOM %26 ))
   local rnd_char=${abc:$n:1}
   local len=$(($pwgen_len-$pwgen_len_fixed))
-  log.stat "\tStrong $(($len+$pwgen_len_fixed)) char password is: $rnd_digit`pwgen -cny $len 1`@$rnd_char" $green
+  local passwd="$rnd_digit`pwgen -cny --remove-chars="${pwgen_supress_chars}${suppress_chars}" $len 1`@$rnd_char"
+  log.stat "\tStrong $(($len+$pwgen_len_fixed)) char password is: $passwd" $green
 }
 
 function do_usergen() {
-  local uname=a`pwgen --remove-chars=$usergen_supress_chars -cny $usergen_len 1`s
+  check_installed pwgen
+  local uname=a`pwgen --remove-chars=${usergen_supress_chars}${suppress_chars} -cny $usergen_len 1`s
   log.stat "\tUsername: $uname" $green
 }
 
@@ -80,7 +90,7 @@ function do_enc() {
     log.error "Need filename to encrypt, see usage"
     usage
   fi
-  openssl enc -aes-256-cbc -a -salt -in $enc_dec_file > $enc_dec_file.enc
+  openssl enc $openssl_opt -in $enc_dec_file > $enc_dec_file.enc
   log.stat "Encrypted file at: $enc_dec_file.enc"
 }
 
@@ -94,8 +104,8 @@ function do_dec() {
     log.error "Can't find the encrypted file $enc_dec_file.enc ..."
     exit 2
   fi
-  openssl enc -d -aes-256-cbc -a -in $enc_dec_file.enc > $enc_dec_file
-  log.stat "Decrypted file at: $enc_dec_file.enc"
+  openssl enc -d $openssl_opt -in $enc_dec_file.enc > $enc_dec_file
+  log.stat "Decrypted file at: $enc_dec_file"
 }
 
 function do_basicauth() {
@@ -143,6 +153,9 @@ while getopts $options opt ; do
       ;;
     b)
       user_password="$OPTARG"
+      ;;
+    s)
+      suppress_chars="$OPTARG"
       ;;
     v)
       verbose=1
