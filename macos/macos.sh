@@ -15,10 +15,11 @@
 #   Feb 21, 2025 --- Added kill command for macOS cpu hogs we can't get rid of.
 #   Feb 22, 2025 --- Added disablespotlight
 #   Feb 28, 2025 --- Added type, cputemp etc
+#   Mar 6,  2025 --- Remove xpc plist on kill, also added kill list file option
 ################################################################################
 
 # version format YY.MM.DD
-version=25.02.28
+version=25.03.05
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl tools for macOS all in one place"
@@ -29,7 +30,7 @@ default_scripts_github=$HOME/src/scripts.github
 scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
 # commandline options
-options="c:l:a:vh?"
+options="c:l:a:kvh?"
 
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 arg=""
@@ -38,6 +39,9 @@ supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle
 volume_level=""
 spolight_path="/System/Volumes/Data/.Spotlight-V100"
 spotlight_volumes="/ /System/Volumes/Data"
+xpc_activity_plist="$HOME/Library/Preferences/com.apple.xpc.activity2.plist"
+killed_list_file="/tmp/$(echo $my_name|cut -d. -f1)_killed_list.txt"
+do_killed_list=0
 
 # default kill list
 #
@@ -47,9 +51,6 @@ spotlight_volumes="/ /System/Volumes/Data"
 # do is kill these hogs every few minutes w/ cron job.
 kill_list="mediaanalysisd mediaanalysisd-access photoanalysisd photolibraryd cloudphotod Stocks StocksKitService StocksWidget StocksDetailIntents"
 
-# ensure path for cron runs (prioritize usr/local first)
-export PATH="/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
-
 usage() {
   cat << EOF
 $my_name --- $my_title
@@ -58,6 +59,7 @@ Usage: $my_name [options]
   -c <command>   ---> command to run [see supported commands below]
   -l <number>    ---> volume level [used by 'volume' command range: 1-100]
   -a <arg>       ---> arguments for commands like bundle or kill etc.
+  -k             ---> enables writing $killed_list_file showing what was killed [note: it may grow to large size]
   -v             ---> enable verbose, otherwise just errors are printed
   -h             ---> print usage/help
 
@@ -134,6 +136,16 @@ do_kill() {
   if [ ! -z "$arg" ] ; then
     klist="$arg"
   fi
+  
+  # TODO: remove the xpc plist if present. This one drives many unnecessary 
+  # background tasks and is written by something often. I am not 100% sure 
+  # about this but for now get rid of these and monitor for a while to make 
+  # sure nothing is broken.
+  if [ -f $xpc_activity_plist ] ; then
+    log.stat "Removing $xpc_activity_plist ..."
+    rm -rf $xpc_activity_plist
+  fi
+
   log.debug "Kill list: $klist"
   for pname in $klist ; do
     pid=$(pidof $pname)
@@ -145,6 +157,9 @@ do_kill() {
         kill -9 $pid
       else
         log.stat "Killed: $pname ($pid)"
+      fi
+      if [ $do_killed_list -ne 0 ] ; then
+        echo "`date +"%m/%d/%Y %H:%M"`: killed $pname ($pid)" >> $killed_list_file
       fi
     else
       log.debug "No process running with name: $pname"
@@ -212,6 +227,9 @@ while getopts $options opt ; do
       ;;
     a)
       arg="$OPTARG"
+      ;;
+    k)
+      do_killed_list=1
       ;;
     v)
       verbose=1
