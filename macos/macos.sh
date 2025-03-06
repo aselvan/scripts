@@ -49,7 +49,7 @@ do_killed_list=0
 # doing risky things like deleting or moving files in root '/' partition to 
 # get rid of the corresponding launchctl pllist files. The only thing you can 
 # do is kill these hogs every few minutes w/ cron job.
-kill_list="mediaanalysisd mediaanalysisd-access photoanalysisd photolibraryd cloudphotod Stocks StocksKitService StocksWidget StocksDetailIntents"
+kill_list="mediaanalysisd mediaanalysisd-access photoanalysisd photolibraryd cloudphotod Stocks StocksKitService StocksWidget StocksDetailIntents com.apple.Photos.Migration"
 
 usage() {
   cat << EOF
