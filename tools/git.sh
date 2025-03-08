@@ -83,7 +83,7 @@ function do_move_tag() {
     usage
   fi
   if [ -z "$comments" ] ; then
-    comments="Moveing ${tag} to latest commit on `date +"%I.%M%p on %b %d, %Y"`"
+    comments="Moveing ${tag} to latest commit at `date +"%I.%M%p on %b %d, %Y"`"
   fi
   log.stat "Moving tag $tag ..."
   git push origin :refs/tags/${tag}
