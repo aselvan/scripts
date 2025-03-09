@@ -1,10 +1,17 @@
+###############################################################################
 #
-# logger.sh --- This script is meant to be included in main script for logging functions.
+# logger.sh --- include script for logging functionality (only for includes)
 #
 #
 # Author:  Arul Selvan
 # Created: Nov 14, 2023
 #
+################################################################################
+# Version History:
+#   Nov 14, 2023 --- Original version
+#   Mar 9,  2025 --- Ensure logger file can be writable for effective user
+################################################################################
+
 logger_file=""
 logger_init=0
 verbose=0
@@ -34,13 +41,15 @@ log.init() {
   if [ -f "$logger_file" ] ; then
     rm -f $logger_file
   fi
-  
-  # ensure log file is owned by effective user $SUDO_USER
-  touch $logger_file
-  if [ ! -z $SUDO_USER ] ; then
-    chown $SUDO_USER $logger_file
+ 
+  if [ ! -z "$logger_file" ] ; then
+    # ensure log file is owned by effective user $SUDO_USER
+    touch $logger_file
+    if [ ! -z $SUDO_USER ] ; then
+      chown $SUDO_USER $logger_file
+    fi
   fi
-  
+
   if [ ! -z "$logger_file" ] ; then
     echo -e "\e[0;${blue}m$my_version, `date +'%m/%d/%y %r'` \e[0m" | tee -a $logger_file
   else
