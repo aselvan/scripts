@@ -1,151 +1,213 @@
-#!/bin/sh
+#!/usr/bin/env bash
 ################################################################################
 #
-# firewall - Simple wrapper script to manipulate firewall rules
+# firewall - Script to manipulate firewall rules
 #
-# 
-# NOTE: From Yosemite onwards, ipfw is no logner supported so and we
-#       have to use PF (pfctl) to setup firewall.
-#
-# See also: pf_rule_simple.conf
+# This script uses pfctl to provide various commands for firewall i.e. start, 
+# stop, show, block/unblock and few other things. First firewall needs to be
+# installed using firewall_install.sh script.
 #
 # Author:  Arul Selvan
 # Version: Feb 7, 2015
 #
+# See also: 
+#   pf_rule_simple.conf firewall_install.sh
+#
+# NOTE: Starting from macOS Yosemite onwards, ipfw is no logner supported so 
+# and we are using PF (pfctl) to manipulate firewall rules.
+#
+################################################################################
 # Version History:
 #   Feb 7,  2015 --- original version
 #   Jan 16, 2025 --- update for table name change and additional tables
 #   Feb 4,  2025 --- added option to add/remove non-routables.
-#
+#   Mar 15, 2025 --- changed to use standard log and includes.
 ################################################################################
+
+# version format YY.MM.DD
+version=25.03.15
+my_name="`basename $0`"
+my_version="`basename $0` v$version"
+my_title="Script to manipulate firewall rules"
+my_dirname=`dirname $0`
+my_path=$(cd $my_dirname; pwd -P)
+my_logfile="/tmp/$(echo $my_name|cut -d. -f1).log"
+default_scripts_github=$HOME/src/scripts.github
+scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
+
+# commandline options
+options="vh?"
 
 anchor_name="com.selvansoft"
 rule_set="/etc/pf.conf"
 non_routables="10.0.0.0/8 172.16.0.0/12 192.168.0.0/16"
+supported_commands="start|stop|status|allstatus|addip|deleteip|showtable|flushtable|blockip|unblockip|block-nonroutables|unblock-nonroutables"
 
 usage() {
-  echo "Usage: $0 <start|stop|status|allstatus|addip|deleteip|showtable|flushtable|blockip|unblockip|block-nonroutables|unblock-nonroutables>"
-  exit
+  cat << EOF
+  
+$my_name --- $my_title
+Usage: $my_name [options]
+  <command> ---> command to run [see supported commands below]  
+  -v        ---> enable verbose, otherwise just errors are printed
+  -h        ---> print usage/help
+
+Supported commands are below: 
+  $supported_commands
+
+example(s): 
+  $my_name start
+  $my_name stop
+  $my_name status
+  $my_name addip <add ip/CIDR to allow list>
+  $my_name blockup <block ip/CIDR>
+  $my_name unblockip <unblock ip/CIDR>
+  
+EOF
+  exit 0
 }
 
 start_firewall() {
+  log.stat "Starting firewall..."
   # enable pf 
-  /sbin/pfctl -e
+  log.stat "Enabling PF..."
+  log.stat "`/sbin/pfctl -e`" $grey
 
   # flush all existing rules
-  /sbin/pfctl -F all
+  log.stat "Flushing existing rules..."
+  log.stat "`/sbin/pfctl -F all`"
 
   # add our rules
-  /sbin/pfctl -f $rule_set
+  log.stat "Adding our rules ..."
+  log.stat "`/sbin/pfctl -f $rule_set`"
+  log.stat "Firewall running."  
 }
 
 stop_firewall() {
   # flush our existing rules
-  /sbin/pfctl -a $anchor_name -F all
-  /sbin/pfctl -F all
+  log.stat "Stopping firewall..."
+  log.stat "`/sbin/pfctl -a $anchor_name -F all`" $grey
+  log.stat "`/sbin/pfctl -F all`" $grey
+  log.stat "Done"
 }
 
-# ---- main -----
-uid=`id -u`
-if [ $uid -ne 0 ]; then
-  echo "You need to be root to execute $0 script"
-  exit
+# -------------------------------  main -------------------------------
+# First, make sure scripts root path is set, we need it to include files
+if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
+  # include logger, functions etc as needed 
+  source $scripts_github/utils/logger.sh
+  source $scripts_github/utils/functions.sh
+else
+  echo "SCRIPTS_GITHUB env variable is either not set or has invalid path!"
+  echo "The env variable should point to root dir of scripts i.e. $default_scripts_github"
+  echo "See INSTALL instructions at: https://github.com/aselvan/scripts?tab=readme-ov-file#setup"
+  exit 1
 fi
+# init logs
+log.init $my_logfile
+check_root
 
-if [ $# -eq 0 ]; then
-  usage
-fi
+while getopts $options opt ; do
+  case $opt in
+    v)
+      verbose=1
+      shift
+      ;;
+    ?|h|*)
+      usage
+      ;;
+  esac
+done
 
 while [ "$1" ] 
 do
   if [ "$1" = "start" ]; then
-     echo "Starting firewall ..."
-     start_firewall
-     break
+    start_firewall
+    break
   elif [ "$1" = "stop" ]; then
-     echo "Stopping firewall ..."
-     stop_firewall
-     break
+    stop_firewall
+    break
   elif [ "$1" = "status" ]; then
-     echo "Listing firewall rules ..."
-     echo "--- Global rules ---"
-     /sbin/pfctl -sr 2>/dev/null
-     echo "--- Anchor: $anchor_name rules ---"
-     /sbin/pfctl -a $anchor_name -sr 2>/dev/null
-     echo "--- Dynamic table list (if any) ---"
-     /sbin/pfctl -a $anchor_name -t dynamic_list -T show 2>/dev/null
-     echo "--- Blocked table list (if any) ---"
-     /sbin/pfctl -a $anchor_name -t blocked_list -T show 2>/dev/null
-     echo "--- non-routable table list (if any) ---"
-     /sbin/pfctl -a $anchor_name -t non_routable_list -T show 2>/dev/null
-     break
+    log.stat "Listing firewall rules ..."
+    log.stat "--- Global rules ---" $green
+    log.stat "`/sbin/pfctl -sr 2>/dev/null`" $grey
+    log.stat "--- Anchor: $anchor_name rules ---" $green
+    log.stat "`/sbin/pfctl -a $anchor_name -sr 2>/dev/null`" $grey
+    log.stat "--- Dynamic table list (if any) ---" $green
+    log.stat "`/sbin/pfctl -a $anchor_name -t dynamic_list -T show 2>/dev/null`" $grey
+    log.stat "--- Blocked table list (if any) ---" $green
+    log.stat "`/sbin/pfctl -a $anchor_name -t blocked_list -T show 2>/dev/null`" $grey
+    log.stat "--- non-routable table list (if any) ---" $green
+    log.stat "`/sbin/pfctl -a $anchor_name -t non_routable_list -T show 2>/dev/null`" $grey
+    break
   elif [ "$1" = "allstatus" ]; then
-     echo "Listing firewall rules ..."
-     /sbin/pfctl -sa 2>/dev/null
-     /sbin/pfctl -a $anchor_name -sa 2>/dev/null
-     break
+    log.stat "Listing firewall rules ..."
+    log.stat "`/sbin/pfctl -sa 2>/dev/null`" $grey
+    log.stat "`/sbin/pfctl -a $anchor_name -sa 2>/dev/null`" $grey
+    break
   elif [ "$1" = "addip" ]; then
-     shift 1
-     if [ -z $1 ]; then
-        echo "addip needs IP/CIDR/Host address as argument"
-        usage
-     fi
-     echo "Adding $1 to the dynamic_list table..."
-     pfctl -a $anchor_name -t dynamic_list -T add $1 2>/dev/null
-     break
+    shift 1
+    if [ -z $1 ]; then
+      log.error "addip needs IP/CIDR address as argument. See usage below"
+      usage
+    fi
+    log.stat "Adding $1 to the dynamic_list table..."
+    log.stat "`pfctl -a $anchor_name -t dynamic_list -T add $1 2>/dev/null`" $grey
+    break
   elif [ "$1" = "deleteip" ]; then
-     shift 1
-     if [ -z $1 ]; then
-        echo "deleteip needs IP/CIDR/Host address as argument"
-        usage
-     fi
-     echo "Deleting $1 from the dynamic_list table..."
-     pfctl -a $anchor_name -t dynamic_list -T delete $1 2>/dev/null
-     break
+    shift 1
+    if [ -z $1 ]; then
+      log.error "deleteip needs IP/CIDR address as argument. See usage below"
+      usage
+    fi
+    log.stat "Deleting $1 from the dynamic_list table..."
+    log.stat "`pfctl -a $anchor_name -t dynamic_list -T delete $1 2>/dev/null`" $grey
+    break
   elif [ "$1" = "blockip" ]; then
-     shift 1
-     if [ -z $1 ]; then
-        echo "blockip needs IP/CIDR/Host address as argument"
-        usage
-     fi
-     echo "Adding $1 to the blocked_list table..."
-     pfctl -a $anchor_name -t blocked_list -T add $1 2>/dev/null
-     break
+    shift 1
+    if [ -z $1 ]; then
+      log.error "blockip needs IP/CIDR address as argument. See usage below"
+      usage
+    fi
+    log.stat "Adding $1 to the blocked_list table..."
+    log.stat "`pfctl -a $anchor_name -t blocked_list -T add $1 2>/dev/null`" $grey
+    break
   elif [ "$1" = "unblockip" ]; then
-     shift 1
-     if [ -z $1 ]; then
-        echo "unblockip needs IP/CIDR/Host address as argument"
-        usage
-     fi
-     echo "Deleting $1 from the blocked_list table..."
-     pfctl -a $anchor_name -t blocked_list -T delete $1 2>/dev/null
-     break
+    shift 1
+    if [ -z $1 ]; then
+      log.error "unblockip needs IP/CIDR address as argument, see usage below."
+      usage
+    fi
+    log.stat "Deleting $1 from the blocked_list table..."
+    log.stat "`pfctl -a $anchor_name -t blocked_list -T delete $1 2>/dev/null`" $grey
+    break
   elif [ "$1" = "block-nonroutables" ]; then
-    echo "blocking inbound for all non-routable IPs ($non_routables) ..."
+    log.stat "blocking inbound for all non-routable IPs ($non_routables) ..." $green
     for c in $non_routables ; do
-      pfctl -a $anchor_name -t non_routable_list -T add $c 2>/dev/null
+      log.stat "`pfctl -v -a $anchor_name -t non_routable_list -T add $c 2>/dev/null`" $grey
     done
     break
   elif [ "$1" = "unblock-nonroutables" ]; then
-    echo "unblocking inbound for all non-routable IPs ($non_routables) ..."
+    log.stat "unblocking inbound for all non-routable IPs ($non_routables) ..."
     for c in $non_routables ; do
-      pfctl -a $anchor_name -t non_routable_list -T delete $c 2>/dev/null
+      log.stat "`pfctl -v -a $anchor_name -t non_routable_list -T delete $c  2>/dev/null`" $grey
     done
     break
   elif [ "$1" = "flushtable" ]; then
-     echo "Flushing the dynamic_list table..."
-     pfctl -a $anchor_name -t dynamic_list -T flush 2>/dev/null
-     break
+    log.stat "Flushing the dynamic_list table..." $green
+    log.stat "`pfctl -a $anchor_name -t dynamic_list -T flush`" $grey
+    break
   elif [ "$1" = "showtable" ]; then
-     echo "Showing dynamic_list table..."
-     echo "--- Allowed table: dynamic_list ----"
-     pfctl -a $anchor_name -t dynamic_list -T show 2>/dev/null
-     echo "--- Blocked table: blocked_list ----"
-     pfctl -a $anchor_name -t blocked_list -T show 2>/dev/null
-     echo "--- non-routable table: non_routable_list ----"
-     pfctl -a $anchor_name -t non_routable_list -T show 2>/dev/null
-     break
+    log.stat "Showing dynamic_list table..."
+    log.stat "--- Allowed table: dynamic_list ----" $green
+    log.stat "`pfctl -a $anchor_name -t dynamic_list -T show 2>/dev/null`" $grey
+    log.stat "--- Blocked table: blocked_list ----" $green
+    log.stat "`pfctl -a $anchor_name -t blocked_list -T show 2>/dev/null`" $grey
+    log.stat "--- non-routable table: non_routable_list ----" $green
+    log.stat "`pfctl -a $anchor_name -t non_routable_list -T show 2>/dev/null`" $grey
+    break
   else
-     usage
+    log.error "Invlid command: $1, see usage below"
+    usage
   fi
 done
