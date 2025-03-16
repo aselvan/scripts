@@ -33,7 +33,7 @@ image_list_file="image_list.txt"
 scale="2400:1600"
 video_codec="-vcodec libx264"
 frame_rate="0.25"
-filter_complex="scale=$scale:force_original_aspect_ratio=decrease,pad=$scale:(ow-iw)/2:(oh-ih)/2"
+filter_complex="[0:v]scale=$scale:force_original_aspect_ratio=decrease,pad=$scale:(ow-iw)/2:(oh-ih)/2"
 image_wildcard=".jpg|.JPG"
 audio_file=""
 output_file="output.mp4"
@@ -160,7 +160,7 @@ while getopts $options opt; do
       ;;
     s)
       scale="$OPTARG"
-      filter_complex="scale=$scale:force_original_aspect_ratio=decrease,pad=$scale:(ow-iw)/2:(oh-ih)/2"
+      filter_complex="[0:v]scale=$scale:force_original_aspect_ratio=decrease,pad=$scale:(ow-iw)/2:(oh-ih)/2"
       ;;
     o)
       output_file="$OPTARG"
@@ -196,7 +196,7 @@ create_end_image
 create_sorted_filelist
 
 write_log "[INFO]" "creating video using all images found at: `pwd`/$image_wildcard ..."
-ffmpeg -f concat -safe 0 -r $frame_rate -i $image_list_file $audio_file $video_codec -filter_complex "$filter_complex" -pix_fmt yuv420p -r 30 -y -timestamp ${creation_date}01 -metadata title="$title_metadata" $output_file >> $log_file 2>&1
+ffmpeg -noautorotate -f concat -safe 0 -r $frame_rate -i $image_list_file $audio_file $video_codec -filter_complex "$filter_complex" -pix_fmt yuv420p -r 30 -y -timestamp ${creation_date}01 -metadata title="$title_metadata" $output_file >> $log_file 2>&1
 rc=$?
 write_log "[INFO]" "cleaning up tmp files"
 cleanup_tmp
