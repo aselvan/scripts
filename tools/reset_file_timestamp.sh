@@ -62,6 +62,7 @@ EOF
 if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
   # include logger, functions etc as needed 
   source $scripts_github/utils/logger.sh
+  source $scripts_github/utils/functions.sh  
 else
   echo "ERROR: SCRIPTS_GITHUB env variable is either not set or has invalid path!"
   echo "The env variable should point to root dir of scripts i.e. $default_scripts_github"
