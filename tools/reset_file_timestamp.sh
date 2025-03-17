@@ -95,13 +95,14 @@ check_installed exiftool
 # check if source path is a single file
 if [ -f "$source_path" ] ; then
   file_list="$source_path"
+  log.stat "Resetting timestamp using metadata for: $file_list"
 else
   dir_name=$(dirname "$source_path")
   file_name=$(basename "$source_path")
   file_list=`ls -1 $dir_name/$file_name`
+  log.stat "Resetting timestamp using metadata for: $dir_name/$file_name"
 fi
 
-log.stat "Resetting timestamp for $file_list using metadata timestamp ..."
 for fname in ${file_list} ;  do
   # if filename is directory, skip
   if [ -d $fname ] ; then
