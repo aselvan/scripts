@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+################################################################################
 #
 # create_videos.sh --- script to create videos from images.
 #
@@ -41,24 +42,28 @@
 #   reset_file_timestamp.sh
 #   
 # Author:  Arul Selvan
-# Version History
-# --------------
-#   23.03.19 --- Initial version
+# Version: Mar 19, 2023
 #
+################################################################################
+# Version History:
+#   Mar 19, 2023 --- Original version
+#   Mar 17, 2025 --- Converted to use standard logging & includes
+#
+################################################################################
 
 # version format YY.MM.DD
-version=23.03.27
+version=25.03.17
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
-host_name=`hostname`
-os_name=`uname -s`
-cmdline_args=`printf "%s " $@`
-dir_name=`dirname $0`
-my_path=$(cd $dir_name; pwd -P)
+my_title="Create videos from images."
+my_dirname=`dirname $0`
+my_path=$(cd $my_dirname; pwd -P)
+my_logfile="/tmp/$(echo $my_name|cut -d. -f1).log"
+default_scripts_github=$HOME/src/scripts.github
+scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
-log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
+# commandline options
 options="c:s:m:vh?"
-verbose=0
 
 # staging path and it should have ton of freespace to create potentially
 # large video files out of each of the directories. Just use a path that
@@ -78,42 +83,22 @@ record_count=1
 img2video_args=""
 default_create_date=`date -u +%Y%m%d%H%M`
 
-# ensure path for cron runs
-export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
-
 usage() {
   cat << EOF
+$my_name --- $my_title
 
-  Usage: $my_name [options]
-     -c <csvfile>  ---> CSV file formated as explained above (code comments)
-     -s <stagedir> ---> staging path must have at least 100GB free space [default: '$stage_dir']
-     -m <mp3dir>   ---> directory of mp3 files to be used for background music [default: '$mp3_dir']
-     -v            ---> verbose mode prints info messages, otherwise just errors
-     -h            ---> print usage/help
+Usage: $my_name [options]
+  -c <csvfile>  ---> CSV file formated as explained above (code comments)
+  -s <stagedir> ---> staging path must have at least 100GB free space [default: '$stage_dir']
+  -m <mp3dir>   ---> directory of mp3 files to be used for background music [default: '$mp3_dir']
+  -v             --> enable verbose, otherwise just errors are printed
+  -h             --> print usage/help  
 
-  example: $my_name -c /data/videos/create_videos.csv -s /data/videos
+example(s): 
+  $my_name -c /data/videos/create_videos.csv -s /data/videos
   
 EOF
   exit 0
-}
-
-write_log() {
-  local msg_type=$1
-  local msg=$2
-
-  # log info type only when verbose flag is set
-  if [ "$msg_type" == "[INFO]" ] && [ $verbose -eq 0 ] ; then
-    return
-  fi
-
-  echo "$msg_type $msg" | tee -a $log_file
-}
-init_log() {
-  if [ -f $log_file ] ; then
-    rm -f $log_file
-  fi
-  write_log "[STAT]" "$my_version"
-  write_log "[STAT]" "starting at `date +'%m/%d/%y %r'` ..."
 }
 
 # mp3_dir is set, return a random mp3 file path, otherwise blank
@@ -124,11 +109,11 @@ get_random_mp3() {
 
 check_pre_requirements() {
   if [ ! -x $img2video ] ; then
-    write_log "[ERROR] required script ($img2video) missing!"
+    log.error "required script ($img2video) missing!"
     exit 1
   fi
   if [ ! -x $reset_file_timestamp ] ; then
-    write_log "[ERROR] required script ($reset_file_timestamp) missing!"
+    log.error "required script ($reset_file_timestamp) missing!"
     exit 1
   fi
   
@@ -148,7 +133,7 @@ build_img2video_arguments() {
       if [ "$mp3" != "" ] ; then
         img2video_args="$img2video_args -a $mp3"
       else
-        write_log "[WARN]" "no mp3 found in the directory: '$mp3_dir' ... continue w/ out audio!"        
+        log.warn "no mp3 found in the directory: '$mp3_dir' ... continue w/ out audio!"        
       fi
     else
       img2video_args="$img2video_args -a $background_mp3_file"
@@ -168,17 +153,17 @@ trim_column_values() {
 create_video() {
   # validate requirements (if we don't have src path & mask nothing to do)
   if [ -z "$src_path" ] ; then
-    write_log "[WARN] missing CSV column 'Directory Path' ... skipping line #$record_count"
+    log.warn "missing CSV column 'Directory Path' ... skipping line #$record_count"
     return
   fi
   if [ -z "$src_mask" ] ; then
-    write_log "[WARN] missing CSV column 'Image Files' ... skipping line #$record_count"
+    log.warn "missing CSV column 'Image Files' ... skipping line #$record_count"
     return
   fi
 
   # validate source image path
   if [ ! -d "$src_path" ] ; then
-    write_log "[ERROR] Image source directory $src_path does not exist!, skipping line #$record_count"
+    log.error "Image source directory $src_path does not exist!, skipping line #$record_count"
     return
   fi
 
@@ -188,19 +173,19 @@ create_video() {
   fi
   
   # we should be in $stage_dir/images directory, just to be save use full path amd ensure it is clean
-  write_log "[STAT]" "Copying source images to staging area ..."
+  log.stat "Copying source images to staging area ..."
   rm -f $stage_dir/images/*
   find $src_path -maxdepth 1 -type f | xargs -I {} cp {} $stage_dir/images/.
 
   # reset file timestamp w/ image metadata for timeline squencing
-  write_log "[STAT]" "Reseting OS timestamp using metadata for time squencing ..."
+  log.stat "Reseting OS timestamp using metadata for time squencing ..."
   $reset_file_timestamp -p .
 
   # setup arguments to call img2video.sh
   build_img2video_arguments
 
   # execute img2video and wait till it completes
-  write_log "[STAT]" "Creating video. This task may take a long time, please wait ..."
+  log.stat "Creating video. This task may take a long time, please wait ..."
   # handle args w/ space separately as they don't work on subshell.
 
   # inject /dev/null as the input stream otherwise it would mess up our (parent)
@@ -213,17 +198,30 @@ create_video() {
     rc=$?
   fi
   if [ $rc -eq 0 ] ; then
-    write_log "[STAT]" "Success creating video at $stage_dir/$video_name ..."
+    log.stat "Success creating video at $stage_dir/$video_name ..."
   else
-    write_log "[ERROR]" "Video create failed, see log for details ($log_file) ..."
+    log.stat "Video create failed, see log for details ($my_logfile) ..."
   fi
 
   # finally cleanup $stage_dir/images/ for next line
   rm -f $stage_dir/images/*
 }
 
-# ----------  main --------------
-init_log
+# -------------------------------  main -------------------------------
+# First, make sure scripts root path is set, we need it to include files
+if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
+  # include logger, functions etc as needed 
+  source $scripts_github/utils/logger.sh
+  source $scripts_github/utils/functions.sh
+else
+  echo "SCRIPTS_GITHUB env variable is either not set or has invalid path!"
+  echo "The env variable should point to root dir of scripts i.e. $default_scripts_github"
+  echo "See INSTALL instructions at: https://github.com/aselvan/scripts?tab=readme-ov-file#setup"
+  exit 1
+fi
+# init logs
+log.init $my_logfile
+
 check_pre_requirements
 
 # parse commandline options
@@ -238,35 +236,33 @@ while getopts $options opt; do
     m)
       mp3_dir="$OPTARG"
       if [ ! -d $mp3_dir ] ; then
-        write_log "[ERROR]" "The MP3 directory ($mp3_dir) does not exists! (see usage)"
+        log.error "The MP3 directory ($mp3_dir) does not exists! (see usage)"
         usage
       fi
       ;;
     v)
       verbose=1
       ;;
-    ?)
-      usage
-      ;;
-    *)
+    ?|h|*)
       usage
       ;;
   esac
 done
 
 if [ ! -f "$csv_file" ] ; then
-  write_log "[ERROR]" "CSV file is missing or non-existent. See usage."
+  log.error "CSV file is missing or non-existent. See usage."
   usage
 fi
 
 if [ ! -d "$stage_dir" ] ; then
-  write_log "[ERROR]" "Stage dir is missing or non-existent. See usage."
+  log.error "Stage dir is missing or non-existent. See usage."
   usage
 else
   # prepare staging dir and cd over there for our processing
   cd $stage_dir >/dev/null 2>&1
   if [ $? -ne 0 ] ; then
-    write_log "[ERROR]" "Unable to cd to stagedir: $stage_dir" || usage
+    log.error "Unable to cd to stagedir: $stage_dir"
+    usage
   fi
   mkdir -p images
   cd images || exit 3
@@ -287,20 +283,21 @@ while IFS="," read -r src_path src_mask background_mp3_file video_title video_na
 
   # check for comments
   if [[ "$src_path" == *"#"* ]]; then
-    write_log "[INFO]" "Line #${record_count} contains comment skip ..."
+    log.debug "Line #${record_count} contains comment skip ..."
     continue
   fi
 
   # trim whitspace on all column values first
   trim_column_values
 
-  write_log "[STAT]" "### Processing line #${record_count} ###      "
-  write_log "[INFO]" "  Path:           '$src_path'"
-  write_log "[INFO]" "  Image Mask:     '$src_mask'"
-  write_log "[INFO]" "  Background:     '$background_mp3_file'"
-  write_log "[INFO]" "  Title:          '$video_title'"
-  write_log "[INFO]" "  Video Filename: '$video_name'"
-  write_log "[INFO]" "  Timestamp:      '$create_date'"
+  log.stat "### Processing line #${record_count} ###      "
+  log.stat "  Path:           $src_path"
+  log.stat "  Image Mask:     $src_mask"
+  log.stat "  Background:     $background_mp3_file"
+  title=$(echo $video_title | tr '\\n' ' ')
+  log.stat "  Title:          $title"
+  log.stat "  Video Filename: $video_name"
+  log.stat "  Timestamp:      $create_date"
   
   # finally, create video
   create_video
