@@ -1,26 +1,32 @@
 #!/usr/bin/env bash
+################################################################################
 #  
-# reset_file_timestamp.sh --- reset a file's timestamp matching the 'createdate' from its metadata
+# reset_file_timestamp.sh --- reset a file's timestamp using createtime in metadata
 #
-# This script will read the file metadata from media files like jpeg,mp3 etc using exiftool and
-# reset the OS filename timestamp to match the createdate in the metadata.
+# This script will read the file metadata from media files like jpeg,mp3 etc 
+# using exiftool and reset the OS filename timestamp to match the createdate in 
+# the metadata.
 #
 # Author : Arul Selvan
 # Created: Jul 10, 2022
 #
-#  See Also: reset_file_timestamp.sh copy_metadata.sh exif_check.sh geocode_media_files.sh add_metadata.sh reset_media_timestamp.sh exif_check.sh
+#  See Also: 
+#     reset_file_timestamp.sh copy_metadata.sh exif_check.sh geocode_media_files.sh 
+#     add_metadata.sh reset_media_timestamp.sh exif_check.sh
 #
+################################################################################
 # Version History
 # --------------
 #   22.07.10 --- Initial version
 #   23.03.21 --- Use stanard logging, with terse support
 #   24.03.31 --- Added "see also" for related tools
+################################################################################
 
 # version format YY.MM.DD
 version=24.03.31
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
-my_title="reset a file timestamp using the 'createdate' from its metadata"
+my_title="Reset file timestamp using createdate from metadata"
 my_dirname=`dirname $0`
 my_path=$(cd $my_dirname; pwd -P)
 my_logfile="/tmp/$(echo $my_name|cut -d. -f1).log"
@@ -32,9 +38,6 @@ options="p:vh?"
 
 source_path=""
 
-# ensure path for cron runs
-export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
-
 usage() {
 cat << EOF
 
@@ -44,9 +47,12 @@ Usage: $my_name [options]
   -p <path>  ---> file/path to reset timestamp using metadata's timestamp
   -v         ---> enable verbose, otherwise just errors are printed
 
-  example: $my_name -p "$HOME/*.jpg"
+example(s): 
+  $my_name -p "$HOME/*.jpg"
 
-  See Also: reset_file_timestamp.sh copy_metadata.sh exif_check.sh geocode_media_files.sh add_metadata.sh reset_media_timestamp.sh exif_check.sh
+See Also: 
+  reset_file_timestamp.sh copy_metadata.sh exif_check.sh 
+  geocode_media_files.sh add_metadata.sh reset_media_timestamp.sh exif_check.sh
 EOF
   exit 0
 }
@@ -73,13 +79,7 @@ while getopts $options opt; do
     v)
       verbose=1
       ;;
-    ?)
-      usage
-      ;;
-    h)
-      usage
-      ;;
-    *)
+    ?|h|*)
       usage
       ;;
   esac
@@ -90,11 +90,7 @@ if [ -z "$source_path" ] ; then
 fi
 
 # ensure exiftool is available
-which exiftool >/dev/null 2>&1
-if [ $? -ne 0 ] ; then
-  log.error "exiftool is required for this script to work, install it first [ex: brew install exiftool]."
-  exit 1
-fi
+check_installed exiftool
 
 # check if source path is a single file
 if [ -f "$source_path" ] ; then
@@ -105,6 +101,7 @@ else
   file_list=`ls -1 $dir_name/$file_name`
 fi
 
+log.stat "Resetting timestamp for $file_list using metadata timestamp ..."
 for fname in ${file_list} ;  do
   # if filename is directory, skip
   if [ -d $fname ] ; then
@@ -124,6 +121,6 @@ for fname in ${file_list} ;  do
     continue
   fi
 
-  log.stat "resetting date: touch -t $create_date $fname"
+  log.debug "resetting date: touch -t $create_date $fname"
   touch -t $create_date $fname
 done
