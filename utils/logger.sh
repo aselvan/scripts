@@ -2,14 +2,18 @@
 #
 # logger.sh --- include script for logging functionality (only for includes)
 #
-#
 # Author:  Arul Selvan
 # Created: Nov 14, 2023
+#
+# Wrapper for log functions used by all scripts. If a logger file name is 
+# provided on log.init function, log messages are sent to file in addition
+# to console, otherwise log messages are printed only on console.
 #
 ################################################################################
 # Version History:
 #   Nov 14, 2023 --- Original version
 #   Mar 9,  2025 --- Ensure logger file can be writable for effective user
+#   Mar 18, 2025 --- Defined effective_user and replaced SUDO_USER usage.
 ################################################################################
 
 logger_file=""
@@ -28,7 +32,9 @@ white=37
 black=39
 default=$black
 
-# note: if logger filename is not provided on log.init by caller, just log to console
+# this is also defined in functions.sh but we redefine it here in case if
+# if this file is included first.
+effective_user=`who -m | awk '{print $1;}'`
 
 # -- Log functions ---
 log.init() {
@@ -43,13 +49,12 @@ log.init() {
   fi
  
   if [ ! -z "$logger_file" ] ; then
-    # ensure log file is owned by effective user $SUDO_USER
+    # ensure log file is owned by effective user
     touch $logger_file
-    if [ ! -z $SUDO_USER ] ; then
-      chown $SUDO_USER $logger_file
-    fi
+    chown $effective_user $logger_file
   fi
 
+  # if logger filename is not provided, just log to console
   if [ ! -z "$logger_file" ] ; then
     echo -e "\e[0;${blue}m$my_version, `date +'%m/%d/%y %r'` \e[0m" | tee -a $logger_file
   else
