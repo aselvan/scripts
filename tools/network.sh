@@ -528,7 +528,12 @@ log.init $my_logfile
 if [ $os_name = "Darwin" ]; then
   pbc='pbcopy'
 else
-  pbc='xsel --clipboard --input'
+  # Linux required X running, check if DISPLAY available, otherwise make this noop
+  if [ -n "$DISPLAY" ]; then
+    pbc='xsel --clipboard --input'
+  else
+    pbc="test"
+  fi
 fi
 
 
