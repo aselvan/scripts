@@ -17,7 +17,6 @@
 #   Jul 7,  2023 --- Original version
 #   Jan 23, 2025 --- Use standard includes for logging, documentation update etc
 #   Feb 4,  2025 --- Copy rules file from source, no longer look in pwd
-#
 ################################################################################
 
 # version format YY.MM.DD
@@ -37,7 +36,7 @@ options="r:vh?"
 anchor_name="com.selvansoft"
 anchor_path="/etc/pf.anchors"
 pf_conf="/etc/pf.conf"
-rules_file=""
+rules_file="$scripts_github/firewall/pf_rules_simple.conf"
 
 # ensure path for cron runs
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
@@ -47,11 +46,13 @@ usage() {
 $my_name --- $my_title
 
 Usage: $my_name [options]
-  -r <file>  ---> firewall rules file name to install [Default: $rules_file]
+  -r <file>  ---> firewall rules file to install [Default: $rules_file]
   -v         ---> verbose mode prints info messages, otherwise just errors are printed
   -h         ---> print usage/help
 
-  example: $my_name
+example(s): 
+  sudo -E $my_name
+  sudo -E $my_name -r /path/myrules.conf
   
 EOF
   exit 0
@@ -63,7 +64,6 @@ if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
   # include logger, functions etc as needed 
   source $scripts_github/utils/logger.sh
   source $scripts_github/utils/functions.sh
-  rules_file="$scripts_github/firewall/pf_rules_simple.conf"
 else
   echo "SCRIPTS_GITHUB env variable is either not set or has invalid path!"
   echo "The env variable should point to root dir of scripts i.e. $default_scripts_github"
@@ -72,9 +72,6 @@ else
 fi
 # init logs
 log.init $my_logfile
-
-# ensure root access with inherited env
-check_root 1
 
 # parse commandline options
 while getopts $options opt ; do
@@ -90,6 +87,9 @@ while getopts $options opt ; do
       ;;
   esac
 done
+
+# ensure root access
+check_root
 
 # check if rules file is valid
 if [ ! -f $rules_file ] ; then
