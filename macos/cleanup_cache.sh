@@ -17,10 +17,11 @@
 #                    spotlight index
 #   Feb 20, 2025 --- Remove spotlight indexing on / when cleanup requested
 #   Feb 22, 2025 --- Remove spotlight indexing on *all* volumes
+#   Mar 18, 2025 --- Use effective_user in place of get_current_user
 #################################################################################
 
 # version format YY.MM.DD
-version=25.02.22
+version=25.03.18
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Wipe macOS cache, logs, revision backup, spotlight etc."
@@ -152,7 +153,7 @@ check_root
 
 # if user list is not provided, user current user by default
 if [ -z "$user_list" ] ; then
-  user_list=$(get_current_user)
+  user_list=$effective_user
 fi
 
 for user in $user_list ; do
