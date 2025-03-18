@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+###############################################################################
 #
 # network.sh --- Wrapper for many useful network commands.
 #
@@ -8,14 +9,16 @@
 # Author:  Arul Selvan
 # Created: Jul 29, 2023
 #
+###############################################################################
 # Version History:
 #   Jul 29, 2023 --- Original version
 #   Nov 26, 2024 --- Renamed to network.sh (was network_info.sh) and added new functionality
 #   Dec 25, 2024 --- Added wifi stats, ssid etc
-#
+#   Mar 18, 2025 --- Use effective_user in place of get_current_user
+###############################################################################
 
 # version format YY.MM.DD
-version=2024.12.25
+version=25.03.18
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl network tools wrapper all in one place"
@@ -50,16 +53,13 @@ ssid=""
 
 airport="/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport"
 
-# ensure path for cron runs (prioritize usr/local first)
-export PATH="/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
-
 usage() {
   cat << EOF
 $my_name --- $my_title
 
 Usage: $my_name [options]
   -c <command>     ---> command to run [see supported commands below]  
-  -i <interface>   ---> network interface to use for various commands that need interface [Default: $iface]
+  -i <interface>   ---> network interface to use for various commands that needs interface
   -n <network>     ---> optional CIDR address to scan [used in 'scan' command Default: $my_net]
   -s <host:[port]> ---> Host and port to test [Needed for commnans like "testsvc|textfw|traceroute|dnsperf" etc]
   -H <hostlist>    ---> List of hosts to perform dns lookup performance [used in multidnsperf command]
@@ -69,9 +69,13 @@ Usage: $my_name [options]
   -v               ---> enable verbose, otherwise just errors are printed
   -h               ---> print usage/help
 
-Supported commands: $supported_commands  
-example: $my_name -c info
-  
+Supported commands: 
+  $supported_commands
+
+example(s): 
+  $my_name -c info
+  $my_name -c traceroute -s yahoo.com
+  $my_name -c testfw -s google.com:443
 EOF
   exit 0
 }
@@ -79,14 +83,6 @@ EOF
 function not_implemented() {
   log.warn "Not implemented for $os_name OS yet, exiting..."
   exit 99
-}
-
-reset_logfile_perm() {
-  # just make sure the log file is writable for next run which is likely non-sudo
-  chown $SUDO_USER $my_logfile
-  if [ -f $ ] ; then
-    chmod $SUDO_USER $arp_entries
-  fi
 }
 
 function get_interface_linux() {
@@ -101,7 +97,6 @@ function get_ssid_linux() {
 function get_wifistats_linux() {
   not_implemented
 }
-
 
 
 # detect active, IP assigned interface. The first one is returned
@@ -183,7 +178,8 @@ function get_wifistats_mac() {
   log.stat "\tNoise:   $noise [-120 to -90: Excellent; -90 to -70: Fair; > -70: Poor]" 
   log.stat "\tTx Rate: $txrate"
 
-  reset_logfile_perm
+  # ensure this file is writable incase if subsequent run of this script is by non-sudo user
+  chmod $effective_user $arp_entries 
   
 }
 
@@ -359,7 +355,8 @@ function traceroute() {
   log.stat "Traceroute to $host using nmap ..."
   nmap -sn --traceroute $host
 
-  reset_logfile_perm
+  # ensure this file is writable incase if subsequent run of this script is by non-sudo user
+  chmod $effective_user $arp_entries 
 }
 
 function dnsperf() {
@@ -415,7 +412,8 @@ function spoofmac() {
   else
     log.stat "\tSpoofing failed on $mac_to_spoof!" $red
   fi
-  reset_logfile_perm
+  # ensure this file is writable incase if subsequent run of this script is by non-sudo user
+  chmod $effective_user $arp_entries 
 }
 
 function genmac() {
@@ -470,7 +468,8 @@ function do_dhcprenew() {
   log.stat "\tSwitch to DHCP now ..."
   sudo ipconfig set $iface DHCP
   log.stat "\tShould be renewed now."
-  reset_logfile_perm  
+  # ensure this file is writable incase if subsequent run of this script is by non-sudo user
+  chmod $effective_user $arp_entries 
 }
 
 
