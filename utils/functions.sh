@@ -14,6 +14,7 @@
 #   Feb 21, 2025 --- added pidof function
 #   Feb 28, 2025 --- added macos_type, check_mac functions.
 #   Mar 4,  2025 --- Scripts no longer need to set PATH overrides
+#   Mar 18, 2025 --- Defined effective_user.
 ################################################################################
 
 # os and other vars
@@ -22,6 +23,7 @@ os_name=`uname -s`
 cpu_arch=`uname -mo`
 cmdline_args=`printf "%s " $@`
 current_timestamp=`date +%s`
+effective_user=`who -m | awk '{print $1;}'`
 
 # calculate the elapsed time (shell automatically increments the var SECONDS magically)
 SECONDS=0
@@ -202,7 +204,8 @@ signal_handler() {
 # require root priv with inherited environment of the effective user
 check_root() {
   if [ `id -u` -ne 0 ] ; then
-    log.error "${FUNCNAME[0]}(): root access required to run this script, re-run with 'sudo -E $my_name'"
+    log.error "${FUNCNAME[0]}(): root access required to run this script!"
+    log.error "re-run as: sudo -E $my_name $cmdline_args"
     exit 1
   fi
 }
@@ -235,11 +238,6 @@ macos_type() {
   else
     echo "Unknown"
   fi
-}
-
-get_current_user() {
-  # correctly return user if elevated run
-  echo `who -m | awk '{print $1;}'`
 }
 
 check_installed() {
