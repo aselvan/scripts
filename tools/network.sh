@@ -14,7 +14,8 @@
 #   Jul 29, 2023 --- Original version
 #   Nov 26, 2024 --- Renamed to network.sh (was network_info.sh) and added new functionality
 #   Dec 25, 2024 --- Added wifi stats, ssid etc
-#   Mar 18, 2025 --- Use effective_user in place of get_current_user
+#   Mar 18, 2025 --- Use effective_user in place of get_current_user. Also
+#                    implemented interface related functions in Linux
 ###############################################################################
 
 # version format YY.MM.DD
@@ -84,10 +85,6 @@ function not_implemented() {
   log.warn "Not implemented for $os_name OS yet, exiting..."
   exit 99
 }
-
-function get_interface_linux() {
-  not_implemented
-}
 function get_wifi_interface_linux() {
   not_implemented
 }
@@ -98,6 +95,23 @@ function get_wifistats_linux() {
   not_implemented
 }
 
+function get_interface_linux() {
+  # Loop through each interface
+  for i in $(ls /sys/class/net); do
+    local mac_addr=$(cat /sys/class/net/"$i"/address)
+    local ipaddr=$(ip -4 addr show "$i" 2>/dev/null |egrep "global|host"|awk '{print $2}'|| echo "N/A")
+
+    # Check if the interface is active (UP)
+    local state=$(cat /sys/class/net/"$i"/operstate)
+    if [[ "$state" == "up" ]]; then
+      iface=$i
+      log.debug "Using interface: $iface"
+      return
+    fi
+    log.error "No active interface found ... exiting"
+    exit 10
+  done
+}
 
 # detect active, IP assigned interface. The first one is returned
 function get_interface_mac() {
@@ -112,6 +126,7 @@ function get_interface_mac() {
   iface="en0"
   log.debug "Using interface: $iface"
 }
+
 function get_interface() {
   case $os_name in 
     Darwin)
@@ -177,10 +192,6 @@ function get_wifistats_mac() {
   log.stat "\tRSSI:    $rssi [-50 to -60: Excellent; -70 to -80: Fair ; < -80: Poor]"
   log.stat "\tNoise:   $noise [-120 to -90: Excellent; -90 to -70: Fair; > -70: Poor]" 
   log.stat "\tTx Rate: $txrate"
-
-  # ensure this file is writable incase if subsequent run of this script is by non-sudo user
-  chmod $effective_user $arp_entries 
-  
 }
 
 function get_wifistats() {
@@ -208,9 +219,10 @@ function get_ip_and_network() {
       fi
       ;;
     Linux)
-      my_ip=`hostname -I | awk '{print $1}'`
+      # note grab the second one which is realip, the first one is link-local
+      my_ip=`hostname -I | awk '{print $2}'`
       ;;
-    *)
+    *)int
       not_implemented
       ;;
   esac
@@ -317,17 +329,47 @@ function testsvc() {
   log.stat "\t$result" $green
 }
 
-# list all the interfaces in this host
-function list_interfaces() {
+function list_interfaces_mac() {
   for i in `ipconfig getiflist` ; do
-    mac_addr=`ifconfig $i | grep ether| awk '{print $2;}'`  
-    ipaddr=`ipconfig getifaddr $i`
+    local mac_addr=`ifconfig $i | grep ether| awk '{print $2;}'`  
+    local ipaddr=`ipconfig getifaddr $i`
     if [ ! -z "$ipaddr" ] ; then
-      log.stat "\t$i : active ; MAC: $mac_addr; IP: $ipaddr" $blue
+      log.stat "\t$i : active ; MAC: $mac_addr; IP: $ipaddr" $green
     else
-      log.stat "\t$i : inactive ; MAC: $mac_addr; IP: N/A" $green
+      log.stat "\t$i : inactive ; MAC: $mac_addr; IP: N/A" $red
     fi
   done
+}
+
+function list_interfaces_linux() {
+  # Loop through each interface
+  for i in $(ls /sys/class/net); do
+    local mac_addr=$(cat /sys/class/net/"$i"/address)
+    local ipaddr=$(ip -4 addr show "$i" 2>/dev/null |egrep "global|host"|awk '{print $2}'|| echo "N/A")
+
+    # Check if the interface is active (UP)
+    local state=$(cat /sys/class/net/"$i"/operstate)
+    if [[ "$state" == "up" ]]; then
+      log.stat "\t$i : active ; MAC: $mac_addr; IP: $ipaddr" $green
+    else
+      log.stat "\t$i : inactive ; MAC: $mac_addr; IP: $ipaddr" $red      
+    fi
+  done
+}
+
+# list all the interfaces in this host
+function list_interfaces() {
+  case $os_name in 
+    Darwin)
+      list_interfaces_mac
+      ;;
+    Linux)
+      list_interfaces_linux
+      ;;
+    *)
+      not_implemented
+      ;;
+  esac
 }
 
 function testfw() {
@@ -355,8 +397,6 @@ function traceroute() {
   log.stat "Traceroute to $host using nmap ..."
   nmap -sn --traceroute $host
 
-  # ensure this file is writable incase if subsequent run of this script is by non-sudo user
-  chmod $effective_user $arp_entries 
 }
 
 function dnsperf() {
@@ -412,8 +452,6 @@ function spoofmac() {
   else
     log.stat "\tSpoofing failed on $mac_to_spoof!" $red
   fi
-  # ensure this file is writable incase if subsequent run of this script is by non-sudo user
-  chmod $effective_user $arp_entries 
 }
 
 function genmac() {
@@ -468,8 +506,6 @@ function do_dhcprenew() {
   log.stat "\tSwitch to DHCP now ..."
   sudo ipconfig set $iface DHCP
   log.stat "\tShould be renewed now."
-  # ensure this file is writable incase if subsequent run of this script is by non-sudo user
-  chmod $effective_user $arp_entries 
 }
 
 
