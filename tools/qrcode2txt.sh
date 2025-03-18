@@ -20,10 +20,11 @@
 ################################################################################
 # Version History:
 #   Jan 31, 2025 --- Original version
+#   Mar 17, 2025 --- Added dir argument to look for qr-code files
 ################################################################################
 
 # version format YY.MM.DD
-version=25.01.31
+version=25.03.17
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Convert QR-Code to Text"
@@ -36,27 +37,26 @@ default_scripts_github=$HOME/src/scripts.github
 scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
 # commandline options
-options="e:o:vh?"
-
-# ensure path for cron runs (prioritize usr/local first)
-export PATH="/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
+options="e:o:d:vh?"
 
 output_file="/tmp/$(echo $my_name|cut -d. -f1).txt"
 file_ext="png"
+dir_path="."
 
 usage() {
   cat << EOF
 $my_name --- $my_title
 
 Usage: $my_name [options]
-  -e <ext>    ---> File extention for all qrcode files [Default: $file_ext]
+  -d <path>   ---> Directory path to look for qr-code files [Default: "$dir_path"]
+  -e <ext>    ---> File extention for all qrcode files [Default: *.$file_ext]
   -o <file>   ---> Output text file to save qrcode secrets [Default: $output_file}
   -v          ---> enable verbose, otherwise just errors are printed.
   -h          ---> print usage/help.
 
 example: 
   $my_name
-  $my_name -o allcodes.txt -e png
+  $my_name -o allcodes.txt -d /tmp -e png
 
 EOF
   exit 0
@@ -80,6 +80,9 @@ log.init $my_logfile
 # parse commandline options
 while getopts $options opt ; do
   case $opt in
+    d)
+      dir_path="$OPTARG"
+      ;;
     e)
       file_ext="$OPTARG"
       ;;
@@ -98,11 +101,19 @@ done
 # check for required tool
 check_installed zbarimg
 
-log.stat "Creating text file with all QR-code files..."
+log.stat "Creating text file with all QR-code files in: $dir_path/*.$file_ext"
 
 rm -rf $output_file
-find . -name "*.${file_ext}" -type f | while read -r file; do
+found=0
+find $dir_path -name "*.${file_ext}" -type f | while read -r file; do
   echo "File: $file" >> $output_file
   zbarimg -q $file >> $output_file
   echo "" >> $output_file
+  found=1
 done
+
+if [ $found -eq 0 ] ; then
+  log.error "There are no *.$file_ext files found under dir $dir_path"
+else
+  log.stat "qr-code output file: $output_file"
+fi
