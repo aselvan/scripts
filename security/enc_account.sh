@@ -186,8 +186,11 @@ adb devices|awk 'NR>1 {print $1}'|grep $aruls_phone
 if [ $? -eq 0 ]; then
   log.stat "Backing up to $aruls_phone ..."
   $scripts_github/andriod/adb_push.sh -s $aruls_phone -f $encFileName -d /sdcard/data/docs/
-  # the termux app (we use that to decrypt the enc file) can read only media file, so add .jpg 
+  # the termux app (we use that to decrypt the enc file) can access only media file, so add .jpg 
   $scripts_github/andriod/adb_shell.sh -s $aruls_phone -c "cp /sdcard/data/docs/${encFileName} /sdcard/data/docs/${encFileName}.jpg"
+  
+  # copy for Android Linux VM (new on Pixel7+ from Mar 2025, enable it in Developer mode)
+  $scripts_github/andriod/adb_push.sh -s $aruls_phone -f $encFileName -d /sdcard/Download/data/
 else
   log.warn "$aruls_phone is not available, skipping ..."
 fi
