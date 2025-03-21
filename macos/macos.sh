@@ -175,21 +175,22 @@ do_disablespotlight() {
 show_cpu_temp() {
   local t=$(macos_type)
   if [ $t == "Intel" ] ; then
-    log.stat "CPU Temp: `sudo powermetrics --samplers smc -n1|grep -i "CPU die"|awk '{print $4,$5}'`"
+    log.stat "CPU Temp: `sudo powermetrics --samplers smc -n1|grep -i "CPU die"|awk '{print $4,$5}'` (Normal: 40-60 C, High: >80 C)"
   elif [ $t == "Apple" ] ; then
     local tvalue=`sudo powermetrics -s thermal -n1|awk '/Current pressure/ {print $4}'`
+    local range="; [Possible values: Nominal, Fair, Serious, Critical]"
     case $tvalue in
       Nominal)
-        log.stat "CPU Temp: $tvalue" $green
+        log.stat "CPU Temp: $tvalue $range" $green
         ;;
       Fair)
-        log.stat "CPU Temp: $tvalue"
+        log.stat "CPU Temp: $tvalue $range "
         ;;
       Serious)
-        log.stat "CPU Temp: $tvalue" $yellow
+        log.stat "CPU Temp: $tvalue $range " $yellow
         ;;
       Critical)
-        log.stat "CPU Temp: $tvalue" $red
+        log.stat "CPU Temp: $tvalue $range " $red
         ;;
       *)
         log.stat "CPU Temp: Unknown" $red
