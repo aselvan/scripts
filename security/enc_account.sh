@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#
+################################################################################
 # enc_account.sh --- encrypts the account password plain file and makes a backup 
 # to remote ssh path.
 #
@@ -11,15 +11,16 @@
 #
 # Author:  Arul Selvan
 # Version: Dec 26, 2018
-#
+################################################################################
 # Version History
 #   Dec 26, 2018  --- original version
 #   Jan 20, 2024  --- added veracrypt, phone additional storage, use logger/function 
 #                     includes, openssl options etc
-#
+#   Mar 21, 2025  --- Added status log lines, misl doc change
+################################################################################
 
 # version format YY.MM.DD
-version=24.01.20
+version=25.03.21
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Encrypts the plain password file and makes a backup"
@@ -92,10 +93,12 @@ if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
   source $scripts_github/utils/logger.sh
   source $scripts_github/utils/functions.sh
 else
-  echo "ERROR: SCRIPTS_GITHUB env variable is either not set or has invalid path!"
+  echo "SCRIPTS_GITHUB env variable is either not set or has invalid path!"
   echo "The env variable should point to root dir of scripts i.e. $default_scripts_github"
+  echo "See INSTALL instructions at: https://github.com/aselvan/scripts?tab=readme-ov-file#setup"
   exit 1
 fi
+
 # init logs
 log.init $my_logfile
 init_osenv
@@ -122,24 +125,29 @@ if [ ! -f $encFileName ]; then
 fi
 
 # backup the existing file
-log.stat "Backing up the existing..."
+log.stat "---------- Back up existing files ----------" $green
 cp $encFileName $encFileName.backup
 cp $encFileNameYubi $encFileNameYubi.backup
 cp $encFileNameGpg $encFileNameGpg.backup
+log.stat "Done" $green
 
 # encrypt w/ openssl (enforce digest to md5 since different openssl libs default differently
 # Note: make sure to add -md md5 on decription and not rely on defaults.
-log.stat "Encrypting w/ openssl ..."
+log.stat "---------- Encrypting w/ openssl ----------" $green
 openssl enc -e $openssl_opt -in $plainFile -out $encFileName
+log.stat "Done" $green
 
 # encrypt w/ yubi key ($usbc_key)
-log.stat "Encrypting w/ Yubi Key USBC ($usbc_key) ..."
+log.stat "---------- Encrypting w/ Yubi Key USBC ($usbc_key) ----------" $green
 cat $plainFile |gpg -ae -r $usbc_key > $encFileNameYubi
+log.stat "Done" $green
 
 # finally enrypt w/ gpg
-log.stat "Encrypting w/ gpg ..."
+log.stat "---------- Encrypting w/ gpg ---------- " $green
 gpg $gpg_opt $plainFile 2>&1 >> $my_logfile
+log.stat "Done" $green
 
+log.stat "---------- Remote backup/storage ----------" $green
 # backup to remote scp path (first check if server is available)
 log.stat "Checking remote server '$remote_host' is available to backup ..."
 /sbin/ping -t30 -c1 -qo $remote_host >/dev/null 2>&1
@@ -171,6 +179,7 @@ else
 fi
 
 # see if we have veracrypt volume mounted, if so copy there as well
+log.stat "---------- Veracrypt backup/storage ----------" $green
 log.stat "Checking for veracrypt volume mounted, if copy there including plaintext file ..."
 $veracrypt_bin -t -l 2>&1 > /dev/null
 if [ $? -eq 0 ]; then
@@ -179,8 +188,10 @@ if [ $? -eq 0 ]; then
 else
   log.warn "$veracrypt_mount not available, skipping ..."  
 fi
+log.stat "Done" $green
 
 # finally, if we have the arulspixel7 phone connected to adb, push it there as well
+log.stat "---------- Phone backup/storage ----------" $green
 log.stat "Checking for $aruls_phone ..."
 adb devices|awk 'NR>1 {print $1}'|grep $aruls_phone
 if [ $? -eq 0 ]; then
@@ -191,6 +202,7 @@ if [ $? -eq 0 ]; then
   
   # copy for Android Linux VM (new on Pixel7+ from Mar 2025, enable it in Developer mode)
   $scripts_github/andriod/adb_push.sh -s $aruls_phone -f $encFileName -d /sdcard/Download/data/
+  log.stat "Done" $green
 else
   log.warn "$aruls_phone is not available, skipping ..."
 fi
