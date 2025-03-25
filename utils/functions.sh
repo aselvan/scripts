@@ -279,13 +279,13 @@ os_code_name() {
   esac
 }
 
-os_release() {
+os_version() {
   case $os_name in 
     Darwin)    
       echo "`sw_vers --productVersion`"
       ;;
     Linux)
-      echo "`lsb_release -sr`"
+      echo "`uname -r`"
       ;;
     *)
       echo "0"
@@ -299,7 +299,7 @@ os_vendor() {
       echo "`sw_vers --productName`"
       ;;
     Linux)
-      echo "`lsb_release -si`"
+      echo "`lsb_release -sd`"
       ;;
     *)
       echo "Unknown"

@@ -201,6 +201,13 @@ show_cpu_temp() {
   fi
 }
 
+show_version() {
+  log.stat "OS Details:" $green
+  log.stat "\tName: $os_name"
+  log.stat "\tVendor:  $(os_vendor)"
+  log.stat "\tCodeName: $(os_code_name)"
+  log.stat "\tVersion:  $(os_version)"
+}
 
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
@@ -258,7 +265,7 @@ case $command_name in
     showvmstat   
     ;;
   version)
-    sw_vers   
+    show_version 
     ;;
   system)
     system_profiler SPSoftwareDataType   
