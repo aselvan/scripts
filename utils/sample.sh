@@ -57,6 +57,12 @@ fi
 # init logs
 log.init $my_logfile
 
+log.stat "OS Details:" $green
+log.stat "\tName: $os_name"
+log.stat "\tVendor:  $(os_vendor)"
+log.stat "\tCodeName: $(os_code_name)"
+log.stat "\tRelease:  $(os_release)"
+
 # check pidof function
 echo "PIDS: $(pidof "bash")"
 

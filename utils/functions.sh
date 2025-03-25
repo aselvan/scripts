@@ -15,6 +15,7 @@
 #   Feb 28, 2025 --- added macos_type, check_mac functions.
 #   Mar 4,  2025 --- Scripts no longer need to set PATH overrides
 #   Mar 18, 2025 --- Defined effective_user.
+#   Mar 25, 2025 --- Added os_relese, os_vendor, os_codename functions
 ################################################################################
 
 # os and other vars
@@ -239,6 +240,74 @@ macos_type() {
     echo "Unknown"
   fi
 }
+
+macos_code_name() {
+  local major_version=`sw_vers --productVersion|awk -F. '{print $1}'`
+  case $major_version in 
+    11) 
+      echo "Big Sur"
+      ;;
+    12) 
+      echo "Monterey"
+      ;;
+    13) 
+      echo "Ventura"
+      ;;
+    14) 
+      echo "Sonoma"
+      ;;
+    15) 
+      echo "Sequoia"
+      ;;
+    *)
+      echo "Unknown"
+      ;;
+  esac
+}
+
+os_code_name() {
+  case $os_name in 
+    Darwin)    
+      macos_code_name
+      ;;
+    Linux)
+      echo "`lsb_release -sc`"
+      ;;
+    *)
+      echo "Unknown"
+      ;;
+  esac
+}
+
+os_release() {
+  case $os_name in 
+    Darwin)    
+      echo "`sw_vers --productVersion`"
+      ;;
+    Linux)
+      echo "`lsb_release -sr`"
+      ;;
+    *)
+      echo "0"
+    ;;
+  esac
+}
+
+os_vendor() {
+  case $os_name in 
+    Darwin)
+      echo "`sw_vers --productName`"
+      ;;
+    Linux)
+      echo "`lsb_release -si`"
+      ;;
+    *)
+      echo "Unknown"
+      ;;
+  esac
+
+}
+
 
 check_installed() {
   local app=$1
