@@ -301,7 +301,7 @@ case $command_name in
     do_kill
     ;;
   type)
-    log.stat "MacOS type: `get_macos_type`"
+    log.stat "MacOS type: `macos_type`"
     ;;
   cputemp)
     # need root access
