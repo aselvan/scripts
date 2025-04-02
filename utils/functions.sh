@@ -12,7 +12,7 @@
 #   May 19, 2024 --- Added version_le, version_ge functions
 #   Feb 16, 2025 --- check_root message changed to include -E to inherit user env
 #   Feb 21, 2025 --- added pidof function
-#   Feb 28, 2025 --- added macos_type, check_mac functions.
+#   Feb 28, 2025 --- added macos_arch, check_mac functions.
 #   Mar 4,  2025 --- Scripts no longer need to set PATH overrides
 #   Mar 18, 2025 --- Defined effective_user.
 #   Mar 25, 2025 --- Added os_relese, os_vendor, os_codename functions
@@ -230,7 +230,7 @@ check_mac() {
 }
 
 # returns "Intel" or "Apple" or "Unknown"
-macos_type() {
+macos_arch() {
   local t=`sysctl -n machdep.cpu.brand_string`
   if [[ $t == *"Intel"* ]] ; then
     echo "Intel"

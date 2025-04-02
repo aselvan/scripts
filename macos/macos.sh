@@ -14,7 +14,7 @@
 #   Feb 20, 2025 --- Added spotlight info
 #   Feb 21, 2025 --- Added kill command for macOS cpu hogs we can't get rid of.
 #   Feb 22, 2025 --- Added disablespotlight
-#   Feb 28, 2025 --- Added type, cputemp etc
+#   Feb 28, 2025 --- Added arch, cputemp etc
 #   Mar 6,  2025 --- Remove xpc plist on kill, also added kill list file option
 ################################################################################
 
@@ -35,7 +35,7 @@ options="c:l:a:kvh?"
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 arg=""
 command_name=""
-supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight|kill|disablespotlight|type|cputemp"
+supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight|kill|disablespotlight|arch|cputemp"
 volume_level=""
 spolight_path="/System/Volumes/Data/.Spotlight-V100"
 spotlight_volumes="/ /System/Volumes/Data"
@@ -173,7 +173,7 @@ do_disablespotlight() {
 }
 
 show_cpu_temp() {
-  local t=$(macos_type)
+  local t=$(macos_arch)
   if [ $t == "Intel" ] ; then
     log.stat "CPU Temp: `sudo powermetrics --samplers smc -n1|grep -i "CPU die"|awk '{print $4,$5}'` (Normal: 40-60 C, High: >80 C)"
   elif [ $t == "Apple" ] ; then
@@ -300,8 +300,8 @@ case $command_name in
   kill)
     do_kill
     ;;
-  type)
-    log.stat "MacOS type: `macos_type`"
+  arch)
+    log.stat "MacOS CPU Architecture: `macos_arch`"
     ;;
   cputemp)
     # need root access
