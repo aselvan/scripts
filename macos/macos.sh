@@ -35,7 +35,7 @@ options="c:l:a:kvh?"
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 arg=""
 command_name=""
-supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight|kill|disablespotlight|arch|cputemp"
+supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight|\n kill|disablespotlight|arch|cputemp|speed|app"
 volume_level=""
 spolight_path="/System/Volumes/Data/.Spotlight-V100"
 spotlight_volumes="/ /System/Volumes/Data"
@@ -58,17 +58,21 @@ $my_name --- $my_title
 Usage: $my_name [options]
   -c <command>   ---> command to run [see supported commands below]
   -l <number>    ---> volume level [used by 'volume' command range: 1-100]
-  -a <arg>       ---> arguments for commands like bundle or kill etc.
-  -k             ---> enables writing $killed_list_file showing what was killed [note: it may grow to large size]
+  -a <arg>       ---> arguments for commands like bundle|kill|app etc.
+  -k             ---> enables writing $killed_list_file showing what was killed 
+                      [note: the file may grow to large size]
   -v             ---> enable verbose, otherwise just errors are printed
   -h             ---> print usage/help
 
-Supported commands: $supported_commands
+Supported commands: 
+  $(echo -e $supported_commands)
+
 examples(s)
   $my_name -c mem
   $my_name -c bundle -a textedit
   $my_name -c volume -l 25
-  $my_name -c kill -a "$kill_list"
+  $my_name -c kill -a "mediaanalysisd photoanalysisd photolibraryd"
+  $my_name -c app -a "Google Chrome"
   
 EOF
   exit 0
@@ -118,7 +122,7 @@ showswap() {
 
 showdisk() {
   local df_output=`df -h /System/Volumes/Data/|tail -1`
-  log.stat "`echo $df_output|awk '{print "  Total: ",$2,"\n  Used:  ",$3,"\n  Available: ",$4,"\n  Capacity:  ",$5}'`"
+  log.stat "`echo $df_output|awk '{print "  Total: ",$2,"\n  Used:  ",$3,"\n  Available: ",$4,"\n  Percent Used:  ",$5}'`"
 }
 
 showspotlight() {
@@ -209,6 +213,16 @@ show_version() {
   log.stat "\tVersion:  $(os_version)"
 }
 
+show_app() {
+  # if argument provided just show the specific app info, otherwise list all
+  if [ ! -z "$arg" ] ; then
+    lsappinfo info "$arg"
+  else
+    lsappinfo list
+  fi
+
+}
+
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
 if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
@@ -250,7 +264,7 @@ done
 
 # check for any commands
 if [ -z "$command_name" ] ; then
-  log.error "Missing arguments, see usage below"
+  log.error "Missing command, see usage below"
   usage
 fi
 
@@ -307,6 +321,12 @@ case $command_name in
     # need root access
     check_root
     show_cpu_temp
+    ;;
+  speed)
+    networkquality -s
+    ;;
+  app)
+    show_app
     ;;
   *)
     log.error "Invalid command: $command_name"
