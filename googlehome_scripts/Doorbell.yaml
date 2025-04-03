@@ -27,5 +27,4 @@ automations:
         message: Someone may be at the door, but I am not 100% sure.
         devices:
           - kitchen - Kitchen
-          - Homegen2
 

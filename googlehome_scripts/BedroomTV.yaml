@@ -11,7 +11,7 @@ automations:
     type: device.state.OnOff
     state: on
     is: true
-    device: TV - Bedroom
+    device: TV
   condition:
     type: time.between
     after: sunset+30min
@@ -27,6 +27,6 @@ automations:
     - type: device.command.OnOff
       on: true
       devices:
-        - bsl2 - Bedroom
-        - bsl - Bedroom
+        - bsl2 - Bedside
+        - bsl - Bedside
 

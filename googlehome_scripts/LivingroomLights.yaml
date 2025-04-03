@@ -9,9 +9,11 @@ metadata:
 automations:
   - starters:
       - type: time.schedule
-        at: 7:00 AM
+        at: 7:30 AM
       - type: time.schedule
-        at: sunset-1hour
+        at: 7:00 PM
+      - type: time.schedule
+        at: sunset-15min
       - type: assistant.event.OkGoogle
         eventData: query
         is: "living room on"
@@ -25,9 +27,9 @@ automations:
           - lr4 - Living Room
   - starters:
       - type: time.schedule
-        at: 11:00 PM
+        at: 10:30 PM
       - type: time.schedule
-        at: 02:30 PM
+        at: 2:30 PM
       - type: assistant.event.OkGoogle
         eventData: query
         is: "living room off"
@@ -45,25 +47,25 @@ automations:
         eventData: query
         is: "living room and kitchen on"
     actions:
-      - type: device.command.OnOff # Turn the device on or off.
+      - type: device.command.OnOff # Turn the device on or off. # Turn the device on or off.
         on: true
         devices:
+          - kl1 - Kitchen
           - lr1 - Living Room
           - lr2 - Living Room
           - lr3 - Living Room
           - lr4 - Living Room
-          - kl1 - Kitchen
   - starters:
       - type: assistant.event.OkGoogle
         eventData: query
         is: "living room and kitchen off"
     actions:
-      - type: device.command.OnOff # Turn the device on or off.
+      - type: device.command.OnOff # Turn the device on or off. # Turn the device on or off.
         on: false
         devices:
+          - kl1 - Kitchen
           - lr1 - Living Room
           - lr2 - Living Room
           - lr3 - Living Room
           - lr4 - Living Room
-          - kl1 - Kitchen
 

@@ -17,8 +17,8 @@ automations:
       - type: device.command.OnOff # Turn the device on or off.
         on: true
         devices:
-          - bsl - Bedroom
-          - bsl2 - Bedroom
+          - bsl - Bedside
+          - bsl2 - Bedside
       - type: device.command.OnOff # Turn the device on or off.
         on: false
         devices:

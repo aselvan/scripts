@@ -25,8 +25,8 @@ automations:
           - b2 - Bedroom
           - b3 - Bedroom
           - b4 - Bedroom
-          - bsl - Bedside
           - bsl2 - Bedside
+          - bsl - Bedside
           - lr1 - Living Room
           - lr2 - Living Room
           - lr3 - Living Room

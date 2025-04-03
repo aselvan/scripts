@@ -56,7 +56,7 @@ automations:
       - type: device.command.OnOff
         on: false
         devices:
-          - kitchen light - Kitchen
+          - kl1 - Kitchen
   # Starter: When garage door opens, turn on kitchen/living room if night time.
   - starters:
       - type: device.state.OpenClose
@@ -75,5 +75,5 @@ automations:
           - lr2 - Living Room
           - lr3 - Living Room
           - lr4 - Living Room
-          - kitchen light - Kitchen
+          - kl1 - Kitchen
 

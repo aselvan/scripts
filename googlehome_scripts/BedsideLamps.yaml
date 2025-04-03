@@ -9,10 +9,13 @@ metadata:
 automations:
   - starters:
       - type: time.schedule
-        at: sunset-45min
+        at: sunset-15min
       - type: assistant.event.OkGoogle
         eventData: query
-        is: "bedside  on"
+        is: "bedside on"
+      - type: assistant.event.OkGoogle
+        eventData: query
+        is: "lamp on"
     actions:
       - type: device.command.OnOff # Turn the device on or off.
         on: true
@@ -22,7 +25,10 @@ automations:
   - starters:
       - type: assistant.event.OkGoogle
         eventData: query
-        is: "bedside  off"
+        is: "bedside off"
+      - type: assistant.event.OkGoogle
+        eventData: query
+        is: "lamp off"
       - type: time.schedule
         at: 11:30 PM
       - type: time.schedule
@@ -35,3 +41,4 @@ automations:
         devices:
           - bsl - Bedside
           - bsl2 - Bedside
+

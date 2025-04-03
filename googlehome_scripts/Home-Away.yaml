@@ -23,9 +23,10 @@ automations:
           - lr2 - Living Room
           - lr3 - Living Room
           - lr4 - Living Room
-          - kitchen light - Kitchen
+          - kl1 - Kitchen
         on: true
   # Turn off living room lights when leaving home during day
+  # Update: AWAY is randomly triggered so comment action for now and send a message instead
   - starters:
       - type: home.state.HomePresence
         state: homePresenceMode
@@ -35,12 +36,17 @@ automations:
       after: sunrise
       before: sunset
     actions:
-      - type: device.command.OnOff
+      - type: assistant.command.Broadcast
+        message: Away event noticed, is anyone home?
         devices:
-          - lr1 - Living Room
-          - lr2 - Living Room
-          - lr3 - Living Room
-          - lr4 - Living Room
-          - kitchen light - Kitchen
-        on: false
+          - Homegen1 - Living Room
+          - kitchen - Kitchen
+      #- type: device.command.OnOff
+      #  devices:
+      #    - lr1 - Living Room
+      #    - lr2 - Living Room
+      #    - lr3 - Living Room
+      #    - lr4 - Living Room
+      #    - kl1 - Kitchen
+      #  on: false
 

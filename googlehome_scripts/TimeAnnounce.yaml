@@ -37,13 +37,6 @@ automations:
         devices: kitchen - Kitchen
   - starters:
       - type: time.schedule
-        at: 11:00 AM
-    actions:
-      - type: assistant.command.Broadcast
-        message: Can you believe it is 11 am already?
-        devices: kitchen - Kitchen
-  - starters:
-      - type: time.schedule
         at: 12:00 PM
     actions:
       - type: assistant.command.Broadcast

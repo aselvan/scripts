@@ -31,14 +31,14 @@ automations:
           - b2 - Bedroom
           - b3 - Bedroom
           - b4 - Bedroom
-          - bsl - Bedroom
-          - bsl2 - Bedroom
+          - bsl - Bedside
+          - bsl2 - Bedside
           - lr1 - Living Room
           - lr2 - Living Room
           - lr3 - Living Room
           - lr4 - Living Room
           - u1 - Office
-          - kitchen light - Kitchen
+          - kl1 - Kitchen
         on: false
       # set the desired volume (not working)
       - type: device.command.SetVolume

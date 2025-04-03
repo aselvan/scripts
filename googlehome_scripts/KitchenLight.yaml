@@ -14,7 +14,7 @@ automations:
         at: 2:30 PM
       - type: assistant.event.OkGoogle
         eventData: query
-        is: "kitchen off"
+        is: "kitchen light off"
     actions:
       - type: device.command.OnOff # Turn the device on or off.
         on: false
@@ -22,12 +22,12 @@ automations:
           - kl1 - Kitchen
   - starters:
       - type: time.schedule
-        at: 7:00 AM
+        at: 7:30 AM
       - type: time.schedule
-        at: 5:45 PM
+        at: 7:00 PM
       - type: assistant.event.OkGoogle
         eventData: query
-        is: "kitchen on"
+        is: "kitchen light on"
     actions:
       - type: device.command.OnOff # Turn the device on or off.
         on: true

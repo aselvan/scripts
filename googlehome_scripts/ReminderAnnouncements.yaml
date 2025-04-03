@@ -1,0 +1,21 @@
+#
+# selvans home automation --- reminder announcement
+# Author:  Arul Selvan
+# Version: Aug 25, 2023
+#
+metadata:
+  name: Reminder Announcements
+  description: Various reminder announcements
+automations:
+  - starters:
+      - type: time.schedule
+        at: 12:01 PM
+    actions:
+      - type: assistant.command.Broadcast
+        devices:
+          - kitchen - Kitchen
+          #- ghmini - Bathroom
+          #- homespeaker1 - Living Room
+          #- Homegen2 - Bedroom
+        message: This is a reminder to take blood pressure medication, now.
+
