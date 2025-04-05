@@ -134,8 +134,8 @@ get() {
   fi
 
   # go in a loop and continue to copy the key to paste buffer until $ttl sec
-  log.stat "OTP for website key: $file"
   log.stat "Generating continually & storing in paste buffer for $ttl seconds, ctrl+c to quit ..."
+  log.stat "Website key: $file"
 
   # check once to determine if the key is hex or base32
   # Note: Symentac VIPAccess key is hex and google & others are base32 encoded
