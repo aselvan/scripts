@@ -51,7 +51,9 @@ log.init() {
   if [ ! -z "$logger_file" ] ; then
     # ensure log file is owned by effective user
     touch $logger_file
-    chown $effective_user $logger_file
+    if [ ! -z "$effective_user" ] ; then
+      chown $effective_user $logger_file
+    fi
   fi
 
   # if logger filename is not provided, just log to console
