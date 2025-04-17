@@ -53,15 +53,17 @@ end_image="end.jpg"
 title_background="blue"
 title_foreground="white"
 title_font="Chalkboard-SE-Bold" # This is macOS font found @ /System/Library/Fonts/Supplemental/
+title_font_fixed="fixed"
 title_font_size=75
+title_font_size2=30
 title_size="1600x1200"
 cmdline_args=`printf "%s " $@`
 copyright="created by SelvanSoft, LLC (selvansoft.com)"
 title_metadata="$my_version, $copyright"
 creation_date=`date -u +%Y%m%d%H%M`
 title_text="Home video from pictures\n$copyright"
-script_source="Created using: https://github.com/aselvan/scripts/blob/master/tools/img2video.sh"
-end_text="THE end!\n\n$copyright\n\n\n$script_source"
+end_text="THE end!\n\n$copyright\n\n\n\n"
+script_source="Created with: https://github.com/aselvan/scripts/blob/master/tools/img2video.sh"
 
 usage() {
 cat << EOF
@@ -108,7 +110,8 @@ cleanup_tmp() {
 
 create_end_image() {
   log.stat "creating video end image $end_image ..."
-  convert -size $title_size -gravity center -background $title_background -fill $title_foreground -font $title_font -pointsize $title_font_size label:"$end_text" $end_image
+# convert -size $title_size -gravity center -background $title_background -fill $title_foreground -font $title_font -pointsize $title_font_size label:"$end_text" $end_image
+  convert -size $title_size xc:$title_background -fill $title_foreground -gravity center -font $title_font -pointsize $title_font_size -annotate +0-50 "$end_text" -font $title_font_fixed -pointsize $title_font_size2 -annotate +0+50 "$script_source" $end_image
 }
 
 # for now hardcoded values, can expand to take arguments for font/image size etc.
