@@ -60,7 +60,8 @@ copyright="created by SelvanSoft, LLC (selvansoft.com)"
 title_metadata="$my_version, $copyright"
 creation_date=`date -u +%Y%m%d%H%M`
 title_text="Home video from pictures\n$copyright"
-end_text="THE end!\n$copyright"
+script_source="Created using: https://github.com/aselvan/scripts/blob/master/tools/img2video.sh"
+end_text="THE end!\n\n$copyright\n\n\n$script_source"
 
 usage() {
 cat << EOF
