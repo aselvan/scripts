@@ -16,10 +16,11 @@
 #   Feb 22, 2025 --- Added disablespotlight
 #   Feb 28, 2025 --- Added arch, cputemp etc
 #   Mar 6,  2025 --- Remove xpc plist on kill, also added kill list file option
+#   Apr 20, 2025 --- Added pids, procinfo commands
 ################################################################################
 
 # version format YY.MM.DD
-version=25.03.05
+version=25.04.20
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl tools for macOS all in one place"
@@ -35,7 +36,7 @@ options="c:l:a:kvh?"
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 arg=""
 command_name=""
-supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight|\n kill|disablespotlight|arch|cputemp|speed|app"
+supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight|\n kill|disablespotlight|arch|cputemp|speed|app|pids|procinfo"
 volume_level=""
 spolight_path="/System/Volumes/Data/.Spotlight-V100"
 spotlight_volumes="/ /System/Volumes/Data"
@@ -67,12 +68,14 @@ Usage: $my_name [options]
 Supported commands: 
   $(echo -e $supported_commands)
 
-examples(s)
-  $my_name -c mem
-  $my_name -c bundle -a textedit
-  $my_name -c volume -l 25
-  $my_name -c kill -a "mediaanalysisd photoanalysisd photolibraryd"
-  $my_name -c app -a "Google Chrome"
+Some examples(s)
+  $my_name -c mem                     # show mem
+  $my_name -c bundle -a textedit      # show bundele details of program/app
+  $my_name -c volume -l 25            # set volume to 25
+  $my_name -c kill -a "mediaanalysisd photoanalysisd photolibraryd" # kill the list of apps
+  $my_name -c app -a "Google Chrome"  # show information of the specified app
+  $my_name -c pids                    # shows list of process & pid runnning with launchctl
+  $my_name -c procinfo -a <pid>       # shows detailed info of a running process under launchctl
   
 EOF
   exit 0
@@ -223,6 +226,19 @@ show_app() {
 
 }
 
+show_pids() {
+  sudo launchctl list | awk '{if ($1 ~ /^[0-9]+$/) print $3,"("$1")"}'  
+}
+
+show_procinfo() {
+  if [ -z $arg ] ; then
+    log.error "Need <pid> argument for this command, see usage"
+    usage
+  fi
+  sudo launchctl procinfo $arg 
+}
+
+
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
 if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
@@ -327,6 +343,14 @@ case $command_name in
     ;;
   app)
     show_app
+    ;;
+  pids)
+    check_root
+    show_pids
+    ;;
+  procinfo)
+    check_root
+    show_procinfo
     ;;
   *)
     log.error "Invalid command: $command_name"
