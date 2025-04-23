@@ -36,7 +36,7 @@ http_output="/tmp/$(echo $my_name|cut -d. -f1).txt"
 
 usage() {
   cat << EOF
-$my_title
+$my_name --- $my_title
 
 Usage: $my_name [options]
   -u <url>   ---> URL to check. Note: partial is ok
