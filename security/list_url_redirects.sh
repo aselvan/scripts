@@ -42,23 +42,6 @@ EOF
   exit 0
 }
 
-make_api_call() {
-  http_status=$(curl -s -o $http_output -w "%{http_code}" "$uri")
-  log.debug "HTTP status: $http_status"
-  if [ "$http_status" -eq 200 ] ; then
-    check_installed jq noexit
-    if [ $? -eq 0 ] ; then
-      cat $http_output | jq
-    else
-      cat $http_output
-    fi
-  elif [ "$http_status" -eq 429 ] ; then
-    log.warn  "\tAPI returned: 'too many requests', retry again after few seconds."
-  else
-    log.error "\tAPI call failed! HTTP status = $http_status"
-  fi
-}
-
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
 if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
@@ -113,8 +96,10 @@ while true; do
 done
 
 # Output all intermediate URLs
-log.stat "Redirect chain: "
-log.stat "  ---> $url"
+order=1
+log.stat "Redirect chain order: "
+log.stat "  ${order}. ---> $url"
 for redirect in "${redirect_list[@]}"; do
-  log.stat "  ---> $redirect"
+  ((order++))
+  log.stat "  ${order}. ---> $redirect"
 done
