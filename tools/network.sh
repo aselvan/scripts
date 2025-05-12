@@ -34,7 +34,7 @@ arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 options="c:i:n:s:H:d:m:a:vh?"
 
 command_name=""
-supported_commands="info|ip|lanip|wanip|mac|dhcp|scan|testsvc|testfw|interfaces|traceroute|dnsperf|multidnsperf|allports|ports|spoofmac|genmac|route|dns|netstat|appfirewall|dhcprenew|wifiint|ssid|wifistats"
+supported_commands="info|ip|lanip|wanip|mac|dhcp|scan|testsvc|testfw|interfaces|traceroute|dnsperf|multidnsperf|allports|ports|spoofmac|genmac|route|dns|netstat|appfirewall|dhcprenew|wifiint|ssid|wifistats|internet"
 iface=""
 wifi_iface=""
 my_net="192.168.1.0/24"
@@ -508,6 +508,16 @@ function do_dhcprenew() {
   log.stat "\tShould be renewed now."
 }
 
+check_internet() {
+  log.stat "Checking internet connectivity ... "
+  ping -c3 8.8.8.8 >/dev/null 2>&1
+  if [ $? -ne 0 ] ; then
+    log.error "  No internet connectvity!"
+  else
+    log.stat "  Internet available!" $green
+  fi
+}
+
 
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
@@ -665,6 +675,9 @@ case $command_name in
     ;;
   wifistats)
     get_wifistats
+    ;;
+  internet)
+    check_internet
     ;;
   *)
     log.error "Invalid command: $command_name"
