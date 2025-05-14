@@ -96,6 +96,7 @@ do_create_thumbs() {
 
   echo "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">" > $index_file
   echo "<html><head><title>$site_name - $title</title>" >> $index_file
+  echo "<meta charset=\"UTF-8\">" >> $index_file
   echo "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">" >> $index_file
   echo "<link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css\">" >> $index_file
   # some styles inline 
@@ -154,7 +155,8 @@ do_create_thumbs() {
     wa_share="whatsapp://send?text=${abs_url},${fname}"
     echo "<a href=\"${wa_share}\" target=\"_blank\">" >> $index_file
     echo "<i class=\"fa fa-whatsapp\" style=\"font-size:24px;color:green\">" >> $index_file
-    echo "</i></a> &nbsp;" >> $index_file
+    #echo "</i></a> &nbsp; " >> $index_file
+    echo "</i></a>  |  " >> $index_file
     echo "" >> $index_file
 
     # facebook share
