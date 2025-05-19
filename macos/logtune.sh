@@ -1,5 +1,5 @@
-#!/bin/bash
-#
+#!/usr/bin/env bash
+################################################################################
 # logtune.sh --- supress chatty logs on MacOS to help reduce wasted CPU & IO
 #
 # The name of this script is a misnomer since it doesn't really tune anything rather 
@@ -33,20 +33,27 @@
 #
 # Author:  Arul Selvan
 # Created: Aug 1, 2022
-#
+################################################################################
+# Version History:
+#   Aug 1,  2022 --- Original version
+#   May 19, 2025 --- Use standard logging, option to view current setting
+#################################################################################
 
 # version format YY.MM.DD
-version=22.08.02
+version=25.05.19
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
-host_name=`hostname`
-os_name=`uname -s`
-cmdline_args=`printf "%s " $@`
+my_title="View/change macOS log settings"
+my_dirname=`dirname $0`
+my_path=$(cd $my_dirname; pwd -P)
+my_logfile="/tmp/$(echo $my_name|cut -d. -f1).log"
+default_scripts_github=$HOME/src/scripts.github
+scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
-log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
-options="evh?"
-verbose=0
-enable_log=0
+# commandline options
+options="l:svh?"
+
+show_setting=0
 log_level="off"
 subsystem_settings_dir="/Library/Preferences/Logging/Subsystems"
 
@@ -111,97 +118,94 @@ subsystem_list="\
   com.apple.analyticsd:xpc,event \
 "
 
-# ensure path for cron runs
-export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
-
 usage() {
-  echo ""
-  echo "Usage: $my_name [options]"
-  echo "  -e  ---> enable logging back"
-  echo "  -v  ---> verbose mode prints info messages, otherwise just errors are printed"
-  echo "  -h  ---> print usage/help"
-  echo ""
-  echo "example: $my_name -h"
-  echo ""
+  cat << EOF
+$my_name --- $my_title
+
+Usage: $my_name [options]
+  -l <level>   ---> Level to change; valid levels are: off|default|info|debug
+  -s           ---> show current settings on all subsystems
+  -v           ---> enable verbose, otherwise just errors are printed
+  -h           ---> print usage/help
+
+example(s): 
+  $my_name -l off
+  $my_name -s
+  
+EOF
   exit 0
 }
 
-write_log() {
-  local msg_type=$1
-  local msg=$2
-
-  # log info type only when verbose flag is set
-  if [ "$msg_type" == "[INFO]" ] && [ $verbose -eq 0 ] ; then
-    return
+change_level() {
+  check_root
+  confirm_action "About to reset log level to '$log_level' ..."
+  if [ $? -eq 0 ] ; then
+    log.stat "No changes done, exiting"
+    exit 0
   fi
 
-  echo "$msg_type $msg" | tee -a $log_file
-}
-
-init_log() {
-  if [ -f $log_file ] ; then
-    rm -f $log_file
-  fi
-  write_log "[STAT]" "$my_version: starting at `date +'%m/%d/%y %r'` ..."
-}
-
-check_root() {
-  if [ `id -u` -ne 0 ] ; then
-    write_log "[ERROR]" "root access needed to run this script, run with 'sudo $my_name' ... exiting."
-    exit
-  fi
-}
-
-reset_logging() {
-  write_log "[INFO]" "setting log level to '$log_level' for the list of subsystems ..."
+  log.stat "Changing log level to '$log_level' for the list of subsystems (Dir: $subsystem_settings_dir)"
   for ss in $subsystem_list ; do
     ss_name=$(echo $ss |awk -F: '{print $1}');
     cat_list=$(echo $ss|awk -F: '{print $2}'|sed "s/,/ /g");
-    write_log "[INFO]" "subsystem: $ss_name, loglevel=$log_level"
-    # if we are turninng off, just remove the file, no need to call log
-    if [ $log_level = "info" ] ; then
-      if [ -f $subsystem_settings_dir/$ss_name.plist ] ; then
-        rm $subsystem_settings_dir/$ss_name.plist
-      fi
-      continue
-    fi
-    /usr/bin/log config --mode "level: $log_level" --subsystem $ss_name >> $log_file 2>&1
+    log.stat "  subsystem: $ss_name, loglevel=$log_level"
+    log config --mode "level: $log_level" --subsystem $ss_name >> $my_logfile 2>&1
     for cat in $cat_list ; do
-      write_log "[INFO]" "    subsystem/category: $ss_name:$cat, loglevel=$log_level"
-      /usr/bin/log config --mode "level: $log_level" --subsystem $ss_name --category $cat >> $log_file 2>&1
+      log.stat "    subsystem/category: $ss_name:$cat, loglevel=$log_level"
+      log config --mode "level: $log_level" --subsystem $ss_name --category $cat >> $my_logfile 2>&1
     done
   done
+  exit 0
 }
 
-# ----------  main --------------
-init_log
+show_level() {
+  check_root
+  log.stat "Showing log settings for all subsystems (Dir: $subsystem_settings_dir)"
+  for ss in $subsystem_list ; do
+    ss_name=$(echo $ss |awk -F: '{print $1}');
+    cat_list=$(echo $ss|awk -F: '{print $2}'|sed "s/,/ /g");    
+    log.stat "subsystem: $ss_name"
+    log.stat "  `log config --subsystem $ss_name --status`" $grey
+    for cat in $cat_list ; do
+      log.stat "  `log config --subsystem $ss_name --category $cat --status`" $grey
+    done
+  done
+  exit 0
+}
+
+
+# -------------------------------  main -------------------------------
+# First, make sure scripts root path is set, we need it to include files
+if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
+  # include logger, functions etc as needed 
+  source $scripts_github/utils/logger.sh
+  source $scripts_github/utils/functions.sh
+else
+  echo "SCRIPTS_GITHUB env variable is either not set or has invalid path!"
+  echo "The env variable should point to root dir of scripts i.e. $default_scripts_github"
+  echo "See INSTALL instructions at: https://github.com/aselvan/scripts?tab=readme-ov-file#setup"
+  exit 1
+fi
+# init logs
+log.init $my_logfile
 
 # parse commandline options
 while getopts $options opt; do
   case $opt in
-    e)
-      log_level="info"
+    l)
+      log_level="$OPTARG"
+      change_level
+      ;;
+    s)
+      show_level
       ;;
     v)
       verbose=1
       ;;
-    ?)
-      usage
-      ;;
-    *)
+    ?|h|*)
       usage
       ;;
   esac
 done
 
-check_root
-
-# confirm if no option 
-write_log "[WARN]" "About to reset log level to '$log_level' ..."
-read -p "Are you sure? (y/n) " -n 1 -r
-echo 
-if [[ $REPLY =~ ^[Yy]$ ]] ; then
-  reset_logging
-else
-  write_log "[INFO]" "Exiting w/ out any change"
-fi
+usage
