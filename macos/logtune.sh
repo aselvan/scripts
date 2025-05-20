@@ -60,62 +60,37 @@ subsystem_settings_dir="/Library/Preferences/Logging/Subsystems"
 # list of subsystems to turn off. This is by no means the full list but this should cover most 
 # annoying log spews. note: the category is a comma separated list after the ':'.
 subsystem_list="\
-  com.apple.bluetooth \
-  com.apple.CoreDisplay \
-  com.apple.amp.mediaremote:MediaRemote \
-  com.apple.symptomsd:analytics,attribution,metrics,flow \
-  com.apple.defaults \
-  com.apple.iconservices:default,trace \
-  com.apple.CarbonCore:checkfix,coreservicesdaemon \
-  com.apple.CFBundle:resources \
-  com.apple.locationd.Core:Notifier \
-  com.apple.locationd.Motion:AOP \
-  com.apple.locationd.Position:GeneralCLX,Position \
-  com.apple.locationd.Utility:Database \
-  com.apple.locationd.Legacy:Generic_deprecated \
-  com.apple.CoreAnalytics \
-  com.apple.powerlog \
-  com.apple.CoreBrightness \
-  com.apple.CoreBrightness.CBHIDEventManager \
-  com.apple.CoreBrightness.CBDisplayModuleSKL \
-  com.apple.CoreBrightness.CBColorModule \
-  com.apple.CoreBrightness.BrightnessSystemInternal \
-  com.apple.CoreBrightness.CBALSEvent \
-  com.apple.CoreBrightness.ColourSensorFilterPlugin \
-  com.apple.spotlightserver \
-  com.apple.useractivity:Diagnostic,main \
-  com.apple.runningboard:process,assertion,monitor,connection \
-  com.apple.sharing \
-  com.apple.rapport \
-  com.apple.networkusage:network-usage \
-  com.apple.network:connection,boringssl \
-  com.apple.chrono:clockDatePublisher \
-  com.apple.watchdogd:service-monitoring-thread \
-  com.apple.WiFiManager \
-  com.apple.CoreUtils:CUBonjourBrowser,BonjourBrowser \
-  com.apple.mDNSResponder:D2D \
-  com.apple.opendirectoryd:session,object-lifetime,pipeline \
-  com.apple.spotlightindex:Access \
-  com.apple.launchservices:record \
-  com.apple.FileURL:resolve com.apple.launchservices:record \
-  com.apple.icloud.searchpartyd:beaconStore \
-  com.apple.SkyLight:default \
-  com.apple.iohid:ups,service,default,activity \
-  com.apple.quicklook:cloudthumbnails.cache.sqlite,cloudthumbnails.cache.thread,cloudthumbnails.cache.memory,cloudthumbnails.cache.index,cloudthumbnails.cache.db.cleanup \
-  com.apple.appkit.xpc.openAndSavePanelService:default \
-  com.apple.VDCAssistant:device.usbclient,device.clientstream,device.frameaccumulator \
-  com.apple.TCC:access \
-  com.apple.DiskArbitration.diskarbitrationd:default \
-  com.apple.distnoted:diagnostic \
-  com.apple.amp.core:powermanagement \
-  com.apple.controlcenter:battery \
-  com.apple.SystemConfiguration:SCDynamicStore \
-  com.apple.WirelessRadioManager.Coex:Trace,Public \
-  com.apple.loginwindow.logging:Standard \
-  com.apple.launchservices:cas \
-  com.apple.HIToolbox:MBarView,MBDaisyFrame \
-  com.apple.duetactivityscheduler:default,scoring,lifecycle(activityGroup) \
-  com.apple.analyticsd:xpc,event \
+com.apple.Authorization:authd \
+com.apple.Biome:BiomeSync \
+com.apple.contacts.contactsd:connections \
+com.apple.analyticsd.critical:xform_cache \
+com.apple.coreaudio:cari,carr,cars \
+com.apple.cts \
+com.apple.geod \
+com.apple.iCloudHelper \
+com.apple.mdns:dnssd_server \
+com.apple.mdns:resolver \
+com.apple.mediaanalysis:common \
+com.apple.nearbyd:general \
+com.apple.networkserviceproxy \
+com.apple.nsurlsessiond:background \
+com.apple.photos.backend:Migration \
+com.apple.powerd:assertions \
+com.apple.powerd:battery \
+com.apple.powerd:systemLoad \
+com.apple.sandbox:sandcastle \
+com.apple.securityd:SecServer \
+com.apple.securityd:accept \
+com.apple.securityd:http \
+com.apple.securityd:machserver \
+com.apple.securityd:ocsp \
+com.apple.securityd:reject \
+com.apple.securityd:serverxpc \
+com.apple.securityd:trust \
+com.apple.securitydpolicy \
+com.apple.wifip2pd:xpc \
+com.apple.windowmanagement:general \
+com.microsoft.autoupdate.helper \
 "
 
 usage() {
