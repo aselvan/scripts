@@ -442,13 +442,19 @@ function spoofmac() {
   log.stat "\tCurrent  MAC on $iface: $cur_mac"
   log.stat "\tSpoofing MAC on $iface: $mac_to_spoof"
 
-  networksetup -setairportpower en0 off
+  networksetup -setairportpower $iface off
   sleep 1
-  networksetup -setairportpower en0 on
+  networksetup -setairportpower $iface on
   ifconfig $iface ether $mac_to_spoof >/dev/null 2>&1
   local cur_mac=`ifconfig $iface | grep ether| awk '{print $2;}'`
   if [ $cur_mac = "$mac_to_spoof" ] ; then
     log.stat "\tSpoofed $mac_to_spoof succesfully!" $green
+    log.stat "\tToggling $iface down/up ..."
+    ifconfig $iface down
+    log.stat "\tSleeping ..."
+    sleep 5
+    ifconfig $iface up
+    log.stat "\tToggled $iface down/up."
   else
     log.stat "\tSpoofing failed on $mac_to_spoof!" $red
   fi
