@@ -16,10 +16,11 @@
 #   Dec 25, 2024 --- Added wifi stats, ssid etc
 #   Mar 18, 2025 --- Use effective_user in place of get_current_user. Also
 #                    implemented interface related functions in Linux
+#   Jun 3,  2025 --- Added restoremac command
 ###############################################################################
 
 # version format YY.MM.DD
-version=25.03.18
+version=25.06.03
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl network tools wrapper all in one place"
@@ -29,13 +30,15 @@ my_logfile="/tmp/$(echo $my_name|cut -d. -f1).log"
 default_scripts_github=$HOME/src/scripts.github
 scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
+my_mac_addr_file="$HOME/.my_mac_address"
 
 # commandline options
 options="c:i:n:s:H:d:m:a:vh?"
 
 command_name=""
-supported_commands="info|ip|lanip|wanip|mac|dhcp|scan|testsvc|testfw|interfaces|traceroute|dnsperf|multidnsperf|allports|ports|spoofmac|genmac|route|dns|netstat|appfirewall|dhcprenew|wifiint|ssid|wifistats|internet"
+supported_commands="info|ip|lanip|wanip|mac|dhcp|scan|testsvc|testfw|interfaces|traceroute|dnsperf|multidnsperf|allports|ports|spoofmac|restoremac|genmac|route|dns|netstat|appfirewall|dhcprenew|wifiint|ssid|wifistats|internet"
 iface=""
+my_mac=""
 wifi_iface=""
 my_net="192.168.1.0/24"
 my_ip=""
@@ -76,7 +79,17 @@ Supported commands:
 example(s): 
   $my_name -c info
   $my_name -c traceroute -s yahoo.com
+  $my_name -c route
   $my_name -c testfw -s google.com:443
+  $my_name -c ip
+  $my_name -c mac
+  $my_name -c interfaces
+  $my_name -c internet
+  $my_name -c allports
+  sudo $my_name -c wifistats
+  sudo $my_name -c spoofmac -m ff:ff:ff:ff:ff:ff
+  sudo $my_name -c restoremac
+
 EOF
   exit 0
 }
@@ -429,6 +442,46 @@ function multidnsperf() {
   log.stat "\tTotal time for resolving all hostnames: $total_time ms" $green
 }
 
+restoremac() {
+  # check for root access
+  check_root
+
+  if [ ! -f $my_mac_addr_file ] ; then
+    log.warn "no previously saved mac file ($my_mac_addr_file) found to restore from! ... exiting"
+    exit 1
+  else
+    my_mac=`cat $my_mac_addr_file`
+  fi    
+
+  log.stat "\trestoring mac to $my_mac ..."
+  if [ $os_name = "Darwin" ]; then
+    networksetup -setairportpower $iface off
+    sleep 1
+    networksetup -setairportpower $iface on
+    ifconfig $iface ether $my_mac >/dev/null 2>&1
+    ifconfig $iface down
+    log.stat "\tSleeping ..."
+    sleep 5
+    ifconfig $iface up
+  else
+    ifconfig $iface hw ether $my_mac
+  fi
+  log.stat "\tmac restored"
+}
+
+save_mac() {
+  if [ ! -f $my_mac_addr_file ] ; then
+    log.debug "no previously saved mac file ($my_mac_addr_file) found!"
+    log.debug "saving current mac address as saved mac address"
+    my_mac=`ifconfig $iface|grep ether|awk '{print $2;}'`
+    echo $my_mac > $my_mac_addr_file
+    log.stat "\tsaved my mac address ($my_mac)."
+  else
+    my_mac=`cat $my_mac_addr_file`
+    log.stat "\tmy mac address $my_mac was already saved."
+  fi
+}
+
 function spoofmac() {
   # check for root access
   check_root
@@ -438,6 +491,9 @@ function spoofmac() {
     usage
   fi
  
+  # save mac for restoring.
+  save_mac
+
   local cur_mac=`ifconfig $iface | grep ether| awk '{print $2;}'`
   log.stat "\tCurrent  MAC on $iface: $cur_mac"
   log.stat "\tSpoofing MAC on $iface: $mac_to_spoof"
@@ -459,6 +515,7 @@ function spoofmac() {
     log.stat "\tSpoofing failed on $mac_to_spoof!" $red
   fi
 }
+
 
 function genmac() {
   local random_mac=`openssl rand -hex 6 | sed "s/\(..\)/\1:/g; s/.$//"`
@@ -654,6 +711,9 @@ case $command_name in
     ;;
   spoofmac)
     spoofmac
+    ;;
+  restoremac)
+    restoremac
     ;;
   genmac)
     genmac
