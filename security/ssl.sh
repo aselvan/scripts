@@ -161,6 +161,14 @@ validate_san() {
   fi
 }
 
+validate_expiry() {
+  openssl x509 -checkend 0 -noout -in $last_cert_name 2>&1 >> $my_logfile
+  if [ $? -ne 0 ] ; then
+    log.warn  "ERROR: certificate may be valid but it is expired! Browser will refuse to load."
+    log.error "Expired on: `openssl x509 -enddate -noout -in $last_cert_name | cut -d= -f2`"
+  fi
+}
+
 additional_options() {
   if [ -z "$optional_checks" ] ; then
     return
@@ -247,6 +255,7 @@ case $command_name in
     list_ssl_chain
     validate_san
     additional_options
+    validate_expiry
     ;;
   extract)
     if [ -z $ssl_cert_file ] ; then
