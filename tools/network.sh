@@ -17,10 +17,11 @@
 #   Mar 18, 2025 --- Use effective_user in place of get_current_user. Also
 #                    implemented interface related functions in Linux
 #   Jun 3,  2025 --- Added restoremac command
+#   Jun 5,  2025 --- Added speed test command
 ###############################################################################
 
 # version format YY.MM.DD
-version=25.06.03
+version=25.06.05
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl network tools wrapper all in one place"
@@ -36,7 +37,7 @@ my_mac_addr_file="$HOME/.my_mac_address"
 options="c:i:n:s:H:d:m:a:vh?"
 
 command_name=""
-supported_commands="info|ip|lanip|wanip|mac|dhcp|scan|testsvc|testfw|interfaces|traceroute|dnsperf|multidnsperf|allports|ports|spoofmac|restoremac|genmac|route|dns|netstat|appfirewall|dhcprenew|wifiint|ssid|wifistats|internet"
+supported_commands="info|ip|lanip|wanip|mac|dhcp|scan|testsvc|testfw|interfaces|traceroute|dnsperf|multidnsperf|allports|ports|spoofmac|restoremac|genmac|route|dns|netstat|appfirewall|dhcprenew|wifiif|ssid|wifistats|internet|speed"
 iface=""
 my_mac=""
 wifi_iface=""
@@ -581,6 +582,15 @@ check_internet() {
   fi
 }
 
+test_speed() {
+  if [ $os_name = "Darwin" ] ; then
+    networkquality -s
+  else
+    check_installed speedtest-cli
+    speedtest-cli --simple
+  fi
+}
+
 
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
@@ -733,7 +743,7 @@ case $command_name in
   dhcprenew)
     do_dhcprenew
     ;;
-  wifiint)
+  wifiif)
     get_wifi_interface_mac
     ;;
   ssid)
@@ -744,6 +754,9 @@ case $command_name in
     ;;
   internet)
     check_internet
+    ;;
+  speed)
+    test_speed
     ;;
   *)
     log.error "Invalid command: $command_name"
