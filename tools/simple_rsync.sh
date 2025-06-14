@@ -34,8 +34,8 @@ backup_dir=""
 usage() {
 cat << EOF
 Usage: $my_name [options]
-  -s <source_dirs>     --> source directories separated by comma [$src_list]
-  -d <destination_dir> --> destination directory to sync [$backup_dir]
+  -s <source_dirs>     ---> source directories separated by comma 
+  -d <destination_dir> ---> destination directory to sync to
   -v enable verbose mode
   -h help
 
@@ -71,10 +71,7 @@ while getopts $options opt; do
     v)
       verbose=1
       ;;
-    ?)
-      usage
-      ;;
-    *)
+    ?|h|*)
       usage
       ;;
   esac
