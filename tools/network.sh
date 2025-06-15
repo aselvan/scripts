@@ -37,7 +37,7 @@ my_mac_addr_file="$HOME/.my_mac_address"
 options="c:i:n:s:H:d:m:a:vh?"
 
 command_name=""
-supported_commands="info|ip|lanip|wanip|mac|dhcp|scan|testsvc|testfw|interfaces|traceroute|dnsperf|multidnsperf|allports|ports|spoofmac|restoremac|genmac|route|dns|netstat|appfirewall|dhcprenew|wifiif|ssid|wifistats|internet|speed"
+supported_commands="info|ip|lanip|wanip|mac|dhcp|scan|testsvc|testfw|interfaces|traceroute|dnsperf|multidnsperf|allports|tcpports|listenports|spoofmac|restoremac|genmac|route|dns|netstat|appfirewall|dhcprenew|wifiif|ssid|wifistats|internet|speed"
 iface=""
 my_mac=""
 wifi_iface=""
@@ -713,11 +713,14 @@ case $command_name in
   multidnsperf)
     multidnsperf
     ;;
-  ports)
+  tcpports)
     lsof -i tcp -P -n
     ;;
   allports)
-    lsof -i -P -n
+    lsof -iTCP -iUDP -P -n
+    ;;
+  listenports)
+    lsof -iUDP -iTCP -sTCP:LISTEN |grep \*
     ;;
   spoofmac)
     spoofmac
