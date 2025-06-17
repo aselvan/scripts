@@ -29,7 +29,7 @@ scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 options="c:l:f:bs::vh?"
 
 command_name=""
-supported_commands="pwgen|usergen|enc|dec|basicauth|unixhash"
+supported_commands="pwgen|usergen|enc|dec|basicauth|unixhash|passphrase"
 pwgen_len=12
 pwgen_len_fixed=3
 enc_dec_file=""
@@ -40,6 +40,10 @@ usergen_supress_chars=",;{}[]o:#^+\|*()=-\"/\\.%&<>_'\`?"
 pwgen_supress_chars="olO:#*()<>'\`\\"
 suppress_chars=""
 openssl_opt="-pbkdf2 -md md5 -aes-256-cbc -a -salt"
+word_list="/usr/share/dict/words"
+passphrase_words=3
+special_char_list="-%$!@^_~',#+"
+
 
 usage() {
   cat << EOF
@@ -122,6 +126,15 @@ function do_unixhash() {
   log.stat "\tUnix hash of your password is: $unix_hashed_password"
 }
 
+do_passphrase() {
+  # generate total of $passphrase_words with at least 4-5 chars and capitalize first letter
+  local passphrase=$(egrep '^[a-zA-Z]{4,5}$' $word_list | shuf -n $passphrase_words|awk '{print toupper(substr($0,1,1)) substr($0,2)}'|tr '\n' ' ')
+  # now we have to add special char to satisfy the stupid websites insists on special chars & number
+
+  local special_chars=$(echo $special_char_list | fold -w1 | shuf | head -2 | tr -d '\n')
+  local numbers=$(random_number 20)
+  log.stat "\tGenerated Passphrase: $passphrase$special_chars$numbers"
+}
 
 
 # -------------------------------  main -------------------------------
@@ -191,6 +204,9 @@ case $command_name in
     ;;
   unixhash)
     do_unixhash
+    ;;
+  passphrase)
+    do_passphrase
     ;;
   *)
     log.error "Invalid command: $command_name"
