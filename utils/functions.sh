@@ -449,6 +449,12 @@ elapsed_time() {
   echo "$(($duration / (60*60))) hour(s), $(($duration / 60)) minute(s) and $(($duration % 60)) second(s)"
 }
 
+# returns a number between 0-$max where $max is the argument
+random_number() {
+  local max=$1
+  echo $((RANDOM % $max ))
+}
+
 # check if the ip string passed is in the form x.x.x.x 
 #
 # usage:
