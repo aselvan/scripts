@@ -185,13 +185,16 @@ show_cpu_temp() {
     log.stat "CPU Temp: `sudo powermetrics --samplers smc -n1|grep -i "CPU die"|awk '{print $4,$5}'` (Normal: 40-60 C, High: >80 C)"
   elif [ $t == "Apple" ] ; then
     local tvalue=`sudo powermetrics -s thermal -n1|awk '/Current pressure/ {print $4}'`
-    local range="; [Possible values: Nominal, Fair, Serious, Critical]"
+    local range="; [Possible values: Nominal, Fair, Moderate, Serious, Critical]"
     case $tvalue in
       Nominal)
         log.stat "CPU Temp: $tvalue $range" $green
         ;;
       Fair)
         log.stat "CPU Temp: $tvalue $range "
+        ;;
+      Moderate)
+        log.stat "CPU Temp: $tvalue $range " $yellow
         ;;
       Serious)
         log.stat "CPU Temp: $tvalue $range " $yellow
@@ -200,7 +203,7 @@ show_cpu_temp() {
         log.stat "CPU Temp: $tvalue $range " $red
         ;;
       *)
-        log.stat "CPU Temp: Unknown" $red
+        log.stat "CPU Temp: Unknown ($tvalue)" $red
         ;;
     esac
   else
