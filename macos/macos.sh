@@ -18,6 +18,7 @@
 #   Mar 6,  2025 --- Remove xpc plist on kill, also added kill list file option
 #   Apr 20, 2025 --- Added pids, procinfo commands
 #   Jun 22, 2025 --- Added verify (check if code is signed), and log commands
+#   Jun 25, 2025 --- Added "spaceused" command
 ################################################################################
 
 # version format YY.MM.DD
@@ -32,12 +33,12 @@ default_scripts_github=$HOME/src/scripts.github
 scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
 # commandline options
-options="c:l:a:d:kvh?"
+options="c:l:a:d:r:p:kvh?"
 
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 arg=""
 command_name=""
-supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight|\n kill|disablespotlight|arch|cputemp|speed|app|pids|procinfo|verify|log"
+supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight|\n kill|disablespotlight|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused"
 volume_level=""
 spolight_path="/System/Volumes/Data/.Spotlight-V100"
 spotlight_volumes="/ /System/Volumes/Data"
@@ -45,6 +46,8 @@ xpc_activity_plist="$HOME/Library/Preferences/com.apple.xpc.activity2.plist"
 killed_list_file="/tmp/$(echo $my_name|cut -d. -f1)_killed_list.txt"
 do_killed_list=0
 log_duration="1h"
+spaceused_rows=10
+spaceused_path="$HOME"
 
 # default kill list
 #
@@ -61,6 +64,8 @@ $my_name --- $my_title
 Usage: $my_name [options]
   -c <command>   ---> command to run [see supported commands below]
   -l <number>    ---> volume level [used by 'volume' command range: 1-100]
+  -r <number>    ---> used by "spaceused" command to restrict rows [Default: $spaceused_rows]
+  -p <path>      ---> used by "spaceused" command recurse down path [Default: $spaceused_path]
   -a <arg>       ---> arguments for commands like bundle|kill|app|procinfo|codesign|log etc.
   -k             ---> enables writing $killed_list_file showing what was killed 
                       [note: the file may grow to large size]
@@ -80,6 +85,7 @@ Some examples(s)
   $my_name -c procinfo -a <pid>       # shows detailed info of a running process under launchctl
   $my_name -c verify -a /sbin/disklabel # check the app's code sign details or error if not signed
   $my_name -c log -a "string" -d $log_duration # the duration can be #mhd [minute,hour,day]
+  $my_name -c spaceused -r10 -p ~/     # shows top 10 rows of dir using max space under ~
   
 EOF
   exit 0
@@ -265,6 +271,9 @@ show_log() {
   log show --predicate "$filter" --style syslog --last $log_duration
 }
 
+show_spaceused() {
+  sudo du -I private -xh -d 2 $spaceused_path 2>/dev/null | sort -hr|head -n$spaceused_rows
+}
 
 
 # -------------------------------  main -------------------------------
@@ -299,6 +308,12 @@ while getopts $options opt ; do
       ;;
     d)
       log_duration="$OPTARG"
+      ;;
+    r)
+      spaceused_rows="$OPTARG"
+      ;;
+    p)
+      spaceused_path="$OPTARG"
       ;;
     v)
       verbose=1
@@ -388,6 +403,10 @@ case $command_name in
     ;;
   log)
     show_log
+    ;;
+  spaceused)
+    check_root
+    show_spaceused
     ;;
   *)
     log.error "Invalid command: $command_name"
