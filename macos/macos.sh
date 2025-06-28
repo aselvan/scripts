@@ -33,7 +33,7 @@ default_scripts_github=$HOME/src/scripts.github
 scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
 # commandline options
-options="c:l:a:d:r:p:kvh?"
+options="c:l:a:d:r:p:n:kvh?"
 
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 arg=""
@@ -47,6 +47,7 @@ killed_list_file="/tmp/$(echo $my_name|cut -d. -f1)_killed_list.txt"
 do_killed_list=0
 log_duration="1h"
 spaceused_rows=10
+spaceused_depth=3
 spaceused_path="$HOME"
 
 # default kill list
@@ -64,8 +65,10 @@ $my_name --- $my_title
 Usage: $my_name [options]
   -c <command>   ---> command to run [see supported commands below]
   -l <number>    ---> volume level [used by 'volume' command range: 1-100]
-  -r <number>    ---> used by "spaceused" command to restrict rows [Default: $spaceused_rows]
-  -p <path>      ---> used by "spaceused" command recurse down path [Default: $spaceused_path]
+  -d <number>    ---> used by "log" to filter duration [Default: $log_duration]
+  -r <number>    ---> used by "spaceused" to restrict rows to display [Default: $spaceused_rows]
+  -n <number>    ---> used by "spaceused" to recurse n-depeth [Default: $spaceused_depth]
+  -p <path>      ---> used by "spaceused" to recurse down path [Default: $spaceused_path]
   -a <arg>       ---> arguments for commands like bundle|kill|app|procinfo|codesign|log etc.
   -k             ---> enables writing $killed_list_file showing what was killed 
                       [note: the file may grow to large size]
@@ -272,7 +275,7 @@ show_log() {
 }
 
 show_spaceused() {
-  sudo du -I private -xh -d 2 $spaceused_path 2>/dev/null | sort -hr|head -n$spaceused_rows
+  sudo du -I private -xh -d $spaceused_depth $spaceused_path 2>/dev/null | sort -hr|head -n$spaceused_rows
 }
 
 
@@ -314,6 +317,9 @@ while getopts $options opt ; do
       ;;
     p)
       spaceused_path="$OPTARG"
+      ;;
+    n)
+      spaceused_depth="$OPTARG"
       ;;
     v)
       verbose=1
