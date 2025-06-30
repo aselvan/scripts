@@ -11,11 +11,12 @@
 # Version History:
 #   Jan 31, 2025 --- Original version (moved from .bashrc)
 #   Feb 16, 2025 --- Added listtag
+#   Jun 30, 2025 --- Added shasum to create shasum for the release tag specified
 #
 ################################################################################
 
 # version format YY.MM.DD
-version=25.02.16
+version=25.06.30
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Wrapper for some git commands"
@@ -25,12 +26,13 @@ my_logfile="/tmp/$(echo $my_name|cut -d. -f1).log"
 default_scripts_github=$HOME/src/scripts.github
 scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
+release_archive="https://github.com/aselvan/scripts/archive"
 
 # commandline options
 options="c:t:m:vh?"
 
 command_name=""
-supported_commands="createtag|deletetag|movetag|listtag"
+supported_commands="createtag|deletetag|movetag|listtag|shasum"
 tag=""
 comments=""
 
@@ -47,7 +49,11 @@ Usage: $my_name [options]
 
 Supported commands: $supported_commands  
 example: 
-  $my_name -c createtag -t V1.0 -m "My new tag"
+  $my_name -c createtag -t v25.06.12 -m "Jun 12, 2025 release"
+  $my_name -c listtag
+  $my_name -c deletetag -t v25.06.12
+  $my_name -c movetag -t v25.06.12   # moves the tag to latest code
+  $my_name -c shasum -t v25.06.12    # generates sha256 for the release code
 
 EOF
   exit 0
@@ -94,6 +100,16 @@ function do_move_tag() {
 do_list_tag() {
   git tag -l -n
 }
+
+do_shasum() {
+  if [ -z $tag ] ; then
+    log.error "createtag needs tag name, see usage"
+    usage
+  fi
+  local rel_url="$release_archive/refs/tags/$tag.tar.gz"
+  curl -sL $rel_url | shasum -a 256
+}
+
 
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
@@ -150,6 +166,9 @@ case $command_name in
     ;;
   listtag)
     do_list_tag
+    ;;
+  shasum)
+    do_shasum
     ;;
   *)
     log.error "Invalid command: $command_name"
