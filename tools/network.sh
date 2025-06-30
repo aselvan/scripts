@@ -18,6 +18,7 @@
 #                    implemented interface related functions in Linux
 #   Jun 3,  2025 --- Added restoremac command
 #   Jun 5,  2025 --- Added speed test command
+#   Jun 30, 2025 --- Added openport command
 ###############################################################################
 
 # version format YY.MM.DD
@@ -34,10 +35,10 @@ arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 my_mac_addr_file="$HOME/.my_mac_address"
 
 # commandline options
-options="c:i:n:s:H:d:m:a:vh?"
+options="c:i:n:s:H:d:m:a:p:vh?"
 
 command_name=""
-supported_commands="info|ip|lanip|wanip|mac|dhcp|scan|testsvc|testfw|interfaces|traceroute|dnsperf|multidnsperf|allports|tcpports|listenports|spoofmac|restoremac|genmac|route|dns|netstat|appfirewall|dhcprenew|wifiif|ssid|wifistats|internet|speed"
+supported_commands="info|ip|lanip|wanip|mac|dhcp|scan|testsvc|testfw|interfaces|traceroute|dnsperf|multidnsperf|allports|tcpports|listenports|spoofmac|restoremac|genmac|route|dns|netstat|appfirewall|dhcprenew|wifiif|ssid|wifistats|internet|speed|openport"
 iface=""
 my_mac=""
 wifi_iface=""
@@ -55,8 +56,8 @@ appfirewall="/usr/libexec/ApplicationFirewall/socketfilterfw"
 appfirewall_args="--listapps --getglobalstate --getblockall  --getstealthmode"
 wait_time=5
 ssid=""
-
 airport="/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport"
+ports=""
 
 usage() {
   cat << EOF
@@ -66,7 +67,9 @@ Usage: $my_name [options]
   -c <command>     ---> command to run [see supported commands below]  
   -i <interface>   ---> network interface to use for various commands that needs interface
   -n <network>     ---> optional CIDR address to scan [used in 'scan' command Default: $my_net]
-  -s <host:[port]> ---> Host and port to test [Needed for commnans like "testsvc|textfw|traceroute|dnsperf" etc]
+  -s <host:[port]> ---> Host and port to test [Needed for commands like 
+                        "testsvc|textfw|traceroute|dnsperf|openport" etc.
+  -p <ports>       ---> Single port or comma separated list of ports in doublequotes [used by openport command]
   -H <hostlist>    ---> List of hosts to perform dns lookup performance [used in multidnsperf command]
   -d <dnsserver>   ---> Custom DNS server to use for resolving insead of default [used in multidnsperf]
   -m <macaddress>  ---> Required argument for spoofmac command i.e. mac address to spoof
@@ -90,7 +93,7 @@ example(s):
   sudo $my_name -c wifistats
   sudo $my_name -c spoofmac -m ff:ff:ff:ff:ff:ff
   sudo $my_name -c restoremac
-
+  $my_name -c openport -s 192.168.1.1 -p "21, 22, 80, 443, 8080"
 EOF
   exit 0
 }
@@ -591,6 +594,33 @@ test_speed() {
   fi
 }
 
+function openport() {
+  if [ -z $host_port ] ; then
+    log.error "Need host, optionally comma separted ports for portopen command. see usage"
+    usage
+  fi
+
+  local host="${host_port%%:*}"
+
+  if [ ! -z "$ports" ] ; then
+    log.stat "Checking port(s) $ports on $host ..."
+    IFS=',' read -ra port_array <<< "$ports"
+    for p in "${port_array[@]}"; do
+      nc -zv -w3 -G3 $host $p 2>&1
+    done
+  else
+    log.stat "Checking all ports on $host. This will  take a long time..."
+    confirm_action "Are you sure?"
+    if [ $? -eq 1 ] ; then
+      for (( i=0 ; i<1024 ; i++ )) ; do
+        nc -zv -w1 -G1 $host $i 2>&1 | grep -E "succeeded|open"
+      done
+    else
+      log.warn "Cancelled openport command!"
+    fi
+  fi
+}
+
 
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
@@ -631,6 +661,9 @@ while getopts $options opt ; do
       ;;
     s)
       host_port="$OPTARG"
+      ;;
+    p)
+      ports="$OPTARG"
       ;;
     n)
       network="$OPTARG"
@@ -760,6 +793,9 @@ case $command_name in
     ;;
   speed)
     test_speed
+    ;;
+  openport)
+    openport
     ;;
   *)
     log.error "Invalid command: $command_name"
