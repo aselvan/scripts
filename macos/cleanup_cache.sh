@@ -97,12 +97,12 @@ clean_system() {
   
   log.stat "  ${cache_dir}: reclaimed: $(space_used $cache_dir)"
   if [ $dry_run -eq 0 ] ; then  
-    rm -rf $cache_dir/* >> $my_logfile 2>&1
+    rm -rf $cache_dir/* 2>/dev/null 
   fi
 
   log.stat "  ${log_dir}: reclaimed: $(space_used $log_dir)"
   if [ $dry_run -eq 0 ] ; then
-    rm -rf $log_dir/* >> $my_logfile 2>&log_dir1
+    rm -rf $log_dir/* 2>/dev/null
   fi
 }
 
