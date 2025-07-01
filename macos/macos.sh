@@ -19,10 +19,11 @@
 #   Apr 20, 2025 --- Added pids, procinfo commands
 #   Jun 22, 2025 --- Added verify (check if code is signed), and log commands
 #   Jun 25, 2025 --- Added "spaceused" command
+#   Jun 25, 2025 --- Added "disablespotlight" command
 ################################################################################
 
 # version format YY.MM.DD
-version=25.04.20
+version=25.07.01
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl tools for macOS all in one place"
@@ -38,10 +39,10 @@ options="c:l:a:d:r:p:n:kvh?"
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 arg=""
 command_name=""
-supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight|\n kill|disablespotlight|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused"
+supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight|\n kill|disablespotlight|enablespotlight|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused"
 volume_level=""
 spolight_path="/System/Volumes/Data/.Spotlight-V100"
-spotlight_volumes="/ /System/Volumes/Data"
+spotlight_volumes="/System/Volumes/Data/Applications"
 xpc_activity_plist="$HOME/Library/Preferences/com.apple.xpc.activity2.plist"
 killed_list_file="/tmp/$(echo $my_name|cut -d. -f1)_killed_list.txt"
 do_killed_list=0
@@ -141,16 +142,6 @@ showdisk() {
   log.stat "`echo $df_output|awk '{print "  Total: ",$2,"\n  Used:  ",$3,"\n  Available: ",$4,"\n  Percent Used:  ",$5}'`"
 }
 
-showspotlight() {
-  log.stat "Spotlight status:" 
-  log.stat "  `mdutil -as`"
-  local space_used="None"
-  if [ -d $spolight_path ] ; then
-    space_used=`du -sh $spolight_path |awk '{print $1}'`
-  fi
-  log.stat "Spotlight storage space: $space_used"
-}
-
 do_kill() {
   local klist="$kill_list"
   if [ ! -z "$arg" ] ; then
@@ -187,10 +178,29 @@ do_kill() {
   done
 }
 
-do_disablespotlight() {
-  log.stat "Disabling Spotlight completely!"
-  mdutil -adE -i off
+showspotlight() {
+  log.stat "Spotlight status:" 
+  mdutil -as
+  if [ -d $spolight_path ] ; then
+    log.stat "spotlight space used: $(space_used $spolight_path)"
+  fi
 }
+
+disablespotlight() {
+  log.stat "Disabling Spotlight completely!"
+  mdutil -adE -i off >> $my_logfile 2>&1
+  log.stat "  ${spolight_path}: reclaimed: $(space_used $spolight_path)"
+  rm -rf $spotlight_path
+}
+
+enablespotlight() {
+  log.stat "Enabling Spotlight for $spotlight_volume"
+  mdutil -adE -i off >> $my_logfile 2>&1
+  log.stat "  ${spolight_path}: reclaimed: $(space_used $spolight_path)"
+  rm -rf $spotlight_path
+  mdutil -i on $spotlight_volume >> $my_logfile 2>&1  
+}
+
 
 show_cpu_temp() {
   local t=$(macos_arch)
@@ -377,7 +387,10 @@ case $command_name in
     showspotlight
     ;;
   disablespotlight)
-    do_disablespotlight
+    disablespotlight
+    ;;
+  enablespotlight)
+    enablespotlight
     ;;
   kill)
     do_kill
