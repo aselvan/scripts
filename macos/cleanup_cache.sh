@@ -18,10 +18,11 @@
 #   Feb 20, 2025 --- Remove spotlight indexing on / when cleanup requested
 #   Feb 22, 2025 --- Remove spotlight indexing on *all* volumes
 #   Mar 18, 2025 --- Use effective_user in place of get_current_user
+#   Jul 1,  2025 --- Now prints how much space is reclaimed, also dry run option
 #################################################################################
 
 # version format YY.MM.DD
-version=25.03.18
+version=25.07.01
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Wipe macOS cache, logs, revision backup, spotlight etc."
@@ -32,7 +33,7 @@ default_scripts_github=$HOME/src/scripts.github
 scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
 # commandline arguments
-options_list="u:saihv"
+options_list="u:snihv"
 
 current_user=""
 user_list="" # empty for current user i.e. no sudo needed
@@ -40,7 +41,8 @@ do_system=0  # by default just do user level only
 document_rev_path="/System/Volumes/Data/.DocumentRevisions-V100"
 do_spotlight=0
 spotlight_path="/System/Volumes/Data/.Spotlight-V100"
-spotlight_volume="/System/Volumes/Data"
+spotlight_volume="/System/Volumes/Data/Applications"
+dry_run=0
 
 usage() {
   cat << EOF
@@ -49,6 +51,7 @@ $my_name --- $my_title
 Usage: $my_name [options]
   -u <list> ---> List of users to clean [default: only current users cache is cleaned]
   -s        ---> Enable cleaning system level cache/logs as well
+  -n        ---> dry run, do not clean, just shows potential space savings
   -v        ---> enable verbose, otherwise just errors are printed
   -i        ---> Clear spotlight (useful if lot of apps installed/removed orphaning index files) 
   -h        ---> print usage/help
@@ -64,50 +67,67 @@ EOF
 clean_user() {
   local user=$1
   local user_home="/Users/$user"
-  cache_dir="${user_home}/Library/Caches"
-  log_dir="${user_home}/Library/Logs"
+  local cache_dir="${user_home}/Library/Caches"
+  local log_dir="${user_home}/Library/Logs"
   
   # ensure the cache directory exists
   if [ ! -d $cache_dir ] ; then
     log.error "  The user '$user' does not have cache dir, possibly non-existent user? skipping..."
     return
   fi
-  log.stat "  cleaning at user level $cache_dir ..."
-  rm -rf $cache_dir/*
+  log.stat "  ${cache_dir}: reclaimed: $(space_used $cache_dir)"
+  if [ $dry_run -eq 0 ] ; then
+    rm -rf $cache_dir/*
+  fi
 
  # ensure the cache directory exists
   if [ ! -d $log_dir ] ; then
     log.error "  The user '$user' does not have log dir, possibly non-existent user? skipping..."
     return
   fi
-  log.stat "  cleaning at user level $log_dir ..."
-  rm -rf $log_dir/*
+  log.stat "  ${log_dir}: reclaimed: $(space_used $log_dir)"
+  if [ $dry_run -eq 0 ] ; then  
+    rm -rf $log_dir/*
+  fi
 }
 
 clean_system() {
-  cache_dir="/Library/Caches"
-  log_dir="/Library/Logs"
+  local cache_dir="/Library/Caches"
+  local log_dir="/Library/Logs"
   
-  log.stat "  cleaning at system level $cache_dir ..."
-  rm -rf $cache_dir/* >> $my_logfile 2>&1
+  log.stat "  ${cache_dir}: reclaimed: $(space_used $cache_dir)"
+  if [ $dry_run -eq 0 ] ; then  
+    rm -rf $cache_dir/* >> $my_logfile 2>&1
+  fi
 
-  log.stat "  cleaning at system level $log_dir ..."
-  rm -rf $log_dir/* >> $my_logfile 2>&1
+  log.stat "  ${log_dir}: reclaimed: $(space_used $log_dir)"
+  if [ $dry_run -eq 0 ] ; then
+    rm -rf $log_dir/* >> $my_logfile 2>&log_dir1
+  fi
 }
 
 clean_spotlight() {
-  log.stat "  cleaning spotlight indexes"
-  space_reclaimed=`du -sh $spotlight_path |awk '{print $1}'`
-  
+  log.stat "cleaning spotlight indexes ..." $green 
+  if [ $dry_run -eq 1 ] ; then
+    log.stat "  ${spotlight_path}: $(space_used $spotlight_path)"
+    return
+  fi
+
+  # check with user
+  confirm_action "WARNING: Spotlight index will be removed"
+  if [ $? -eq 0 ] ; then
+    log.warn "skipping spotlight cleanup"
+    return
+  fi
+
   log.stat "  disabling spotlight indexing for all volumes & stores ..."
   mdutil -adE -i off  >> $my_logfile 2>&1
   
-  log.stat "  removing spotlight index space ..."
+  log.stat "  ${spotlight_path}: reclaimed: $(space_used $spotlight_path)"
   rm -rf $spotlight_path
-  
-  log.stat "  removed $space_reclaimed of spotlight index data!"
   log.stat "  enabling spotlight indexing on $spotlight_volume only ..."
   mdutil -i on $spotlight_volume >> $my_logfile 2>&1
+
   log.stat "Spotlight indexing will start now as background process."
   log.stat "NOTE: indexing *will* take long time to complete, just let them (mds_store & mdworker) run."
 }
@@ -139,6 +159,9 @@ while getopts "$options_list" opt; do
     i)
       do_spotlight=1
       ;;
+    n)
+      dry_run=1
+      ;;
     v)
       verbose=1
       ;;
@@ -156,6 +179,10 @@ if [ -z "$user_list" ] ; then
   user_list=$effective_user
 fi
 
+if [ $dry_run -eq 1 ] ; then
+  log.warn "Dry Run mode: space will not be deleted"
+fi
+
 for user in $user_list ; do
   log.stat "cleaning cache, logs for user: $user ..." $green
   clean_user $user
@@ -167,19 +194,13 @@ if [ $do_system -eq 1 ] ; then
   clean_system
 
   # clean the document revisions. (note: this would remove the ability to restore previous versions (mostly preview app)
-  log.stat "cleaning document versions at system level... (reboot at your convenience)"
+  log.stat "cleaning document versions at system level... (reboot at your convenience)" $green
   rm -rf $document_rev_path
 fi
 
 # clean spotlight (only if requested)
 if [ $do_spotlight -eq 1 ] ; then
-  # check with user
-  confirm_action "WARNING: Spotlight index will be removed"
-  if [ $? -eq 1 ] ; then
-    clean_spotlight
-  else
-    log.warn "skipping spotlight cleanup"
-  fi
+  clean_spotlight
 fi
 
 log.stat "Cleanup completed"
