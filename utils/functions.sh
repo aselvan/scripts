@@ -194,6 +194,12 @@ is_media() {
   esac
 }
 
+# return the total used size of path passed
+space_used() {
+  local p=$1
+  echo `du -I private -sh $p 2>/dev/null |awk '{print $1}'`
+}
+
 #--- system utilities ---
 # used for ctrl+c install in main function as shown below
 # trap 'signal_handler' SIGINT <other signal as needed>
