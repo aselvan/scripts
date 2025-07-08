@@ -193,7 +193,7 @@ while getopts $options opt ; do
     s)
       service="$OPTARG"
       if [[ ! "$service" =~ ^[0-3]$ ]] ; then
-        log.error "Invalid service! It must be between 0-2, see usage below ..."
+        log.error "Invalid service! It must be between 0-3, see usage below ..."
         usage
       fi
       ;;
