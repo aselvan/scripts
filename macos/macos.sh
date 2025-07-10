@@ -20,10 +20,11 @@
 #   Jun 22, 2025 --- Added verify (check if code is signed), and log commands
 #   Jun 25, 2025 --- Added "spaceused" command
 #   Jun 25, 2025 --- Added "disablespotlight" command
+#   Jul 9,  2025 --- Added help syntax for each supported commands
 ################################################################################
 
 # version format YY.MM.DD
-version=25.07.01
+version=25.07.09
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl tools for macOS all in one place"
@@ -39,7 +40,10 @@ options="c:l:a:d:r:p:n:kvh?"
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 arg=""
 command_name=""
-supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight|\n kill|disablespotlight|enablespotlight|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused"
+supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight|kill|disablespotlight|enablespotlight|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused"
+# if -h argument comes after specifiying a valid command to provide specific command help
+command_help=0
+
 volume_level=""
 spolight_path="/System/Volumes/Data/.Spotlight-V100"
 spotlight_volumes="/System/Volumes/Data/Applications"
@@ -55,7 +59,7 @@ spaceused_path="$HOME"
 #
 # Note: these items in the kill list are pigs that we can't get rid of w/ out 
 # doing risky things like deleting or moving files in root '/' partition to 
-# get rid of the corresponding launchctl pllist files. The only thing you can 
+# get rid of the corresponding launchctl plist files. The only thing you can 
 # do is kill these hogs every few minutes w/ cron job.
 kill_list="mediaanalysisd mediaanalysisd-access photoanalysisd photolibraryd cloudphotod Stocks StocksKitService StocksWidget StocksDetailIntents com.apple.Photos.Migration"
 
@@ -63,34 +67,24 @@ usage() {
   cat << EOF
 $my_name --- $my_title
 
-Usage: $my_name [options]
-  -c <command>   ---> command to run [see supported commands below]
-  -l <number>    ---> volume level [used by 'volume' command range: 1-100]
-  -d <number>    ---> used by "log" to filter duration [Default: $log_duration]
-  -r <number>    ---> used by "spaceused" to restrict rows to display [Default: $spaceused_rows]
-  -n <number>    ---> used by "spaceused" to recurse n-depeth [Default: $spaceused_depth]
-  -p <path>      ---> used by "spaceused" to recurse down path [Default: $spaceused_path]
-  -a <arg>       ---> arguments for commands like bundle|kill|app|procinfo|codesign|log etc.
-  -k             ---> enables writing $killed_list_file showing what was killed 
-                      [note: the file may grow to large size]
-  -v             ---> enable verbose, otherwise just errors are printed
-  -h             ---> print usage/help
+Usage: $my_name -c <command> [options]
+  -c <command> [-h] ---> command to run [see supported commands below] -h to show command syntax
+  -l <number>       ---> volume level [used by 'volume' command range: 1-100]
+  -d <number>       ---> used by "log" to filter duration [Default: $log_duration]
+  -r <number>       ---> used by "spaceused" to restrict rows to display [Default: $spaceused_rows]
+  -n <number>       ---> used by "spaceused" to recurse n-depeth [Default: $spaceused_depth]
+  -p <path>         ---> used by "spaceused" to recurse down path [Default: $spaceused_path]
+  -a <arg>          ---> arguments for commands like bundle|kill|app|procinfo|codesign|log etc.
+  -k                ---> enables writing $killed_list_file showing what was killed 
+                         [note: the file may grow to large size]
+  -v                ---> enable verbose, otherwise just errors are printed
+  -h                ---> print usage/help
+  
+NOTE: Add -h after the command to see command specific usage. Ex: $my_name -c app -h
 
 Supported commands: 
-  $(echo -e $supported_commands)
+$(echo -e $supported_commands)
 
-Some examples(s)
-  $my_name -c mem                     # show mem
-  $my_name -c bundle -a textedit      # show bundele details of program/app
-  $my_name -c volume -l 25            # set volume to 25
-  $my_name -c kill -a "mediaanalysisd photoanalysisd photolibraryd" # kill the list of apps
-  $my_name -c app -a "Google Chrome"  # show information of the specified app
-  $my_name -c pids                    # shows list of process & pid runnning with launchctl
-  $my_name -c procinfo -a <pid>       # shows detailed info of a running process under launchctl
-  $my_name -c verify -a /sbin/disklabel # check the app's code sign details or error if not signed
-  $my_name -c log -a "string" -d $log_duration # the duration can be #mhd [minute,hour,day]
-  $my_name -c spaceused -r10 -p ~/     # shows top 10 rows of dir using max space under ~
-  
 EOF
   exit 0
 }
@@ -118,6 +112,12 @@ showcpu() {
 }
 
 volume() {
+  if [ $command_help -eq 1 ] ; then
+    log.stat "Usage: $my_name -c volume        # Shows current volume level" $black
+    log.stat "Usage: $my_name -c volume -l 25  # sets volume level to 25 [range: 0-100]" $black
+    exit 1
+  fi
+
   # if level is provided use to set (otherwise, just show)
   if [ ! -z $volume_level ] ; then
     log.stat "\tSetting output volume to $volume_level" $green
@@ -142,7 +142,21 @@ showdisk() {
   log.stat "`echo $df_output|awk '{print "  Total: ",$2,"\n  Used:  ",$3,"\n  Available: ",$4,"\n  Percent Used:  ",$5}'`"
 }
 
+showbundle () {
+  if [ $command_help -eq 1 ] ||  [ -z "$arg" ]  ; then
+    log.stat "Usage: $my_name -c bundle -a textedit  # this example shows details of textedit" $black
+    exit 1
+  fi
+  cmd="osascript -e 'id of app \"$arg\"'"
+  log.stat "\t`eval $cmd`" $green
+}
+
 do_kill() {
+  if [ $command_help -eq 1 ] ; then
+    log.stat "Usage: $my_name -c kill -a \"photoanalysisd photolibraryd\" # kill the list of apps" $black
+    exit 1
+  fi
+
   local klist="$kill_list"
   if [ ! -z "$arg" ] ; then
     klist="$arg"
@@ -179,6 +193,7 @@ do_kill() {
 }
 
 showspotlight() {
+  check_root  
   log.stat "Spotlight status:" 
   mdutil -as
   if [ -d $spolight_path ] ; then
@@ -203,6 +218,8 @@ enablespotlight() {
 
 
 show_cpu_temp() {
+  check_root  
+  
   local t=$(macos_arch)
   if [ $t == "Intel" ] ; then
     log.stat "CPU Temp: `sudo powermetrics --samplers smc -n1|grep -i "CPU die"|awk '{print $4,$5}'` (Normal: 40-60 C, High: >80 C)"
@@ -243,6 +260,11 @@ show_version() {
 }
 
 show_app() {
+  if [ $command_help -eq 1 ] ||  [ -z "$arg" ]  ; then
+    log.stat "Usage: $my_name -c app -a \"Google Chrome\"  # show information of the specified app" $black
+    exit 1
+  fi
+
   # if argument provided just show the specific app info, otherwise list all
   if [ ! -z "$arg" ] ; then
     lsappinfo info "$arg"
@@ -253,22 +275,25 @@ show_app() {
 }
 
 show_pids() {
+  check_root  
   sudo launchctl list | awk '{if ($1 ~ /^[0-9]+$/) print $3,"("$1")"}'  
 }
 
 show_procinfo() {
-  if [ -z $arg ] ; then
-    log.error "Need <pid> argument for this command, see usage"
-    usage
+  if [ $command_help -eq 1 ] ||  [ -z "$arg" ]  ; then
+    log.stat "Usage: $my_name -c procinfo -a pid  # show procinfo for pid" $black
+    exit 1
   fi
+  check_root  
   sudo launchctl procinfo $arg 
 }
 
 verify_code() {
-  if [ -z $arg ] ; then
-    log.error "Need appname argument for this command, see usage"
-    usage
+  if [ $command_help -eq 1 ] ||  [ -z "$arg" ]  ; then
+    log.stat "Usage: $my_name -c verify -a /sbin/disklabel  # check code sign details or error if not signed" $black
+    exit 1
   fi
+
   codesign -d --verbose=2 $arg
   if [ $? -ne 0 ]; then
     log.error "${arg}: is not signed"
@@ -276,15 +301,24 @@ verify_code() {
 }
 
 show_log() {
-  if [ -z $arg ] ; then
-    log.error "Need string to search log, see usage"
-    usage
+  if [ $command_help -eq 1 ] ||  [ -z "$arg" ]  ; then
+    log.stat "Usage: $my_name -c log -a \"string\"       # search system log for string" $black
+    log.stat "Usage: $my_name -c log -a \"string\" -d $log_duration # -d can be #mhd [min,hour,day]" $black
+    exit 1
   fi
+
   local filter='eventMessage contains "'"$arg"'"'
   log show --predicate "$filter" --style syslog --last $log_duration
 }
 
 show_spaceused() {
+  if [ $command_help -eq 1 ] ||  [ -z "$arg" ]  ; then
+    log.stat "Usage: $my_name -c spaceused            # show space used under $spaceused_path" $black
+    log.stat "Usage: $my_name -c spaceused -r10 -p ~/ # show space used with top 10 max space under ~/ß" $black
+    exit 1
+  fi
+
+  check_root  
   sudo du -I private -xh -d $spaceused_depth $spaceused_path 2>/dev/null | sort -hr|head -n$spaceused_rows
 }
 
@@ -335,7 +369,11 @@ while getopts $options opt ; do
       verbose=1
       ;;
     ?|h|*)
-      usage
+      if [[ -n "$command_name" ]] && valid_command "$command_name" "$supported_commands" ; then
+        command_help=1
+      else
+        usage
+      fi
       ;;
   esac
 done
@@ -375,15 +413,9 @@ case $command_name in
     showdisk
     ;;
   bundle)
-    if [ -z "$arg" ] ; then
-      log.error "bundle requires argumement... see usage"
-      usage
-    fi
-    cmd="osascript -e 'id of app \"$arg\"'"
-    log.stat "\t`eval $cmd`" $green
+    showbundle
     ;;
   spotlight)
-    check_root
     showspotlight
     ;;
   disablespotlight)
@@ -399,8 +431,6 @@ case $command_name in
     log.stat "MacOS CPU Architecture: `macos_arch`"
     ;;
   cputemp)
-    # need root access
-    check_root
     show_cpu_temp
     ;;
   speed)
@@ -410,11 +440,9 @@ case $command_name in
     show_app
     ;;
   pids)
-    check_root
     show_pids
     ;;
   procinfo)
-    check_root
     show_procinfo
     ;;
   verify)
@@ -424,7 +452,6 @@ case $command_name in
     show_log
     ;;
   spaceused)
-    check_root
     show_spaceused
     ;;
   *)
