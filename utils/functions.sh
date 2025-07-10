@@ -436,6 +436,18 @@ string_contains() {
   return $?
 }
 
+# same as above but need expects list to check should be like "item1|item2" etc
+valid_command() {
+  local c=$1
+  local c_list=$2
+
+  if [ -z "$c" ] || [ -z "$c_list" ] ; then
+    return 1
+  fi
+  
+  [[ "$c" =~ ^($c_list)$ ]]
+}
+
 # compare versions (le or ge)
 # usage: check if my_version is less than or equal to 3.1.0
 #   if version_le "$my_version" "3.1.10" ; then
