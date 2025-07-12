@@ -19,10 +19,11 @@
 #   Jun 3,  2025 --- Added restoremac command
 #   Jun 5,  2025 --- Added speed test command
 #   Jun 30, 2025 --- Added openport command
+#   Jul 12, 2025 --- Added help syntax for each supported commands
 ###############################################################################
 
 # version format YY.MM.DD
-version=25.06.05
+version=25.07.12
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl network tools wrapper all in one place"
@@ -39,6 +40,8 @@ options="c:i:n:s:H:d:m:a:p:vh?"
 
 command_name=""
 supported_commands="info|ip|lanip|wanip|mac|dhcp|scan|testsvc|testfw|interfaces|traceroute|dnsperf|multidnsperf|allports|tcpports|listenports|spoofmac|restoremac|genmac|route|dns|netstat|appfirewall|dhcprenew|wifiif|ssid|wifistats|internet|speed|openport"
+# if -h argument comes after specifiying a valid command to provide specific command help
+command_help=0
 iface=""
 my_mac=""
 wifi_iface=""
@@ -63,37 +66,28 @@ usage() {
   cat << EOF
 $my_name --- $my_title
 
-Usage: $my_name [options]
-  -c <command>     ---> command to run [see supported commands below]  
-  -i <interface>   ---> network interface to use for various commands that needs interface
-  -n <network>     ---> optional CIDR address to scan [used in 'scan' command Default: $my_net]
-  -s <host:[port]> ---> Host and port to test [Needed for commands like 
-                        "testsvc|textfw|traceroute|dnsperf|openport" etc.
-  -p <ports>       ---> Single port or comma separated list of ports in doublequotes [used by openport command]
-  -H <hostlist>    ---> List of hosts to perform dns lookup performance [used in multidnsperf command]
-  -d <dnsserver>   ---> Custom DNS server to use for resolving insead of default [used in multidnsperf]
-  -m <macaddress>  ---> Required argument for spoofmac command i.e. mac address to spoof
-  -a <args>        ---> Additional args used for commands like netstat|appfirewall etc
-  -v               ---> enable verbose, otherwise just errors are printed
-  -h               ---> print usage/help
+Usage: $my_name -c <command> [options]
+  -c <command> [-h] ---> command to run [see supported commands below] -h to show command syntax
+  -i <interface>    ---> network interface to use for various commands that needs interface
+  -n <network>      ---> optional CIDR address to scan [used in 'scan' command Default: $my_net]
+  -s <host:[port]>  ---> Host and port to test [Needed for commands like 
+                         "testsvc|textfw|traceroute|dnsperf|openport" etc.
+  -p <ports>        ---> Single port or comma separated list of ports in doublequotes [used by openport command]
+  -H <hostlist>     ---> List of hosts to perform dns lookup performance [used in multidnsperf command]
+  -d <dnsserver>    ---> Custom DNS server to use for resolving insead of default [used in multidnsperf]
+  -m <macaddress>   ---> Required argument for spoofmac command i.e. mac address to spoof
+  -a <args>         ---> Additional args used for commands like netstat|appfirewall etc
+  -v                ---> enable verbose, otherwise just errors are printed
+  -h                ---> print usage/help
+NOTE: For commands requiring args add -h after the command to see command specific usage. 
+Ex: $my_name -c openport -h
 
 Supported commands: 
   $supported_commands
 
-example(s): 
-  $my_name -c info
-  $my_name -c traceroute -s yahoo.com
-  $my_name -c route
-  $my_name -c testfw -s google.com:443
-  $my_name -c ip
-  $my_name -c mac
-  $my_name -c interfaces
-  $my_name -c internet
-  $my_name -c allports
-  sudo $my_name -c wifistats
-  sudo $my_name -c spoofmac -m ff:ff:ff:ff:ff:ff
-  sudo $my_name -c restoremac
-  $my_name -c openport -s 192.168.1.1 -p "21, 22, 80, 443, 8080"
+See also: 
+  macos.sh process.sh security.sh
+
 EOF
   exit 0
 }
@@ -335,10 +329,14 @@ function scannetwork() {
 }
 
 function testsvc() {
-  if [ -z $host_port ] ; then
-    log.error "Need host:port for testsvc function, see usage"
-    usage
+  if [ $command_help -eq 1 ] ||  [ -z "$host_port" ]  ; then
+    if [ -z $host_port ] ; then
+      log.error "Need host:port for testsvc command"
+    fi
+    log.stat "Usage: $my_name -c testsvc -s yahoo.com:443  # check host:port is active using netcat " $black
+    exit 1
   fi
+
   host="${host_port%%:*}"
   port="${host_port##*:}"
   log.debug "Checking service on $host at port $port ..."
@@ -390,10 +388,14 @@ function list_interfaces() {
 }
 
 function testfw() {
-  if [ -z $host_port ] ; then
-    log.error "Need host:port for testfw function, see usage"
-    usage
+  if [ $command_help -eq 1 ] ||  [ -z "$host_port" ]  ; then
+    if [ -z $host_port ] ; then
+      log.error "Need host:port for testfw command"
+    fi
+    log.stat "Usage: $my_name -c testfw -s yahoo.com:443  # check host:port is active using nmap " $black
+    exit 1
   fi
+
   host="${host_port%%:*}"
   port="${host_port##*:}"
   log.debug "Checking port open on $host at port $port ..."
@@ -405,22 +407,28 @@ function traceroute() {
   # check for root access
   check_root
 
-  if [ -z $host_port ] ; then
-    log.error "Need host for traceroute function, see usage"
-    usage
+  if [ $command_help -eq 1 ] ||  [ -z "$host_port" ]  ; then
+    if [ -z $host_port ] ; then
+      log.error "Need host for traceroute command"
+    fi
+    log.stat "Usage: sudo $my_name -c traceroute -s yahoo.com  # traceroute using nmap " $black
+    exit 1
   fi
-  host="${host_port%%:*}"
 
+  host="${host_port%%:*}"
   log.stat "Traceroute to $host using nmap ..."
   nmap -sn --traceroute $host
-
 }
 
 function dnsperf() {
-  if [ -z $host_port ] ; then
-    log.error "Need host for dnsperf function, see usage"
-    usage
+  if [ $command_help -eq 1 ] ||  [ -z "$host_port" ]  ; then
+    if [ -z $host_port ] ; then
+      log.error "Need host for dnsperf command"
+    fi
+    log.stat "Usage: $my_name -c dnsperf -s yahoo.com  # traceroute using nmap " $black
+    exit 1
   fi
+
   host="${host_port%%:*}"
   log.stat "Running dnsperf to resolve host $host ..."
   result=$(dig $host +noall +answer +stats | awk '$3 == "IN" && $4 == "A"{ip=$5}/Query time:/{t=$4 " " $5}END{print ip, t}')
@@ -442,7 +450,6 @@ function multidnsperf() {
   for time in $output; do
     total_time=$((total_time + time))
   done
-
   log.stat "\tTotal time for resolving all hostnames: $total_time ms" $green
 }
 
@@ -489,10 +496,14 @@ save_mac() {
 function spoofmac() {
   # check for root access
   check_root
-  
-  if [ -z $mac_to_spoof ] ; then
-    log.error "Need a mac address to spoof, see usage"
-    usage
+ 
+  if [ $command_help -eq 1 ] ||  [ -z "$mac_to_spoof" ]  ; then
+    if [ -z $mac_to_spoof ] ; then
+      log.error "Need mac address to spoof for spoofmac command"
+    fi
+    local mac_example=`openssl rand -hex 6 | sed "s/\(..\)/\1:/g; s/.$//"`
+    log.stat "Usage: $my_name -c spoofmac -m $mac_example # spoof macaddress to specified address " $black
+    exit 1
   fi
  
   # save mac for restoring.
@@ -519,7 +530,6 @@ function spoofmac() {
     log.stat "\tSpoofing failed on $mac_to_spoof!" $red
   fi
 }
-
 
 function genmac() {
   local random_mac=`openssl rand -hex 6 | sed "s/\(..\)/\1:/g; s/.$//"`
@@ -595,13 +605,16 @@ test_speed() {
 }
 
 function openport() {
-  if [ -z $host_port ] ; then
-    log.error "Need host, optionally comma separted ports for portopen command. see usage"
-    usage
+
+  if [ $command_help -eq 1 ] ||  [ -z "$host_port" ]  ; then
+    if [ -z $host_port ] ; then
+      log.error "Need host, optionally comma separted ports for openport command"
+    fi
+    log.stat "Usage: $my_name -c openport -s 192.168.1.1 -p \"21, 22, 80, 443\" # check if listed ports are open using netcat" $black
+    exit 1
   fi
 
   local host="${host_port%%:*}"
-
   if [ ! -z "$ports" ] ; then
     log.stat "Checking port(s) $ports on $host ..."
     IFS=',' read -ra port_array <<< "$ports"
@@ -684,7 +697,11 @@ while getopts $options opt ; do
       verbose=1
       ;;
     ?|h|*)
-      usage
+      if [[ -n "$command_name" ]] && valid_command "$command_name" "$supported_commands" ; then
+        command_help=1
+      else
+        usage
+      fi
       ;;
   esac
 done

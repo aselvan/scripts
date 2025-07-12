@@ -4,6 +4,8 @@
 #
 # Author:  Arul Selvan
 # Created: Aug 25, 2024
+#
+# See Also: process.sh
 ################################################################################
 #
 # Version History:
@@ -79,11 +81,13 @@ Usage: $my_name -c <command> [options]
                          [note: the file may grow to large size]
   -v                ---> enable verbose, otherwise just errors are printed
   -h                ---> print usage/help
-  
-NOTE: Add -h after the command to see command specific usage. Ex: $my_name -c app -h
+NOTE: For commands requiring args add -h after the command to see command specific usage.
+Ex: $my_name -c app -h
 
 Supported commands: 
 $(echo -e $supported_commands)
+
+See also: process.sh network.sh security.sh
 
 EOF
   exit 0
@@ -281,7 +285,8 @@ show_pids() {
 
 show_procinfo() {
   if [ $command_help -eq 1 ] ||  [ -z "$arg" ]  ; then
-    log.stat "Usage: $my_name -c procinfo -a pid  # show procinfo for pid" $black
+    log.stat "Usage: $my_name -c procinfo -a pid  # show general process for pid" $black
+    log.stat "See also: process.sh -cinfo -p pid  # show detailed process info for pid" $black
     exit 1
   fi
   check_root  
