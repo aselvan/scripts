@@ -9,9 +9,10 @@
 #   Oct 18, 2020 --- Original version
 #   Nov 2,  2024 --- Changed to use standard includes and additional options
 #   Nov 11, 2024 --- renamed to diskutil.sh to be consistent, check macOS version for -noEFI option
+#   Jul 14, 2025 --- Added missing Apple fstypes
 
 # version format YY.MM.DD
-version=24.11.02
+version=25.07.14
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Wrapper for diskutil on macOS"
@@ -28,7 +29,7 @@ options_list="d:f:n:lvh"
 export PATH="/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
 
 fat32_char_limit=8
-fs_types="JHFS+ HFS+ FAT32 ExFAT"
+fs_types="APFS APFSX APFSI APFSXI JHFS+ HFS+ FAT32 ExFAT"
 disk_list=`diskutil list |grep dev| awk -F'/| ' '{print $3;}' |tr '\n' ' '`
 volume_name="MYDISK"
 fs_type="ExFAT"
@@ -44,12 +45,12 @@ usage() {
 $my_title
 
 Usage: $my_name [options]
-  -d <disk>        ---> disk to format [Available: '$disk_list']
-  -f <file_system> ---> file system to format [Available: '$fs_types']
-  -n <name>        ---> disk name [Default: '$volume_name'] Note: for FAT32 it must be <8 char and all caps
-  -v               ---> enable verbose, otherwise just errors are printed
-  -l               ---> List all the available disks and the type and exit
-  -h               ---> print usage/help
+  -d <disk>    ---> disk to format [Available: '$disk_list']
+  -f <fstype>  ---> file system to format [Available: '$fs_types']
+  -n <name>    ---> disk name [Default: '$volume_name'] Note: for FAT32 it must be <8 char and all caps
+  -v           ---> enable verbose, otherwise just errors are printed
+  -l           ---> List all the available disks and the type and exit
+  -h           ---> print usage/help
   
 EOF
   exit 0
