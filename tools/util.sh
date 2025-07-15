@@ -17,10 +17,11 @@
 #   Dec 26, 2024 --- Added txt2mp3
 #   Dec 27, 2024 --- Added knock
 #   Jan 25, 2025 --- Added lstype, lsmedia etc.
+#   Jul 14, 2025 --- Added help syntax for commands with args
 ################################################################################
 
 # version format YY.MM.DD
-version=25.01.25
+version=25.07.14
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl util tools wrapper all in one place"
@@ -36,6 +37,8 @@ options="c:n:i:o:a:q:Q:d:s:vh?"
 
 command_name=""
 supported_commands="tohex|todec|toascii|calc|rsync|knock|compresspdf|dos2unix|tx2mp3|vid2gif|resize|lsmedia|lstype"
+# if -h argument comes after specifiying a valid command to provide specific command help
+command_help=0
 number=""
 ifile=""
 ofile=""
@@ -56,10 +59,10 @@ usage() {
   cat << EOF
 $my_name --- $my_title
 
-Usage: $my_name [options]
-  -c <command>   ---> command to run [see supported commands below]  
+Usage: $my_name -c <command> [options]
+  -c <command>   ---> command to run [see supported commands below] -h to show command syntax  
   -n <number>    ---> used by all commands that requires a number argument.
-  -i <file/path> ---> input file (wildcard must be quoted) for commands like toascii|rsync|compresspdf|lsmedia etc
+  -i <path>      ---> file/path (quoted) for commands like toascii|rsync|compresspdf|lsmedia etc
   -o <file/path> ---> output for commands require output argument like rsync
   -a <arg>       ---> for commands like calc|lstype
   -d <delay>     ---> frame delay used for vid2gif [Default: $delay]
@@ -70,8 +73,13 @@ Usage: $my_name [options]
   -v             ---> enable verbose, otherwise just errors are printed
   -h             ---> print usage/help
 
+NOTE: For commands requiring args add -h after the command to see command specific usage.
+Ex: $my_name -c lsmedia -h
+
 Supported commands: 
   $supported_commands  
+
+See also: process.sh network.sh security.sh macos.sh
 
 example(s): 
   $my_name -c tohex -n 1000
@@ -82,14 +90,20 @@ EOF
 }
 
 function do_tohex() {
-  if [ -z $number ] ; then
-    log.error "tohex needs a number, see usage"
-    usage
+  if [ $command_help -eq 1 ] ||  [ -z "$number" ]  ; then
+    log.stat "Usage: $my_name -c tohex -n 1234  # convert 1234 to hex" $black
+    exit 1
   fi
+
   log.stat "\tDecimal:Hex: $number:`printf "0x%x" $number`"
 }
 
 function do_todec() {
+  if [ $command_help -eq 1 ] ||  [ -z "$number" ]  ; then
+    log.stat "Usage: $my_name -c $command_name -n 0xa1000  # convert 0xa1000 to decimal" $black
+    exit 1
+  fi
+
   if [ -z $number ] ; then
     log.error "todec needs a number, see usage"
     usage
@@ -98,18 +112,19 @@ function do_todec() {
 }
 
 function do_toascii() {
-  check_installed iconv
-  if [ -z $ifile ] ; then
-    log.error "toascii needs a unicode file to convert to ascii, see usage"
-    usage
+  if [ $command_help -eq 1 ] ||  [ -z "$ifile" ]  ; then
+    log.stat "Usage: $my_name -c $command_name -i unicode.do  # convert unicode.doc to ascii" $black
+    exit 1
   fi
-  iconv -t ASCII//TRANSLIT $file
+
+  check_installed iconv
+  iconv -t ASCII//TRANSLIT $ifile
 }
 
 function do_calc() {
-  if [ -z $args ] ; then
-    log.error "calc needs a expression argument, see usage"
-    usage
+  if [ $command_help -eq 1 ] ||  [ -z "$args" ]  ; then
+    log.stat "Usage: $my_name -c $command_name <expression> # evaluates math expressions " $black
+    exit 1
   fi
   log.stat "\t$args = `echo "scale=6; \"$args\""|bc`"
 }
@@ -128,10 +143,9 @@ function do_rsync() {
 
 function do_compresspdf() {
   check_installed gs
-  
-  if [ -z $ifile ] ; then
-    log.error "compresspdf needs input PDF file to compress, see usage"
-    usage
+  if [ $command_help -eq 1 ] ||  [ -z "$ifile" ]  ; then
+    log.stat "Usage: $my_name -c $command_name -i <pdf_file> # compress specified PDF file " $black
+    exit 1
   fi
 
   gs -sDEVICE=pdfwrite -dPDFSETTINGS="${pdf_quality}" -dNOPAUSE -dQUIET -dBATCH -sOutputFile=$ifile.compressed $ifile
@@ -141,13 +155,12 @@ function do_compresspdf() {
   else
     log.error "Failed to compress: $ifile"
   fi
-
 }
 
 function do_dos2unix() {
-  if [ -z $ifile ] ; then
-    log.error "dos2unix needs input file, see usage"
-    usage
+  if [ $command_help -eq 1 ] ||  [ -z "$ifile" ]  ; then
+    log.stat "Usage: $my_name -c $command_name -i <dos_format_file> # convert dos2unix " $black
+    exit 1
   fi
 
   tr -d '\r' < $ifile > $ifile.dos2unix
@@ -188,12 +201,13 @@ function do_vid2gif() {
 }
 
 function do_knock() {
+  if [ $command_help -eq 1 ] ||  [ -z "$host_port" ]  ; then
+    log.stat "Usage: $my_name -c $command_name -s <host:port> # does port knocking on host:port " $black
+    exit 1
+  fi
+
   check_installed fwknop
 
-  if [ -z $host_port ] ; then
-    log.error "Need host:port for do_knock function, see usage"
-    usage
-  fi
   local host="${host_port%%:*}"
   local port="${host_port##*:}"
   if [ "$port" == "$host" ] ; then
@@ -207,6 +221,11 @@ function do_knock() {
 }
 
 function do_resize() {
+  if [ $command_help -eq 1 ] ||  [ -z "$host_port" ]  ; then
+    log.stat "Usage: $my_name -c $command_name -i <image> -Q $image_quality -r $image_resize # convert image quality [0-100]; size 0-100%" $black
+    exit 1
+  fi
+
   check_installed mogrify
 
   if [ -z "$ifile" ] ; then
@@ -233,6 +252,7 @@ function do_lsmedia() {
   # need use eval to avoid shell interpreting paranthesis
   eval "find $ifile -type f \( $filter \) -print"
 }
+
 function do_lstype() {
   if [ -z "$ifile" ] || [ ! -d "$ifile" ] || [ -z "$args" ] ; then
     log.error "lstype needs path and list of types, see usage"
@@ -299,7 +319,11 @@ while getopts $options opt ; do
       verbose=1
       ;;
     ?|h|*)
-      usage
+      if [[ -n "$command_name" ]] && valid_command "$command_name" "$supported_commands" ; then
+        command_help=1
+      else
+        usage
+      fi
       ;;
   esac
 done
@@ -353,7 +377,7 @@ case $command_name in
     ;;
   *)
     log.error "Invalid command: $command_name"
-    log.stat "Available commands: $supported_commands"
+    log.stat  "Available commands: $supported_commands"
     exit 1
     ;;
 esac
