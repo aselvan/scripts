@@ -23,11 +23,11 @@
 #   Jun 25, 2025 --- Added "spaceused" command
 #   Jun 25, 2025 --- Added "disablespotlight" command
 #   Jul 9,  2025 --- Added help syntax for each supported commands
-#   Jul 22, 2025 --- Added sysext command (uses systemextensionsctl list)
+#   Jul 22, 2025 --- Added sysext (uses systemextensionsctl list) and lsbom 
 ################################################################################
 
 # version format YY.MM.DD
-version=25.07.09
+version=25.07.22
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl tools for macOS all in one place"
@@ -43,7 +43,7 @@ options="c:l:a:d:r:p:n:kvh?"
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 arg=""
 command_name=""
-supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight|kill|disablespotlight|enablespotlight|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused|sysext"
+supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight|kill|disablespotlight|enablespotlight|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused|sysext|lsbom"
 # if -h argument comes after specifiying a valid command to provide specific command help
 command_help=0
 
@@ -328,6 +328,16 @@ show_spaceused() {
   sudo du -I private -xh -d $spaceused_depth $spaceused_path 2>/dev/null | sort -hr|head -n$spaceused_rows
 }
 
+do_lsbom() {
+  if [ $command_help -eq 1 ] ||  [ -z "$arg" ]  ; then
+    log.stat "Usage: $my_name -c $command_name -a \"string\"  # list $arg installed files"
+    log.stat "Example: $my_name -c $command_name -a \"com.nordvpn\" "
+    exit 1
+  fi
+  log.stat "Installed Path of app: $arg"
+  lsbom -ds /var/db/receipts/*${arg}*.bom |awk -F/ '{print $2}'|sort -u
+}
+
 
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
@@ -463,6 +473,9 @@ case $command_name in
   sysext)
     log.stat "System Extentions List"
     systemextensionsctl list   
+    ;;
+  lsbom)
+    do_lsbom
     ;;
   *)
     log.error "Invalid command: $command_name"
