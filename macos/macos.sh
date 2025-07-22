@@ -23,6 +23,7 @@
 #   Jun 25, 2025 --- Added "spaceused" command
 #   Jun 25, 2025 --- Added "disablespotlight" command
 #   Jul 9,  2025 --- Added help syntax for each supported commands
+#   Jul 22, 2025 --- Added sysext command (uses systemextensionsctl list)
 ################################################################################
 
 # version format YY.MM.DD
@@ -42,7 +43,7 @@ options="c:l:a:d:r:p:n:kvh?"
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 arg=""
 command_name=""
-supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight|kill|disablespotlight|enablespotlight|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused"
+supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight|kill|disablespotlight|enablespotlight|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused|sysext"
 # if -h argument comes after specifiying a valid command to provide specific command help
 command_help=0
 
@@ -458,6 +459,10 @@ case $command_name in
     ;;
   spaceused)
     show_spaceused
+    ;;
+  sysext)
+    log.stat "System Extentions List"
+    systemextensionsctl list   
     ;;
   *)
     log.error "Invalid command: $command_name"
