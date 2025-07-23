@@ -57,6 +57,7 @@ log_duration="1h"
 spaceused_rows=10
 spaceused_depth=3
 spaceused_path="$HOME"
+receipt_path="/var/db/receipts"
 
 # default kill list
 #
@@ -335,7 +336,10 @@ do_lsbom() {
     exit 1
   fi
   log.stat "Installed Path of app: $arg"
-  lsbom -ds /var/db/receipts/*${arg}*.bom |awk -F/ '{print $2}'|sort -u
+  # get prefix
+  local prefix=`plutil -p  ${receipt_path}/*${arg}*.plist|awk '/InstallPrefixPath/ {print $3}'|tr -d \"`
+  log.stat "Prefix: /$prefix"
+  lsbom -ds ${receipt_path}/*${arg}*.bom |awk -F/ '{print $2}'|sort -u
 }
 
 
