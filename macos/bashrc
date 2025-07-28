@@ -135,6 +135,15 @@ wakeup_mac() {
   echo "Waking up mac at '$ten_sec_from_now'"
   sudo pmset schedule wake "$ten_sec_from_now"
 }
+
+pidof() {
+  if [ -z $1 ] ; then
+    echo "Usage: pidof <appname> [note: appname can be regex]"
+    return
+  fi
+  ps axc|awk "\$5 ~ /$1/ {print \$1;}"
+}
+
 # ----------------------- custom entries ----------------------------
 # Finally, include any custom local bashrc if present that may include 
 # env/alias/functions that may not be suitable for public version of 
