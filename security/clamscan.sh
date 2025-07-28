@@ -15,10 +15,11 @@
 #   May 28, 2018 --- Original Version.
 #   Jan 26, 2024 --- Refactored to use logger, function includes, exclude large files.
 #   Feb 11, 2024 --- Added code to write html file optionally.
+#   Jul 28, 2025 --- Added additional excludes and changed default path on macOS
 #
 
 # version format YY.MM.DD
-version=24.02.11
+version=25.07.28
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Sample script"
@@ -36,7 +37,7 @@ export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/opt/homebrew/bin:$PAT
 
 # TODO:
 # Customize these to fit your needs (these are specific to my needs), the rest should be generic
-exclude_dirs=".Trash|.Trashes|.Spotlight-V100|index.spotlightV3|var|dev|private|xarts|CloudStorage|CrashReporter|views|com.apple.mail|creditexpert|javanetexamples|ice|work|VirtualBoxVMs|android|medical_records|react-tutorial|gdrive|configs|google-backup|raspberrypi|offline-videos|Movies|.svn|.ak"
+exclude_dirs=".Trash|.Trashes|.Spotlight-V100|index.spotlightV3|var|dev|private|xarts|CloudStorage|CrashReporter|views|com.apple.mail|creditexpert|javanetexamples|ice|work|VirtualBoxVMs|android|medical_records|react-tutorial|gdrive|configs|google-backup|raspberrypi|offline-videos|Movies|.svn|.ak|virtual-images|Volumes|Movies"
 macos_unreadable="com.apple.homed.notbackedup.plist|com.apple.homed.plist|com.apple.mail-shared.plist|com.apple.AddressBook.plist"
 chrom_plugin_excludes="urlhaus-filter-online.txt"
 misl_excludes="vc56g_exfat.hc"
@@ -66,7 +67,7 @@ default_linux_scan_path="/"
 scan_path="$default_linux_scan_path"
 # use this for macOS since starting from catalina lot of OS area is mounted under "/"
 # that is not writeable anyway (unless SIP disabled) so dont bother scanning
-default_macos_scanpath="/Applications /Library /Users /usr/local"
+default_macos_scanpath="/Applications /Library /Users /usr/local /opt"
 my_host=`hostname`
 urlhaus_sig_file="urlhaus.ndb"
 urlhaus_sig_url="https://urlhaus.abuse.ch/downloads"
@@ -276,6 +277,7 @@ if [ $os_name = "Darwin" ]; then
     # old brew location
     clamav_lib_path="/usr/local/var/lib/clamav/"
   fi
+  scan_path="$default_macos_scanpath"
 else
   # linux location
   clamav_lib_path="/var/lib/clamav"
