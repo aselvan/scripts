@@ -173,7 +173,7 @@ function get_wifi_interface() {
 
 function get_ssid_mac() {
   ssid=`system_profiler SPAirPortDataType | awk '/Current Network Information/ {getline; gsub(":", ""); print $NF; exit}'`
-  log.stat "\tSSID: $ssid"
+  log.stat "\tSSID:        $ssid"
 }
 
 function get_ssid() {
@@ -193,16 +193,18 @@ function get_ssid() {
 function get_wifistats_mac() {
   check_root
 
-  rssi=`wdutil info | grep 'RSSI'|awk -F: '{print $2}'`
-  noise=`wdutil info | grep 'Noise'|awk -F: '{print $2}'`
-  txrate=`wdutil info | grep 'Tx Rate'|awk -F: '{print $2}'`
-  enc_type=`wdutil info | grep 'Security'|awk -F: '{print $2}'`
+  local rssi=`wdutil info | grep 'RSSI'|awk -F: '{print $2}'`
+  local noise=`wdutil info | grep 'Noise'|awk -F: '{print $2}'`
+  local txrate=`wdutil info | grep 'Tx Rate'|awk -F: '{print $2}'`
+  local enc_type=`wdutil info | grep 'Security'|awk -F: '{print $2}'`
+  local phy_mode=`wdutil info | grep 'PHY Mode'|awk -F: '{print $2}'`
 
   get_ssid
+  log.stat "\tPHY Mode:   $phy_mode"
   log.stat "\tEncryption: $enc_type"
-  log.stat "\tRSSI:    $rssi [-50 to -60: Excellent; -70 to -80: Fair ; < -80: Poor]"
-  log.stat "\tNoise:   $noise [-120 to -90: Excellent; -90 to -70: Fair; > -70: Poor]" 
-  log.stat "\tTx Rate: $txrate"
+  log.stat "\tRSSI:       $rssi [-50 to -60: Excellent; -70 to -80: Fair ; < -80: Poor]"
+  log.stat "\tNoise:      $noise [-120 to -90: Excellent; -90 to -70: Fair; > -70: Poor]" 
+  log.stat "\tTx Rate:    $txrate"
 }
 
 function get_wifistats() {
