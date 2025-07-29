@@ -198,9 +198,11 @@ function get_wifistats_mac() {
   local txrate=`wdutil info | grep 'Tx Rate'|awk -F: '{print $2}'`
   local enc_type=`wdutil info | grep 'Security'|awk -F: '{print $2}'`
   local phy_mode=`wdutil info | grep 'PHY Mode'|awk -F: '{print $2}'`
+  local channel=`wdutil info|egrep '^    Channel[[:space:]]+:'|awk -F: '{print $2}'`
 
   get_ssid
   log.stat "\tPHY Mode:   $phy_mode"
+  log.stat "\tChannel:    $channel"
   log.stat "\tEncryption: $enc_type"
   log.stat "\tRSSI:       $rssi [-50 to -60: Excellent; -70 to -80: Fair ; < -80: Poor]"
   log.stat "\tNoise:      $noise [-120 to -90: Excellent; -90 to -70: Fair; > -70: Poor]" 
