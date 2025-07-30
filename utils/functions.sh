@@ -314,7 +314,6 @@ os_vendor() {
 
 }
 
-
 check_installed() {
   local app=$1
   local noexit=$2
@@ -503,6 +502,8 @@ validate_ip() {
   return 0
 }
 
+# ---  IP related functions ---
+
 # reverse_ip -- reverse ip for use in DNSBL checkes.
 #
 # usage:
@@ -514,6 +515,21 @@ reverse_ip() {
   local reversed_ip="${octets[3]}.${octets[2]}.${octets[1]}.${octets[0]}"
   echo $reversed_ip
 }
+
+# check if IP falls in non-routables
+# return: 1 if private 0 otherwise
+is_ip_private() {
+  local ip=$1
+  local private_range=( "10\." "172\.(1[6-9]|2[0-9]|3[0-1])\."  "192\.168\.")
+  for r in "${private_range[@]}"; do
+    if [[ "$ip" =~ ^$r ]]; then
+      return 1
+    fi
+  done
+  return 0
+}
+
+# ---  keyboard related functions  ---
 
 # returns 1 for YES, 0 for NO
 confirm_action() {
@@ -530,7 +546,7 @@ confirm_action() {
   fi
 }
 
-#--- network connectivity utilities ---
+#--- network connectivity functions ---
 check_connectivity() {
   # google dns for validating connectivity
   local gdns=8.8.8.8
