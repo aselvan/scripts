@@ -266,8 +266,8 @@ show_version() {
 }
 
 show_app() {
-  if [ $command_help -eq 1 ] ||  [ -z "$arg" ]  ; then
-    log.stat "Usage: $my_name -c app -a \"Google Chrome\"  # show information of the specified app" $black
+  if [ $command_help -eq 1 ]  ; then
+    log.stat "Usage: $my_name -c app [-a \"Google Chrome\"]  # show information of the specified app" $black
     exit 1
   fi
 
