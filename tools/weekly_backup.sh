@@ -13,10 +13,11 @@
 #    Jan 17, 2024 --- Updated to use rsync log, disabled special case handling for offsite
 #    Mar 6,  2024 --- Added commandline option to provide device list array
 #    Mar 11, 2024 --- Added second (new offsite SSD) to the list of default devices.
+#    Aug 1,  2025 --- Added additional backup target i.e. for offsite purpose
 ###########################################################################################
 
 # version format YY.MM.DD
-version=24.03.11
+version=25.08.01
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Weekly backup of selvans.net"
@@ -27,7 +28,7 @@ default_scripts_github=$HOME/src/scripts.github
 scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
 # commandline options
-options_list="e:d:h"
+options_list="e:d:o:vh?"
 
 # ensure path for cron runs
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
@@ -57,9 +58,11 @@ current_device_model="N/A"
 
 # list of devices: descriptive name and mount points. NOTE: the /etc/fstab
 # entry should be setup to right device for each of the mount point specified. 
-# Note: when offsite is swapped between home/chase locker, swap the below i.e uncoment first and comment next
-#device_names=("PRIMARY (Seagate 1TB):/media/usb-1tb-2" "SECONDARY (WD Element 1TB):/media/usb-1tb-3" "TERTIARY (eSATA-RAID 3TB):/media/sata-3tb" "OFFSITE (HP 500g):/media/usb-ssd-500g")
-device_names=("PRIMARY (Seagate 1TB):/media/usb-1tb-2" "SECONDARY (WD Element 1TB):/media/usb-1tb-3" "TERTIARY (eSATA-RAID 3TB):/media/sata-3tb" "OFFSITE (Crucial/micron SSD 1TB):/media/usb-ssd-1tb-crucial")
+device_names=("PRIMARY (Seagate 1TB):/media/usb-1tb-2" "SECONDARY (WD Element 1TB):/media/usb-1tb-3" "TERTIARY (eSATA-RAID 3TB):/media/sata-3tb")
+#optional_device="OFFSITE (Crucial/micron SSD 1TB):/media/usb-ssd-1tb-crucial"
+#optional_device="OFFSITE (OFFSITE (HP 500g):/media/usb-ssd-500g"
+optional_device=""
+
 
 usage() {
   cat << EOF
@@ -68,10 +71,13 @@ $my_name - $my_title
 Usage: $my_name [options]
   -e <email>   ---> email address to send backup report
   -d <devices> ---> device name/value pair(s) [default: "${device_names[*]}"]
+  -o <extra>   ---> additional name:device pair for offsite purpose 
   -v           ---> enable verbose, otherwise just errors are printed
   -h           ---> print usage/help
 
-example: $my_name -e foo@bar.com -d "DeviceName1:/mnt/backup,DeviceName2:/mnt/backup2"
+example(s): 
+  $my_name -e foo@bar.com -d "DeviceName1:/mnt/backup,DeviceName2:/mnt/backup2"
+  $my_name -e foo@bar.com -o "OFFSITE (Crucial/micron SSD 1TB):/media/usb-ssd-1tb-crucial"
   
 EOF
   exit 0
@@ -180,6 +186,30 @@ do_backup() {
   return 0
 }
 
+# calls do_backup for one device
+backup_device() {
+  #local devpair="$1"
+  IFS=:
+  keyval=($devpair)
+  usb_desc=${keyval[0]}
+  usb_mount=${keyval[1]}
+  IFS=$IFS_old
+  backup_dir=$usb_mount/backup
+  echo "" >> $my_logfile
+  echo ">>>>>>> $usb_desc backup target device/path: $backup_dir <<<<<<<<< " >> $my_logfile
+  
+  device_start_time=$SECONDS
+  log.debug "Backing up to: $backup_dir"
+  do_backup
+  tb=$?
+  if [ $tb -ne 0 ]; then
+    echo "    ERROR: ${keyval[0]} backup failed!" >> $my_logfile
+    backup_status=1
+  fi
+  echo "Total elapsed time: <b><font color=\"blue\">$(($SECONDS - $device_start_time))</font></b> seconds." >> $my_logfile
+  echo "" >> $my_logfile
+}
+
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
 if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
@@ -207,8 +237,14 @@ while getopts "$options_list" opt; do
     e)
       email_address=$OPTARG
       ;;
+    o)
+      optional_device="$OPTARG"
+      ;;
     d)
       IFS=',' read -r -a device_names <<< "${OPTARG}"
+      ;;
+    v)
+      verbose=1
       ;;
     ?|h|*)
       usage
@@ -222,26 +258,18 @@ if [ -f $rsync_log_file ] ; then
   rm -f $rsync_log_file
 fi
 
+# loop through all backup devices.
 for devpair in "${device_names[@]}" ; do
-  IFS=:
-  keyval=($devpair)
-  usb_desc=${keyval[0]}
-  usb_mount=${keyval[1]}
-  IFS=$IFS_old
-  backup_dir=$usb_mount/backup
-  echo "" >> $my_logfile
-  echo ">>>>>>> $usb_desc backup target device/path: $backup_dir <<<<<<<<< " >> $my_logfile
-  
-  device_start_time=$SECONDS
-  do_backup
-  tb=$?
-  if [ $tb -ne 0 ]; then
-    echo "    ERROR: ${keyval[0]} backup failed!" >> $my_logfile
-    backup_status=1
-  fi
-  echo "Total elapsed time: <b><font color=\"blue\">$(($SECONDS - $device_start_time))</font></b> seconds." >> $my_logfile
-  echo "" >> $my_logfile
+  log.debug "Main Devpair: $devpair"
+  backup_device
 done
+
+# Do we have optional device provided via -o argument? 
+if [ ! -z "$optional_device" ] ; then
+  log.debug "Optional Devpair: $optional_device"
+  devpair=$optional_device
+  backup_device
+fi
 
 # mail good if all backup devices are successful, otherwise even if one fails send bad mail
 echo "" >> $my_logfile
