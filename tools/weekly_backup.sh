@@ -62,6 +62,7 @@ device_names=("PRIMARY (Seagate 1TB):/media/usb-1tb-2" "SECONDARY (WD Element 1T
 #optional_device="OFFSITE (Crucial/micron SSD 1TB):/media/usb-ssd-1tb-crucial"
 #optional_device="OFFSITE (OFFSITE (HP 500g):/media/usb-ssd-500g"
 optional_device=""
+start_timestamp=`date`
 
 
 usage() {
@@ -278,6 +279,8 @@ if [ $backup_status -eq 0 ] ; then
 else
     echo "<b>Backup Result:</b> <b><font color=\"red\">FAILED</font></b> on one or more devices" >> $my_logfile
 fi
+echo "<b>Start time:</b> $start_timestamp" >> $my_logfile
+echo "<b>End time:  </b> `date`" >> $my_logfile
 echo "<b>Total backup runtime:</b><font color=\"blue\">$(elapsed_time)</font>" >> $my_logfile
 
 # mail the report 
