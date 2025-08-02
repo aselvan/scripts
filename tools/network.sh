@@ -549,9 +549,18 @@ function do_route() {
 
 function do_dns() {
   check_installed scutil
-  local dns_info=`scutil --dns |grep nameserver`
+  log.stat "System wide DNS server(s)"
+  log.stat "-------------------------"
+  local dns_info=`scutil --dns |grep nameserver|sort -u`
   log.stat "$dns_info" $green
 
+  log.stat "\nPer Device DNS servers"
+  log.stat "-----------------------"
+  readarray -t services < <(networksetup -listallnetworkservices | tail -n +2)
+  for service in "${services[@]}"; do
+    log.stat "Service: $service"
+    networksetup -getdnsservers "$service"
+  done
 }
 
 function do_netstat() {
