@@ -179,12 +179,23 @@ strip_ansi_codes() {
   mv $tmp_file $in_file
 }
 
+file_type() {
+  local f=$1
+  local ftype=`file -b --mime-type $f | cut -d '/' -f 1|head -n1`
+  echo $ftype
+}
+file_content() {
+  local f=$1
+  local ftype=`file -b --mime-type $f | cut -d '/' -f 2|head -n1`
+  echo $ftype
+}
+
 # check if file is a media file that could support metadata
 is_media() {
   local f=$1
-  local mtype=`file -b --mime-type $f | cut -d '/' -f 2`
+  local ctype=$(file_content $f)
 
-  case $mtype in 
+  case $ctype in 
     jpg|jpeg|JPEG|JPG|PDF|pdf|mpeg|MPEG|MP3|mp3|mp4|MP4|png|PNG|mov|MOV|gif|GIF|TIFF|tiff|x-m4a)
       return 0
       ;;
