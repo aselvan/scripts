@@ -22,12 +22,13 @@ default_scripts_github=$HOME/src/scripts.github
 scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
 # commandline options
-options="c:f:vh?"
+options="c:f:a:vh?"
 
 command_name=""
-supported_commands="show|clear"
+supported_commands="show|clear|add"
 command_help=0
 file_name=""
+attr=""
 
 usage() {
   cat << EOF
@@ -36,6 +37,7 @@ $my_name --- $my_title
 Usage: $my_name -c command [options]
   -c <cmd>   ---> command to run [see supported commands below] -h to show command syntax
   -f <file>  ---> file to check attr information
+  -a <attr>  ---> optional attributes for clear|add commands [Default: all attribures are cleared]
   -v         ---> enable verbose, otherwise just errors are printed
   -h         ---> print usage/help
 
@@ -83,7 +85,13 @@ do_clear_linux() {
 }
 
 do_clear_mac() {
-  not_implemented
+  if [ -z "$attr" ] ; then
+    log.stat "Clearing all attributes"
+    xattr -c "$file_name"
+  else
+    log.stat "Clearing the attribute: $attr_to_clear"
+    xattr -d $attr "$file_name"
+  fi
 }
 
 do_show() {
@@ -132,6 +140,31 @@ do_clear() {
   esac
 }
 
+do_add_linux() {
+  not_implemented
+}
+do_add_mac() {
+  not_implemented
+}
+
+do_add() {
+  log.debug "add attribute"
+  check_command_help
+
+  case $os_name in 
+    Darwin)
+      do_add_mac
+      ;;
+    Linux)
+      do_add_linux
+      ;;
+    *)
+      not_implemented
+      ;;
+  esac
+}
+
+
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
 if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
@@ -160,6 +193,9 @@ while getopts $options opt ; do
     f) 
       file_name="$OPTARG"
       ;;
+    a)
+      attr="$OPTARG"
+      ;;
     v)
       verbose=1
       ;;
@@ -186,6 +222,9 @@ case $command_name in
     ;;
   clear)
     do_clear
+    ;;
+  add)
+    do_add
     ;;
   *)
     log.error "Invalid command: $command_name"
