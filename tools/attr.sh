@@ -70,10 +70,11 @@ do_show_linux() {
 }
 
 do_show_mac() {
+  log.stat "Extended Attributes:" 
   if xattr "$file_name" | grep -q . ; then
-    xattr "$file_name"
+    log.stat "`xattr -l "$file_name"`" $green
   else
-    log.warn "No extended attributes found for $file_name"
+    log.warn "\tNo extended attributes found."
   fi
 }
 
@@ -89,6 +90,18 @@ do_show() {
   log.debug "show attribute"
   check_command_help
 
+  # standard attributes same across all OS
+  log.stat "Standard Attributes: "
+  log.stat "\tName: $file_name" $green
+  log.stat "\tType: `file_type $file_name`" $green 
+  log.stat "\tContent: `file_content $file_name`" $green
+  if is_media $file_name ; then
+    log.stat "\tIs Media?: YES" $green
+  else
+    log.stat "\tIs Media?: NO" $green
+  fi
+
+  # OS specific attributes
   case $os_name in 
     Darwin)
       do_show_mac
@@ -164,6 +177,7 @@ done
 if [ -z "$command_name" ]; then
   command_name=show
 fi
+
 
 # run different wrappes depending on the command requested
 case $command_name in
