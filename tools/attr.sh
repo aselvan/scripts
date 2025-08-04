@@ -2,7 +2,6 @@
 ################################################################################
 # attr.sh --- wrapper over xatter (macOS) lsattr/chattr (linux)
 #
-#
 # Author:  Arul Selvan
 # Created: Aug 2, 2025
 ################################################################################
@@ -47,6 +46,7 @@ Supported commands:
 example(s): 
   $my_name -c show -f foo
   $my_name -c clear -f foo
+  $my_name -c add -f foo -a "attribute_name attribute_value"
   
 EOF
   exit 0
@@ -73,6 +73,7 @@ do_show_linux() {
 
 do_show_mac() {
   log.stat "Extended Attributes:" 
+  log.stat "Flags: `ls -lO $file_name|awk '{print $5}'`"
   if xattr "$file_name" | grep -q . ; then
     log.stat "`xattr -l "$file_name"`" $green
   else
@@ -143,12 +144,19 @@ do_clear() {
 do_add_linux() {
   not_implemented
 }
+
 do_add_mac() {
-  not_implemented
+  log.debug "add attribute"
+  if [ ! -z "$attr" ] ; then
+    log.stat "Adding attribute value $attr"
+    xattr -w $attr "$file_name"
+  else
+    log.error "No attribute provided to add, see usage"
+    usage
+  fi
 }
 
 do_add() {
-  log.debug "add attribute"
   check_command_help
 
   case $os_name in 
