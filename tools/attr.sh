@@ -68,7 +68,8 @@ function not_implemented() {
 }
 
 do_show_linux() {
-  not_implemented
+  log.stat "Extended Attributes:" 
+  log.stat "Flags: `lsattr -l "$file_name"|cut -d' ' -f2- | sed 's/^ *//'`"
 }
 
 do_show_mac() {
@@ -82,7 +83,8 @@ do_show_mac() {
 }
 
 do_clear_linux() {
-  not_implemented
+  log.stat "Clearing all attributes"  
+  chattr '=' "$file_name"
 }
 
 do_clear_mac() {
