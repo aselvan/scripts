@@ -259,10 +259,11 @@ show_cpu_temp() {
 
 show_version() {
   log.stat "OS Details:" $green
-  log.stat "\tName: $os_name"
-  log.stat "\tVendor:  $(os_vendor)"
+  log.stat "\tName:     $os_name"
+  log.stat "\tVendor:   $(os_vendor)"
   log.stat "\tCodeName: $(os_code_name)"
   log.stat "\tVersion:  $(os_version)"
+  log.stat "\tBuild:    $(os_build)"
 }
 
 show_app() {

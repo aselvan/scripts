@@ -296,6 +296,21 @@ os_code_name() {
   esac
 }
 
+os_build() {
+  case $os_name in 
+    Darwin)    
+      echo "`sw_vers -buildVersion`"
+      ;;
+    Linux)
+      echo "N/A"
+      ;;
+    *)
+      echo "0"
+    ;;
+  esac
+}
+
+
 os_version() {
   case $os_name in 
     Darwin)    
