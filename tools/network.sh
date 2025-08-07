@@ -71,7 +71,7 @@ Usage: $my_name -c <command> [options]
   -i <interface>    ---> network interface to use for various commands that needs interface
   -n <network>      ---> optional CIDR address to scan [used in 'scan' command Default: $my_net]
   -s <host:[port]>  ---> Host and port to test [Needed for commands like 
-                         "testsvc|textfw|traceroute|dnsperf|openport" etc.
+                         "testsvc|textfw|traceroute|dnsperf|openport|route" etc.
   -p <ports>        ---> Single port or comma separated list of ports in doublequotes [used by openport command]
   -H <hostlist>     ---> List of hosts to perform dns lookup performance [used in multidnsperf command]
   -d <dnsserver>    ---> Custom DNS server to use for resolving insead of default [used in multidnsperf]
@@ -541,10 +541,29 @@ function genmac() {
 }
 
 function do_route() {
-  check_installed ip
-  local default_route=`ip route show |grep default`
-  echo $default_route | $pbc
-  log.stat "\tDefault route: $default_route" $green
+  if [ $command_help -eq 1 ] ; then
+    log.stat "Usage: $my_name -c $command_name # shows default route" $black
+    log.stat "Usage: $my_name -c $command_name -s 8.8.8.8  # default route, also how 8.8.8.8 will be routed" $black
+    exit 1
+  fi
+  local default_route=""
+  local host="${host_port%%:*}"
+  if [ $os_name = "Darwin" ] ; then
+    default_route=`netstat -rn -finet|grep default|awk '{print "via gateway",$2,"on iface",$4}'`
+    log.stat "\tDefault route: $default_route" $green
+    if [ ! -z "$host" ] ; then 
+      local r_gw=`route -n get $host |awk '/gateway/ {print $2}'`
+      local r_if=`route -n get $host |awk '/interface/ {print $2}'`
+      log.stat "\tRoute Path: $host will be routed through $r_gw via iface $r_if" $green
+    fi
+  else
+    default_route=`ip route show|grep default | awk '{print "via gateway",$3,"on iface",$5}'`
+    if [ ! -z "$host" ] ; then 
+      local r_path=`ip route get $host|head -1|awk '{print "will be routed through",$3, "via iface",$5}'`
+      log.stat "\tRoute Path: $host will be routed through $r_gw via iface $r_if" $green
+    fi
+    log.stat "\tDefault route: $default_route" $green
+  fi
 }
 
 function do_dns() {
