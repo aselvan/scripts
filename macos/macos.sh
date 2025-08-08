@@ -43,7 +43,7 @@ options="c:l:a:d:r:p:n:kvh?"
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 arg=""
 command_name=""
-supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight|kill|disablespotlight|enablespotlight|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused|sysext|lsbom"
+supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight|kill|disablespotlight|enablespotlight|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused|sysext|lsbom|user"
 # if -h argument comes after specifiying a valid command to provide specific command help
 command_help=0
 
@@ -343,6 +343,22 @@ do_lsbom() {
   lsbom -ds ${receipt_path}/*${arg}*.bom |awk -F/ '{print $2}'|sort -u
 }
 
+do_user() {
+  if [ $command_help -eq 1 ] ; then
+    log.stat "Usage: $my_name -c$command_name   # show details of the user running the script" $black
+    log.stat "Usage: $my_name -c$command_name -a bob  # show details of the user bob" $black
+    exit 1
+  fi
+
+  local u=$USER
+  if [ ! -z "$arg" ] ; then
+    u=$arg
+  fi
+
+  log.stat "Username: $u\n`dscl . -read /Users/$u RealName UniqueID PrimaryGroupID`"
+  log.stat "Admin Group: `dscl . -read /Groups/admin GroupMembership`"
+  log.stat "Admin?: `dsmemberutil checkmembership -U $u -G admin`"
+}
 
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
@@ -481,6 +497,9 @@ case $command_name in
     ;;
   lsbom)
     do_lsbom
+    ;;
+  user)
+    do_user
     ;;
   *)
     log.error "Invalid command: $command_name"
