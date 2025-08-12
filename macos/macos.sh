@@ -24,6 +24,7 @@
 #   Jun 25, 2025 --- Added "disablespotlight" command
 #   Jul 9,  2025 --- Added help syntax for each supported commands
 #   Jul 22, 2025 --- Added sysext (uses systemextensionsctl list) and lsbom 
+#   Aug 12, 2025 --- Added kext command
 ################################################################################
 
 # version format YY.MM.DD
@@ -43,7 +44,7 @@ options="c:l:a:d:r:p:n:kvh?"
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 arg=""
 command_name=""
-supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight|kill|disablespotlight|enablespotlight|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused|sysext|lsbom|user"
+supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight|kill|disablespotlight|enablespotlight|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused|sysext|lsbom|user|kext"
 # if -h argument comes after specifiying a valid command to provide specific command help
 command_help=0
 
@@ -78,7 +79,7 @@ Usage: $my_name -c <command> [options]
   -r <number>       ---> used by "spaceused" to restrict rows to display [Default: $spaceused_rows]
   -n <number>       ---> used by "spaceused" to recurse n-depeth [Default: $spaceused_depth]
   -p <path>         ---> used by "spaceused" to recurse down path [Default: $spaceused_path]
-  -a <arg>          ---> arguments for commands like bundle|kill|app|procinfo|codesign|log etc.
+  -a <arg>          ---> arguments for commands like bundle|kill|app|procinfo|codesign|log|kext|user etc.
   -k                ---> enables writing $killed_list_file showing what was killed 
                          [note: the file may grow to large size]
   -v                ---> enable verbose, otherwise just errors are printed
@@ -360,6 +361,23 @@ do_user() {
   log.stat "Admin?: `dsmemberutil checkmembership -U $u -G admin`"
 }
 
+do_kext() {
+ if [ $command_help -eq 1 ] ; then
+    log.stat "Usage: $my_name -c $command_name [-a com.apple.driver.watchdog]  # kext stats for all or bundle id"
+    exit 1
+  fi
+  
+  # if arg provided just do kextstat for the bundle arg
+  if [ -z "$arg" ] ; then
+    log.stat "ALL Kernel Extention stats (excluding OS built-in)"
+    kextstat -lk 2>/dev/null
+  else
+    log.stat "Kernel Extention stats for bundle: $arg"
+    kextstat -b $arg 2>/dev/null
+  fi
+}
+
+
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
 if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
@@ -494,6 +512,9 @@ case $command_name in
   sysext)
     log.stat "System Extentions List"
     systemextensionsctl list   
+    ;;
+  kext)
+    do_kext
     ;;
   lsbom)
     do_lsbom
