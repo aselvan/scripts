@@ -1,14 +1,17 @@
 #!/usr/bin/env bash
-#
-#
+################################################################################
 # certbot_renew.sh --- simple wrapper script certbot renewal of my domains
 #
 # Author:  Arul Selvan
 # Version: Oct 24, 2018
-#
+################################################################################
+# Version History:
+#   Oct 24, 2018 --- Original version
+#   Aug 12, 2025 --- Removed mypassword.us since we don't want to renew anymore
+################################################################################
 
 # version format YY.MM.DD
-version=23.12.17
+version=25.08.12
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Wrapper script certbot renewal of one or more domains"
@@ -19,17 +22,15 @@ default_scripts_github=$HOME/src/scripts.github
 scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
 # commandline options
-options_list="hle:d:v"
-
-# ensure path for cron runs
-export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
+options_list="le:d:vh?"
 
 # note: no need to add acme_server argument to certbot as it defaults to this. This is here for reference
 #acme_server="--server https://acme-v02.api.letsencrypt.org/directory"
 #certbot_args="-agree-tos --manual-public-ip-logging-ok --preferred-challenges=dns $acme_server"
 my_email=""
 certbot_args="--agree-tos --manual-public-ip-logging-ok --preferred-challenges=dns"
-domain_list="selvans.net selvansoft.com mypassword.us"
+#domain_list="selvans.net selvansoft.com mypassword.us"
+domain_list="selvans.net selvansoft.com"
 
 usage() {
 cat << EOF
