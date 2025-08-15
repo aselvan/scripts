@@ -44,7 +44,7 @@ options="c:l:a:d:r:p:n:kvh?"
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 arg=""
 command_name=""
-supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight|kill|disablespotlight|enablespotlight|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused|sysext|lsbom|user|kext"
+supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight|kill|disablespotlight|enablespotlight|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused|sysext|lsbom|user|kext|kmutil|power"
 # if -h argument comes after specifiying a valid command to provide specific command help
 command_help=0
 
@@ -59,6 +59,7 @@ spaceused_rows=10
 spaceused_depth=3
 spaceused_path="$HOME"
 receipt_path="/var/db/receipts"
+power_sample_secs=30
 
 # default kill list
 #
@@ -377,6 +378,34 @@ do_kext() {
   fi
 }
 
+do_kmutil() {
+
+  log.stat "All from system_profiler"
+  system_profiler -json SPExtensionsDataType -detailLevel full | jq -r '.SPExtensionsDataType[] 
+  | select(.spext_loaded == "spext_yes") 
+  | "Name: \(.["_name"])\nBundle ID: \(.spext_bundleid)\nPath: \(.spext_path)\nSource: \(.spext_signed_by)\n"'
+  
+  log.stat "Loaded kernel modules:"
+  kmutil check 2>&1|grep "Loaded extension" |awk '{print $4,$5}'
+
+  log.warn "Failed modules:"
+  kmutil check 2>&1|grep "Could not" |awk '{print $4,$5}'
+ 
+}
+
+do_power() {
+
+ if [ $command_help -eq 1 ] ; then
+    log.stat "Usage: $my_name -c $command_name [-a 60]  # sample power usage for 60sec"
+    exit 1
+  fi
+  if [ ! -z "$arg" ] ; then
+    power_sample_secs=$arg
+  fi
+  local awk_arg="/PID/{p=1; c++} p && c==$power_sample_secs"
+  log.stat "List of top 10 apps consuming power below... Please wait $power_sample_secs seconds"
+  top -l$power_sample_secs -s1 -o power -stats pid,command,power -n12 | awk "${awk_arg}" |egrep -v 'top|kernel_task'
+}
 
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
@@ -516,11 +545,17 @@ case $command_name in
   kext)
     do_kext
     ;;
+  kmutil)
+    do_kmutil
+    ;;
   lsbom)
     do_lsbom
     ;;
   user)
     do_user
+    ;;
+  power)
+    do_power
     ;;
   *)
     log.error "Invalid command: $command_name"
