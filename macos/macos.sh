@@ -25,10 +25,11 @@
 #   Jul 9,  2025 --- Added help syntax for each supported commands
 #   Jul 22, 2025 --- Added sysext (uses systemextensionsctl list) and lsbom 
 #   Aug 12, 2025 --- Added kext command
+#   Aug 20, 2025 --- Added cleanup command to wipe cache, log etc.
 ################################################################################
 
 # version format YY.MM.DD
-version=25.07.22
+version=25.08.20
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl tools for macOS all in one place"
@@ -44,7 +45,7 @@ options="c:l:a:d:r:p:n:kvh?"
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 arg=""
 command_name=""
-supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight|kill|disablespotlight|enablespotlight|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused|sysext|lsbom|user|kext|kmutil|power"
+supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight|kill|disablespotlight|enablespotlight|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused|sysext|lsbom|user|kext|kmutil|power|cleanup"
 # if -h argument comes after specifiying a valid command to provide specific command help
 command_help=0
 
@@ -60,6 +61,10 @@ spaceused_depth=3
 spaceused_path="$HOME"
 receipt_path="/var/db/receipts"
 power_sample_secs=30
+cache_path="/Library/Caches"
+logs_path="/Library/Logs"
+spotlight_path="/System/Volumes/Data/.Spotlight-V100"
+doc_revision_path="/System/Volumes/Data/.DocumentRevisions-V100"
 
 # default kill list
 #
@@ -322,7 +327,7 @@ show_log() {
 }
 
 show_spaceused() {
-  if [ $command_help -eq 1 ] ||  [ -z "$arg" ]  ; then
+  if [ $command_help -eq 1 ] ; then
     log.stat "Usage: $my_name -c spaceused            # show space used under $spaceused_path" $black
     log.stat "Usage: $my_name -c spaceused -r10 -p ~/ # show space used with top 10 max space under ~/ß" $black
     exit 1
@@ -394,8 +399,7 @@ do_kmutil() {
 }
 
 do_power() {
-
- if [ $command_help -eq 1 ] ; then
+  if [ $command_help -eq 1 ] ; then
     log.stat "Usage: $my_name -c $command_name [-a 60]  # sample power usage for 60sec"
     exit 1
   fi
@@ -405,6 +409,101 @@ do_power() {
   local awk_arg="/PID/{p=1; c++} p && c==$power_sample_secs"
   log.stat "List of top 10 apps consuming power below... Please wait $power_sample_secs seconds"
   top -l$power_sample_secs -s1 -o power -stats pid,command,power -n12 | awk "${awk_arg}" |egrep -v 'top|kernel_task'
+}
+
+# remove logs, cache, doc revision, spotlight etc
+do_cleanup() {
+  local tsize=0
+
+  if [ $command_help -eq 1 ] ; then
+    log.stat "Usage: $my_name -c $command_name  # cleanup log, cache spotlight & misl stuff"
+    exit 1
+  fi
+  check_root
+  
+  # estimate size of potential cleanup items
+  log.stat "Type: User Space"
+  for u in `ls -1 /Users/|egrep -v '.localized|Shared'` ; do
+    log.stat "  User: $u"
+    if [ -d /Users/$u/$cache_path ] ; then
+      tsize=$((tsize + `du -I private -sk /Users/$u/$cache_path 2>/dev/null|awk '{print $1}'`))
+    fi
+    log.stat "    Cache: $(space_used "/Users/$u/$cache_path")"
+    if [ -d /Users/$u/$logs_path ] ; then
+      tsize=$((tsize + `du -I private -sk /Users/$u/$logs_path 2>/dev/null|awk '{print $1}'`))
+    fi
+    log.stat "    Log:   $(space_used "/Users/$u/$logs_path")"
+  done
+
+  log.stat "Type: System Space"
+  if [ -d $cache_path ] ; then
+    tsize=$((tsize + `du -I private -sk $cache_path 2>/dev/null|awk '{print $1}'`))
+  fi
+  log.stat "  Cache: $(space_used $cache_path)"
+  if [ -d $logs_path ] ; then
+    tsize=$((tsize + `du -I private -sk $logs_path 2>/dev/null|awk '{print $1}'`))
+  fi
+  log.stat "  Log:   $(space_used $logs_path)"
+
+  log.stat "Type: Spotlight Space"
+  if [ -d $spotlight_path ] ; then
+    tsize=$((tsize + `du -I private -sk $spotlight_path 2>/dev/null|awk '{print $1}'`))
+  fi
+  log.stat "  Used: $(space_used $spotlight_path)"
+
+  log.stat "Type: Document Revisions Space"
+  if [ -d $doc_revision_path ] ; then
+    tsize=$((tsize + `du -I private -sk $doc_revision_path 2>/dev/null|awk '{print $1}'`))
+  fi
+  log.stat "  Used: $(space_used $doc_revision_path)"
+  
+  log.stat "Type: /var/folders"
+  log.stat "  Used: $(space_used "/var/folders")"
+  log.warn "  NOTE: /var/folders size is information only, if it is excessive, reboot to reduce.\n"
+
+  # convert tsize from KB to GB
+  tsize=$(echo "scale=2; $tsize / (1024 * 1024)" | bc)
+  log.stat "Total space can be reclaimed: $tsize GB\n"
+  
+  # check with user
+  confirm_action "WARNING: All spaces listed above except /var/folders will be wiped."
+  if [ $? -eq 0 ] ; then
+    log.warn "skipping cleanup"
+    exit 10
+  fi
+
+  # remove all the spaces
+  log.stat "Removing everying listed above..."
+  for u in `ls -1 /Users/|egrep -v '.localized|Shared'` ; do
+    if [ -d /Users/$u/${cache_path} ]; then
+      rm -rf /Users/$u/${cache_path}/*
+    fi
+    if [ -d /Users/$u/${logs_path} ] ; then
+      rm -rf /Users/$u/${logs_path}/*
+    fi
+  done
+
+  # system space
+  if [ ! -z "$cache_path" ] && [ -d $cache_path ] ; then
+    rm -rf ${cache_path}/* 2>/dev/null
+  fi
+  if [ ! -z "$logs_path" ] && [ -d $logs_path ] ; then
+    rm -rf ${logs_path}/* 2>/dev/null
+  fi
+
+  # spotlight space
+  if [ ! -z "$spotlight_path" ] && [ -d $spotlight_path ] ; then
+    log.stat "Disabling spotlight to remove spotlight data. Enable if you need it"
+    mdutil -adE -i off > /dev/null 2>&1
+    rm -rf ${spotlight_path}/*
+  fi
+
+  # revision space
+  if [ -d $doc_revision_path ] ; then
+    rm -rf ${doc_revision_path}/*
+  fi
+
+  log.stat "All cleanup done."
 }
 
 # -------------------------------  main -------------------------------
@@ -556,6 +655,9 @@ case $command_name in
     ;;
   power)
     do_power
+    ;;
+  cleanup)
+    do_cleanup
     ;;
   *)
     log.error "Invalid command: $command_name"
