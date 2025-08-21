@@ -51,7 +51,7 @@ command_help=0
 
 volume_level=""
 spolight_path="/System/Volumes/Data/.Spotlight-V100"
-spotlight_volumes="/System/Volumes/Data/Applications"
+spotlight_volume="/System/Volumes/Data"
 xpc_activity_plist="$HOME/Library/Preferences/com.apple.xpc.activity2.plist"
 killed_list_file="/tmp/$(echo $my_name|cut -d. -f1)_killed_list.txt"
 do_killed_list=0
@@ -217,6 +217,8 @@ showspotlight() {
 disablespotlight() {
   log.stat "Disabling Spotlight completely!"
   mdutil -adE -i off >> $my_logfile 2>&1
+  # on reboot this gets enabled on reboot though the -a above should disable all... so force again
+  mdutil -i off $spotlight_volume >> $my_logfile 2>&1
   log.stat "  ${spolight_path}: reclaimed: $(space_used $spolight_path)"
   rm -rf $spotlight_path
 }
@@ -427,12 +429,16 @@ do_cleanup() {
     log.stat "  User: $u"
     if [ -d /Users/$u/$cache_path ] ; then
       tsize=$((tsize + `du -I private -sk /Users/$u/$cache_path 2>/dev/null|awk '{print $1}'`))
+      log.stat "    Cache: $(space_used "/Users/$u/$cache_path")"
+    else
+      log.stat "    Cache: N/A"
     fi
-    log.stat "    Cache: $(space_used "/Users/$u/$cache_path")"
     if [ -d /Users/$u/$logs_path ] ; then
       tsize=$((tsize + `du -I private -sk /Users/$u/$logs_path 2>/dev/null|awk '{print $1}'`))
+      log.stat "    Log:   $(space_used "/Users/$u/$logs_path")"
+    else
+      log.stat "    Log: N/A"
     fi
-    log.stat "    Log:   $(space_used "/Users/$u/$logs_path")"
   done
 
   log.stat "Type: System Space"
@@ -476,25 +482,27 @@ do_cleanup() {
   log.stat "Removing everying listed above..."
   for u in `ls -1 /Users/|egrep -v '.localized|Shared'` ; do
     if [ -d /Users/$u/${cache_path} ]; then
-      rm -rf /Users/$u/${cache_path}/*
+      rm -rf /Users/$u/${cache_path}/*  >> $my_logfile  2>&1
     fi
     if [ -d /Users/$u/${logs_path} ] ; then
-      rm -rf /Users/$u/${logs_path}/*
+      rm -rf /Users/$u/${logs_path}/*  >> $my_logfile  2>&1
     fi
   done
 
   # system space
   if [ ! -z "$cache_path" ] && [ -d $cache_path ] ; then
-    rm -rf ${cache_path}/* 2>/dev/null
+    rm -rf ${cache_path}/* >> $my_logfile  2>&1
   fi
   if [ ! -z "$logs_path" ] && [ -d $logs_path ] ; then
-    rm -rf ${logs_path}/* 2>/dev/null
+    rm -rf ${logs_path}/* >> $my_logfile  2>&1
   fi
 
   # spotlight space
   if [ ! -z "$spotlight_path" ] && [ -d $spotlight_path ] ; then
     log.stat "Disabling spotlight to remove spotlight data. Enable if you need it"
-    mdutil -adE -i off > /dev/null 2>&1
+    mdutil -adE -i off >> $my_logfile 2>&1
+    # on reboot $spotlight_volume gets enabled though the -a above should disable all ... so force again
+    mdutil -i off $spotlight_volume >> $my_logfile 2>&1
     rm -rf ${spotlight_path}/*
   fi
 
