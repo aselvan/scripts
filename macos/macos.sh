@@ -29,7 +29,7 @@
 ################################################################################
 
 # version format YY.MM.DD
-version=25.08.20
+version=25.08.23
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl tools for macOS all in one place"
@@ -45,7 +45,7 @@ options="c:l:a:d:r:p:n:kvh?"
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 arg=""
 command_name=""
-supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight|kill|disablespotlight|enablespotlight|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused|sysext|lsbom|user|users|kext|kmutil|power|cleanup"
+supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight|kill|disablespotlight|enablespotlight|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused|sysext|lsbom|user|users|kext|kmutil|power|cleanup|lsusb"
 # if -h argument comes after specifiying a valid command to provide specific command help
 command_help=0
 
@@ -719,6 +719,9 @@ case $command_name in
     ;;
   cleanup)
     do_cleanup
+    ;;
+  lsusb)
+    system_profiler SPUSBDataType
     ;;
   *)
     log.error "Invalid command: $command_name"
