@@ -545,15 +545,16 @@ do_cleanup() {
   fi
 
   # log space
+  log erase --all >> $my_logfile 2>&1
   if [ -d "$aul_p1" ] ; then
     rm -rf ${aul_p1}/*
   fi
   if [ -d "$aul_p2" ] ; then
     rm -rf ${aul_p2}/*
   fi
-  log erase --all
 
-  log.stat "All cleanup done. Reboot now."
+  log.stat "All cleanup done." 
+  log.warn "Caution: You must reboot now to get logs working!"
 }
 
 # -------------------------------  main -------------------------------
