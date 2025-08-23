@@ -513,12 +513,13 @@ do_cleanup() {
 
   # remove all the spaces
   log.stat "Removing everying listed above..."
-  for u in `ls -1 /Users/|egrep -v '.localized|Shared'` ; do
-    if [ -d /Users/$u/${cache_path} ]; then
-      rm -rf /Users/$u/${cache_path}/*  >> $my_logfile  2>&1
+  dscl . -list /Users UniqueID | awk '$2 >= 501 {print $1}' | while read u; do
+    home=$(dscl . read /Users/$u NFSHomeDirectory 2>/dev/null | awk '{print $2}')    
+    if [ -d "${home}/${cache_path}" ]; then
+      rm -rf ${home}/${cache_path}/*  >> $my_logfile  2>&1
     fi
-    if [ -d /Users/$u/${logs_path} ] ; then
-      rm -rf /Users/$u/${logs_path}/*  >> $my_logfile  2>&1
+    if [ -d "${home}/${logs_path}" ] ; then
+      rm -rf ${home}/${logs_path}/*  >> $my_logfile  2>&1
     fi
   done
 
@@ -545,16 +546,22 @@ do_cleanup() {
   fi
 
   # log space
-  log erase --all >> $my_logfile 2>&1
-  if [ -d "$aul_p1" ] ; then
-    rm -rf ${aul_p1}/*
-  fi
-  if [ -d "$aul_p2" ] ; then
-    rm -rf ${aul_p2}/*
+  log.stat "Purging Apple Unified Logs (AUL) ..."
+  confirm_action "WARNING: Purging AUL requires reboot."
+  if [ $? -eq 0 ] ; then
+    log.warn "Skiping AUL purge."
+  else
+    log erase --all >> $my_logfile 2>&1
+    if [ -d "$aul_p1" ] ; then
+      rm -rf ${aul_p1}/*
+    fi
+    if [ -d "$aul_p2" ] ; then
+      rm -rf ${aul_p2}/*
+    fi
   fi
 
   log.stat "All cleanup done." 
-  log.warn "Caution: You must reboot now to get logs working!"
+  log.warn "Note: If you purged, AUL, you must reboot now to get logs working!"
 }
 
 # -------------------------------  main -------------------------------
