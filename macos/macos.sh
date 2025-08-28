@@ -45,7 +45,7 @@ options="c:l:a:d:r:p:n:kvh?"
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 arg=""
 command_name=""
-supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight|kill|disablespotlight|enablespotlight|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused|sysext|lsbom|user|users|kext|kmutil|power|cleanup|lsusb"
+supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight|kill|disablespotlight|enablespotlight|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused|sysext|lsbom|user|users|kext|kmutil|power|cleanup|usb|btc|bta|hw|system|wifi"
 # if -h argument comes after specifiying a valid command to provide specific command help
 command_help=0
 
@@ -108,8 +108,9 @@ showmem() {
   hwmemsize=$(sysctl -n hw.memsize)
   ramsize=$(expr $hwmemsize / $((1024**3)))
   free_percent=$(memory_pressure|grep percentage|awk '{print $5;}')
-  log.stat "\tPhysical Memory: ${ramsize}GB" $green
-  log.stat "\tFree Memory    : ${free_percent}" $green
+  log.stat "  Physical Memory: ${ramsize}GB" $green
+  log.stat "  Free Memory    : ${free_percent}" $green
+  system_profiler SPMemoryDataType |awk '!/Memory:|Memory Slots:/'
 }
 
 showvmstat() {
@@ -126,7 +127,7 @@ showcpu() {
   #log.stat "\tCores:  `sysctl -a machdep.cpu.core_count|awk -F: '{print $2}'`" $green
 }
 
-volume() {
+do_volume() {
   if [ $command_help -eq 1 ] ; then
     log.stat "Usage: $my_name -c volume        # Shows current volume level" $black
     log.stat "Usage: $my_name -c volume -l 25  # sets volume level to 25 [range: 0-100]" $black
@@ -155,6 +156,8 @@ showswap() {
 showdisk() {
   local df_output=`df -h /System/Volumes/Data/|tail -1`
   log.stat "`echo $df_output|awk '{print "  Total: ",$2,"\n  Used:  ",$3,"\n  Available: ",$4,"\n  Percent Used:  ",$5}'`"
+
+  system_profiler SPStorageDataType SPNetworkVolumeDataType
 }
 
 showbundle () {
@@ -645,7 +648,7 @@ case $command_name in
     ioreg -c IOPlatformExpertDevice -d 2 | awk -F\" '/IOPlatformSerialNumber/{print $(NF-1)}'  
     ;;
   volume)
-    volume  
+    do_volume  
     ;;
   swap)
     showswap
@@ -720,8 +723,21 @@ case $command_name in
   cleanup)
     do_cleanup
     ;;
-  lsusb)
-    system_profiler SPUSBDataType
+  usb)
+    system_profiler SPUSBDataType | awk '!/USB:/'
+    hidutil list --matching '{"Transport":"USB"}' | awk '/Devices:/ {show=1;next} show'
+    ;;
+  btc)
+    system_profiler SPBluetoothDataType  | awk '/Not Connected/ {exit} {print}'
+    ;;
+  bta)
+    system_profiler SPBluetoothDataType
+    ;;
+  hw)
+    system_profiler SPHardwareDataType
+    ;;
+  wifi)
+    system_profiler SPAirPortDataType -detailLevel mini
     ;;
   *)
     log.error "Invalid command: $command_name"
