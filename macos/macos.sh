@@ -26,10 +26,11 @@
 #   Jul 22, 2025 --- Added sysext (uses systemextensionsctl list) and lsbom 
 #   Aug 12, 2025 --- Added kext command
 #   Aug 20, 2025 --- Added cleanup command to wipe cache, log etc.
+#   Aug 31, 2025 --- Added monitor command for file, network, etc monitoring 
 ################################################################################
 
 # version format YY.MM.DD
-version=25.08.23
+version=25.08.31
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl tools for macOS all in one place"
@@ -45,7 +46,7 @@ options="c:l:a:d:r:p:n:kvh?"
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 arg=""
 command_name=""
-supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight|kill|disablespotlight|enablespotlight|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused|sysext|lsbom|user|users|kext|kmutil|power|cleanup|usb|btc|bta|hw|system|wifi"
+supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight|kill|disablespotlight|enablespotlight|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused|sysext|lsbom|user|users|kext|kmutil|power|cleanup|usb|btc|bta|hw|system|wifi|monitor"
 # if -h argument comes after specifiying a valid command to provide specific command help
 command_help=0
 
@@ -567,6 +568,24 @@ do_cleanup() {
   log.warn "Note: If you purged, AUL, you must reboot now to get logs working!"
 }
 
+do_monitor() {
+  check_root
+
+  if [ $command_help -eq 1 ] ; then
+    log.stat "Usage: $my_name -c $command_name [-a <command>|<pid>]"
+    log.stat "Example(s):"
+    log.stat "  $my_name -c $command_name                # monitor all applications"
+    log.stat "  $my_name -c $command_name -a \"WhatsApp\"  # monitor just whatsapp"
+    exit 1
+  fi
+
+  log.stat "What would you like to monitor?"
+  local choice=$(select_option "network filesys diskio pathname exec")
+  
+  log.stat "Running fs_usage monitor $choice, press Ctrl+C to exit..."
+  fs_usage -f $choice $arg
+}
+
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
 if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
@@ -581,6 +600,8 @@ else
 fi
 # init logs
 log.init $my_logfile
+
+trap signal_handler SIGINT
 
 # parse commandline options
 while getopts $options opt ; do
@@ -738,6 +759,9 @@ case $command_name in
     ;;
   wifi)
     system_profiler SPAirPortDataType -detailLevel mini
+    ;;
+  monitor)
+    do_monitor
     ;;
   *)
     log.error "Invalid command: $command_name"
