@@ -583,7 +583,14 @@ do_monitor() {
   local choice=$(select_option "network filesys diskio pathname exec")
   
   log.stat "Running fs_usage monitor $choice, press Ctrl+C to exit..."
-  fs_usage -f $choice $arg
+  if [ "$choice" = "invalid" ] ; then
+    log.stat "Monitoring everything ..."
+    fs_usage $arg
+  else
+    log.stat "Monitoring $choice ..."
+    fs_usage -f $choice $arg
+  fi
+
 }
 
 # -------------------------------  main -------------------------------
