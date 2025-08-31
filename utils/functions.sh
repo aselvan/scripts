@@ -25,6 +25,7 @@ cpu_arch=`uname -mo`
 cmdline_args=`printf "%s " $@`
 current_timestamp=`date +%s`
 effective_user=`who -m | awk '{print $1;}'`
+parent_name="`basename $0`"
 
 # calculate the elapsed time (shell automatically increments the var SECONDS magically)
 SECONDS=0
@@ -215,7 +216,7 @@ space_used() {
 # used for ctrl+c install in main function as shown below
 # trap 'signal_handler' SIGINT <other signal as needed>
 signal_handler() {
-  log.stat "\n${FUNCNAME[0]}(): Received ctrl+c signal, exiting."
+  log.stat "\n${parent_name}::${FUNCNAME[0]}(): Received ctrl+c signal, exiting."
   exit 99
 }
 
@@ -570,6 +571,36 @@ confirm_action() {
     log.debug "Confirm action is: NO"
     return 0
   fi
+}
+
+# select from the list of options presented
+#
+# Usage:
+#     choice=$(select_option "Apple Orange Banana")
+#     echo "You chose: $choice"
+#
+select_option() {
+  local options=($@)
+  printf "Available Choices:\n" >&2
+  
+  local i=1
+  for opt in "${options[@]}"; do
+    printf "  %d) %s\n" "$i" "$opt" >&2   # <-- two spaces before %d
+    ((i++))
+  done
+
+  local choice
+  while true; do
+    read -rp "Enter choice [1-${#options[@]}]: " choice
+    if [[ "$choice" =~ ^[0-9]+$ ]] && (( choice >= 1 && choice <= ${#options[@]} )); then
+      echo "${options[$((choice-1))]}"   # <-- only result to stdout
+      return 0
+    else
+      echo "invalid"
+      return 1
+    fi
+  done
+
 }
 
 #--- network connectivity functions ---

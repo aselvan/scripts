@@ -13,7 +13,7 @@
 ################################################################################
 
 # version format YY.MM.DD
-version=25.03.04
+version=25.08.31
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Sample script"
@@ -112,4 +112,8 @@ echo "1686709485000 msec from now to human readble date: $date_st"
 # conversion function
 v2mv=$(v2mv 3.2)
 echo "Volt/mVolt: 3.2/$v2mv"
+
+# selection list
+choice=$(select_option "Apple Orange Banana")
+echo "You chose: $choice"
 
