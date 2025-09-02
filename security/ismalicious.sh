@@ -52,7 +52,7 @@ $my_title
 
 Usage: $my_name [options]
   -c <command>  ---> command to run [Default: $command_name]. See supported commands below
-  -n <name>     ---> Domain/IP name to check
+  -n <name>     ---> Domain or IP to check
   -k <apikey>   ---> ismalicious.com API key [Default: read from $ismalicious_api_key_file]
   -v            ---> enable verbose, otherwise just errors are printed
   -h            ---> print usage/help
@@ -60,7 +60,8 @@ Usage: $my_name [options]
 Supported commands: $supported_commands  
 example(s): 
   $my_name -n 123.160.221.167
-  $my_name -c whois -n qouv.fr
+  $my_name -n qouv.fr
+  $my_name -c whois -n 123.160.221.167
  
 EOF
   exit 0
@@ -74,8 +75,17 @@ print_results() {
       log.stat "\tSuspicious: `cat $http_output|jq -r '.reputation.suspicious'`" 
       log.stat "\t`cat $http_output|jq -r '.sources[] | "\(.category): \(.status)"'`" 
       log.stat "\tOutput:  $http_output"
-    ;;
-    vulnerabilities|geolocation|whois)
+      ;;
+    whois)
+      log.stat "\tName:     `cat $http_output|jq -r '.whois.company.name'`" 
+      log.stat "\tDomain:   `cat $http_output|jq -r '.whois.company.domain'`" 
+      log.stat "\tNetwork:  `cat $http_output|jq -r '.whois.company.network'`" 
+      log.stat "\tAddress:  `cat $http_output|jq -r '.whois.abuse.address'`" 
+      log.stat "\tLocation: `cat $http_output|jq -r '.whois.location| "City: \(.city) ; State: \(.state) ; Zip: \(.zip); Country: \(.country)"'`" 
+      log.stat "\tGeo:      `cat $http_output|jq -r '.whois.location| "Lat: \(.latitude) ; Lon: \(.longitude)"'`" 
+      log.stat "\tOutput:  $http_output"
+      ;;
+    vulnerabilities|geolocation)
       cat $http_output|jq
     ;;
   esac
@@ -83,8 +93,14 @@ print_results() {
 
 # check using ismalicious API
 check_ismalicious() {
-  log.stat "Checking $command_name of $name using ismalicious API ..."
+  
+  # check if keys available first
+  if [ -z "$ismalicious_api_key" ]  ; then
+    log.error "Need API keys for ismalicious service call, see usage below"
+    usage
+  fi
 
+  log.stat "Checking $command_name of $name using ismalicious API ..."
   http_status=$(curl -s -o $http_output -w "%{http_code}" -H "X-API-KEY: $ismalicious_api_key" ${ismalicious_api_url_base}/${command_name}?query=$name)
 
   log.debug "HTTP status: $http_status"
@@ -153,10 +169,5 @@ if [ -z "$name" ] ; then
   usage
 fi
 
-if [ -z "$ismalicious_api_key" ]  ; then
-  log.error "Need API keys for ismalicious service call, see usage below"
-  usage
-fi
-
+# call API
 check_ismalicious
-
