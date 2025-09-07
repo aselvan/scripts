@@ -12,10 +12,11 @@
 # Version History:
 #   Nov 27, 2024 --- Original version
 #   Mar 5,  2025 --- Supress additional char for pwgen, added openssl_opt
+#   Sep 7,  2025 --- better password generation instead of using pwgen
 ################################################################################
 
 # version format YY.MM.DD
-version=25.03.05
+version=25.09.07
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Wrapper for many useful security related commands"
@@ -26,11 +27,14 @@ default_scripts_github=$HOME/src/scripts.github
 scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
 # commandline options
-options="c:l:f:bs::vh?"
+options="c:l:f:b:s:pvh?"
 
 command_name=""
 supported_commands="pwgen|usergen|enc|dec|basicauth|unixhash|passphrase"
 pwgen_len=12
+num_upper=2
+num_digit=2
+num_special=2
 pwgen_len_fixed=3
 enc_dec_file=""
 user_password=""
@@ -42,7 +46,11 @@ suppress_chars=""
 openssl_opt="-pbkdf2 -md md5 -aes-256-cbc -a -salt"
 word_list="/usr/share/dict/words"
 passphrase_words=3
-special_char_list="-%$!@^_~',#+"
+upper_chars="ABCDEFGHJKLMNPQRSTUVWXYZ"
+lower_chars="abcdefghijkmnpqrstuvwxyz"
+digit_chars="0123456789"
+special_char_list="~!@#$%&-=+?"
+pwgen=0
 
 
 usage() {
@@ -52,6 +60,7 @@ $my_name --- $my_title
 Usage: $my_name [options]
   -c <command>  ---> command to run [see supported commands below]  
   -l <len>      ---> length of password for pwgen command
+  -p            ---> use pwgen for password [Default: no]
   -s <chars>    ---> list of chars to exclude from passwords
   -f <file>     ---> filename for enc/dec funcions
   -b <user:pwd> ---> used for basicauth to encode user/password in base64 encoding
@@ -71,15 +80,36 @@ EOF
   exit 0
 }
 
+# Function to pick random characters
+function pick_random() {
+  echo "$1" | fold -w1 | shuf | head -n"$2"
+}
+
 function do_pwgen() {
   check_installed pwgen
   local rnd_digit=$(( $RANDOM % 10 ))
-  local abc=ABCDEFGHIJKLMNOPQRSTUVXWYZ
   local n=$(( $RANDOM %26 ))
-  local rnd_char=${abc:$n:1}
+  local rnd_char=${upper_chars:$n:1}
   local len=$(($pwgen_len-$pwgen_len_fixed))
   local passwd="$rnd_digit`pwgen -cny --remove-chars="${pwgen_supress_chars}${suppress_chars}" $len 1`@$rnd_char"
-  log.stat "\tStrong $(($len+$pwgen_len_fixed)) char password is: $passwd" $green
+  log.stat "\tStrong $(($len+$pwgen_len_fixed)) char password: $passwd" $green
+}
+
+function do_password() {
+  if [ $pwgen -ne 0 ] ; then
+    do_pwgen
+    return
+  fi
+
+  local num_lower=$((pwgen_len - num_upper - num_digit - num_special))
+  local upper=$(pick_random "$upper_chars" "$num_upper")
+  local lower=$(pick_random "$lower_chars" "$num_lower")
+  local digit=$(pick_random "$digit_chars" "$num_digit")
+  local special=$(pick_random "$special_char_list" "$num_special")
+
+  # combine all components
+  local password=$(echo "$upper$lower$digit$special" | fold -w1 | shuf | tr -d '\n')
+  log.stat "\tStrong $pwgen_len char password: $password" $green
 }
 
 function do_usergen() {
@@ -170,6 +200,9 @@ while getopts $options opt ; do
     s)
       suppress_chars="$OPTARG"
       ;;
+    p)
+      pwgen=1
+      ;;
     v)
       verbose=1
       ;;
@@ -188,7 +221,7 @@ fi
 # run different wrappes depending on the command requested
 case $command_name in
   pwgen)
-    do_pwgen
+    do_password
     ;;
   usergen)
     do_usergen
