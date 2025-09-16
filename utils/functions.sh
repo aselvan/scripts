@@ -262,23 +262,26 @@ macos_arch() {
 macos_code_name() {
   local major_version=`sw_vers --productVersion|awk -F. '{print $1}'`
   case $major_version in 
-    11) 
+    11)
       echo "Big Sur"
       ;;
-    12) 
+    12)
       echo "Monterey"
       ;;
-    13) 
+    13)
       echo "Ventura"
       ;;
     14) 
       echo "Sonoma"
       ;;
-    15) 
+    15)
       echo "Sequoia"
       ;;
+    26)
+      echo "Tahoe"
+      ;;
     *)
-      echo "Unknown"
+      echo "Unknown v$major_version"
       ;;
   esac
 }
