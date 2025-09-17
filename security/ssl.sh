@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#
+################################################################################
 # ssl.sh --- Download and/or validate SSL certs of a server
 #
 # Validation is done by downloading all the certificates in the certificate 
@@ -9,17 +9,18 @@
 #
 # Author:  Arul Selvan
 # Created: Aug 7, 2019
-#
+################################################################################
 # Version History:
 #   Aug 7,  2019 --- Orginal version (from ~/.bashrc) moved to standalone script
 #   May 19, 2024 --- Added options, validate chain, list chain error check etc.
 #   Dec 6,  2024 --- Added validation for CN/SAN.
 #   Dec 12, 2024 --- Option to save the SSL cert to a file
-#   Dec 26, 2024 --- Check for openSSL as opposed to LibreSSL. Also renamed to ssl.sh
-#
+#   Dec 26, 2024 --- Check for openSSL as opposed to LibreSSL, renamed to ssl.sh
+#   Sep 17, 2025 --- Added view option
+################################################################################
 
 # version format YY.MM.DD
-version=24.12.26
+version=25.09.17
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Download and validate SSL certs of a server"
@@ -29,7 +30,7 @@ default_scripts_github=$HOME/src/scripts.github
 scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
 # commandline options
-options="c:s:d:o:x:lvh?"
+options="c:s:d:o:x:f:lvh?"
 
 optional_checks=""
 show_ssl_chain=0
@@ -43,7 +44,7 @@ last_cert_name=""
 ssl_cert_file=""
 openssl_version_string="OpenSSL"
 command_name=""
-supported_commands="validate|extract"
+supported_commands="validate|extract|view"
 
 
 usage() {
@@ -51,14 +52,15 @@ usage() {
 $my_title
 
 Usage: $my_name [options]
-  -c <command>  ---> command to run [see supported commands below].
-  -s <server>   ---> webserver who's SSL cert needs to be validated or extracted.
-  -x <certname> ---> Just extract the cert and save it. No validation performed.
-  -d <number>   ---> chain depth [default: $chain_depth is sufficient for most cases].
-  -o <flags>    ---> Any openssl x509 flags example "-enddate -issuer -subject -fingerprint"
-  -l            ---> list ssl chain starting from root -> server cert
-  -v            ---> enable verbose, otherwise just errors are printed
-  -h            ---> print usage/help
+  -c <command> ---> command to run [see supported commands below].
+  -s <server>  ---> webserver who's SSL cert needs to be validated or extracted.
+  -x <file>    ---> extract the cert and save it to file. No validation performed.
+  -f <file>    ---> view the already extracted file [used by view command].
+  -d <number>  ---> chain depth [default: $chain_depth is sufficient for most cases].
+  -o <flags>   ---> Any openssl x509 flags example "-enddate -issuer -subject -fingerprint"
+  -l           ---> list ssl chain starting from root -> server cert
+  -v           ---> enable verbose, otherwise just errors are printed
+  -h           ---> print usage/help
 
 Supported commands: $supported_commands  
 example: $my_name -c validate -s google.com -o "-enddate -issuer"
@@ -189,6 +191,14 @@ extract_ssl_cert() {
   echo | openssl s_client -connect ${server}:443 -showcerts 2>/dev/null >$ssl_cert_file
 }
 
+view_ssl_cert() {
+  log.stat "\tCert file content: $ssl_cert_file"
+  if [ -z "$optional_checks" ] ; then
+    openssl x509 -in $ssl_cert_file -noout -text
+  else
+    openssl x509 -in $ssl_cert_file $optional_checks -noout 
+  fi
+}
 
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
@@ -224,7 +234,7 @@ while getopts $options opt ; do
     l)
       show_ssl_chain=1
       ;;
-    x)
+    x|f)
       ssl_cert_file="$OPTARG"
       ;;
     v)
@@ -244,7 +254,7 @@ if [ -z "$command_name" ] ; then
   usage
 fi
 
-if [ -z "$server" ] ; then
+if [ -z "$server" ] && [ $command_name != "view" ] ; then
   log.error "Server name is missing! See usage below"
   usage
 fi
@@ -263,6 +273,13 @@ case $command_name in
       usage
     fi
     extract_ssl_cert
+    ;;
+  view)
+    if [ -z $ssl_cert_file ] ; then
+      log.error "Extract requires filename to view, See usage below"
+      usage
+    fi
+    view_ssl_cert
     ;;
   *)
     log.error "Invalid command: $command_name"
