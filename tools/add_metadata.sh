@@ -26,7 +26,7 @@
 #   Sep 17, 2023 --- Initial version
 #   Mar 31, 2024 --- Use standard includes for logging, added desc metadata.
 #   Feb 5,  2025 --- Use use current date/time if missing from image file
-#
+#   Oct 6,  2025 --- fixed to work if missing/invalid create date found
 ################################################################################
 
 # version format YY.MM.DD
@@ -86,20 +86,15 @@ EOF
 
 reset_os_timestamp() {
   local fname=$1
+  local todays_date=`date +"%Y%m%d%H%M.%S"`
 
   # reset file OS timestamp to match create date
   log.info "resetting OS timestamp to match create date of '$fname' ..."
   create_date=`exiftool -d "%Y%m%d%H%M.%S" -createdate $fname | awk -F: '{print $2;}'`
-  if [ -z "$create_date" ] ; then
-    log.warn "$fname does not contain create date, using current date ..."
-    create_date=`date +"%Y%m%d%H%M.%S"`
+  if [ -z "$create_date" ] || [ "$create_date" = " 0000" ] ; then
+    create_date=$todays_date
+    log.warn "$fname does not contain create date or has invaild data, using current date ..."
     exiftool $exiftool_opt -d "%Y%m%d%H%M.%S" -AllDates="$create_date" -overwrite_original $fname 2>&1 >> $my_logfile
-  fi
-
-  # validate createdate since sometimes images contain create date but show " 0000"
-  if [ "$create_date" = " 0000" ] ; then
-    log.warn "Invalid create date ($create_date) for $fname, skipping ..."
-    return
   fi
 
   log.debug "resetting date: touch -t $create_date $fname"
