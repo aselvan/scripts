@@ -155,10 +155,12 @@ showswap() {
 }
 
 showdisk() {
-  local df_output=`df -h /System/Volumes/Data/|tail -1`
-  log.stat "`echo $df_output|awk '{print "  Total: ",$2,"\n  Used:  ",$3,"\n  Available: ",$4,"\n  Percent Used:  ",$5}'`"
-
+  log.stat "Storage type details:"
   system_profiler SPStorageDataType SPNetworkVolumeDataType
+  local df_output=`df -h /System/Volumes/Data/|tail -1`
+  
+  log.stat "Overall Disk Usage:"
+  log.stat "`echo $df_output|awk '{print "  Total: ",$2,"\n  Used:  ",$3,"\n  Available: ",$4,"\n  Percent Used:  ",$5}'`"
 }
 
 showbundle () {
