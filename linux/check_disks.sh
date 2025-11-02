@@ -26,10 +26,11 @@
 # Version History
 #   19.06.23 --- Original version
 #   24.05.01 --- Updated to use common logging includes
+#   25.11.02 --- Fixed broken device id and added switch to rotate deveice list
 #
 
 # version format YY.MM.DD
-version=24.05.01
+version=25.11.02
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Script to check mountable disks and reset mount counts"
@@ -40,15 +41,15 @@ default_scripts_github=$HOME/src/scripts.github
 scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
 # commandline options
-options_list="u:e:cvh"
+options_list="u:e:l:cvh"
 
 email_address=""
 failure=0
 # UUID: from "ls -al /dev/disk/by-uuid"
-# NOTE: keep rotating (*58f821665890 & *58e406aaef5d) everytime we move the last device to offsite (bank locker)
-#uuid_list="638c3c50-6f6f-4b2b-b407-437c7074602b f5b39d74-5541-4478-b705-9762f7d3110c e087431d-84b8-404f-8de2-a3785f692426 acbc7081-368e-4459-b7b9-58f821665890"
-#uuid_list="638c3c50-6f6f-4b2b-b407-437c7074602b f5b39d74-5541-4478-b705-9762f7d3110c e087431d-84b8-404f-8de2-a3785f692426 5204ef97-f3f1-46cc-8a80-58e406aaef5d"
-uuid_list="638c3c50-6f6f-4b2b-b407-437c7074602b f5b39d74-5541-4478-b705-9762f7d3110c e087431d-84b8-404f-8de2-a3785f692426 5204ef97-f3f1-46cc-8a80-58e406aaef5d"
+# NOTE: keep rotating (*420f23d7e68a & *58e406aaef5d) everytime we move the last device to offsite i.e. fireproof vault
+uuid_list_1="638c3c50-6f6f-4b2b-b407-437c7074602b f5b39d74-5541-4478-b705-9762f7d3110c e087431d-84b8-404f-8de2-a3785f692426 489609f7-87f3-4ab0-94e1-420f23d7e68a"
+uuid_list_2="638c3c50-6f6f-4b2b-b407-437c7074602b f5b39d74-5541-4478-b705-9762f7d3110c e087431d-84b8-404f-8de2-a3785f692426 5204ef97-f3f1-46cc-8a80-58e406aaef5d"
+uuid_list="$uuid_list_1"
 
 uuid_path="/dev/disk/by-uuid"
 
@@ -58,16 +59,20 @@ export PATH="/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
 
 usage() {
   cat << EOF
-$my_title
+$my_name - $my_title
 
 Usage: $my_name [options]
   -u <uuid_list> ---> double quoted list of space separated uuid's i.e. 'ls /dev/disk/by-uuid'
   -e <email>     ---> optional email address to mail results
-  -c             ---> validate all uuids [default: $uuid_list] 
+  -l <listid>    ---> 1 or 2 [default: 1]
+  -c             ---> validate all uuids 
   -v             ---> enable verbose, otherwise just errors are printed
   -h             ---> print usage/help
 
-  example: $my_name -u "$uuid_list" -e foo@bar.com -v
+example(s): 
+  $my_name -e foo@bar.com -v
+  $my_name -l2 -c -e foo@bar.com -v
+  $my_name -u "uuid1 uuid2 uuid3" -e foo@bar.com -v
   
 EOF
   exit 0
@@ -146,6 +151,15 @@ while getopts "$options_list" opt ; do
     u)
       uuid_list="$OPTARG"
       ;;
+    l)
+      if [ "$OPTARG" -eq 1 ] ; then
+        uuid_list="$uuid_list_1"
+      elif [ "$OPTARG" -eq 2 ] ; then
+        uuid_list="$uuid_list_2"
+      else
+        log.warn "Invalid list_id ($OPTARG), continue with using default uuid_list."
+      fi
+      ;;
     e)
       email_address="$OPTARG"
       ;;
@@ -160,7 +174,10 @@ done
 
 check_os
 check_root
+
 log.stat "Host: $host_name"
+log.debug "Using uuid_list: $uuid_list"
+
 for uuid in $uuid_list ; do
   log.stat "==================== device: $uuid ==================== "
 
