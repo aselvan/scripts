@@ -90,10 +90,10 @@ validate_uuid() {
   local uuid=$1
   disk_dev=`/usr/bin/readlink -nf  $uuid_path/$uuid`
   
-  log.stat "validating uuid: $uuid"
   if [ ! -b $disk_dev ] ; then
     return 1
   else
+    log.stat "    ${uuid}: valid"
     return 0
   fi
 }
@@ -106,7 +106,7 @@ validate_uuids() {
   for uuid in $uuid_list ; do
     validate_uuid $uuid
     if [ $? -ne 0 ]; then
-      log.warn "  Invalid/non-existent uuid: $uuid"      
+      log.warn "    ${uuid}: Invalid/non-existent!"      
       atleast_one_failed=1
     fi
   done
