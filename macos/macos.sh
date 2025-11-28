@@ -31,7 +31,7 @@
 ################################################################################
 
 # version format YY.MM.DD
-version=25.11.22
+version=25.11.28
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl tools for macOS all in one place"
@@ -47,7 +47,7 @@ options="c:l:a:d:r:p:n:kvh?"
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 arg=""
 command_name=""
-supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight|kill|disablespotlight|enablespotlight|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused|sysext|lsbom|user|users|kext|kmutil|power|cleanup|usb|btc|bta|hw|system|wifi|monitor|battery"
+supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight|kill|disablespotlight|enablespotlight|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused|sysext|lsbom|user|users|kext|kmutil|power|cleanup|usb|btc|bta|hw|system|wifi|monitor|battery|airplay"
 # if -h argument comes after specifiying a valid command to provide specific command help
 command_help=0
 
@@ -593,7 +593,16 @@ do_monitor() {
     log.stat "Monitoring $choice ..."
     fs_usage -f $choice $arg
   fi
+}
 
+do_airplay() {
+  if [ ! -z "$arg" ] ; then
+    log.stat "Details of airplay device $arg ..."
+    dns-sd -L "$arg" _airplay._tcp
+  else
+    log.stat "Showing airplay devices..."
+    dns-sd -B _airplay._tcp
+  fi
 }
 
 # -------------------------------  main -------------------------------
@@ -776,6 +785,9 @@ case $command_name in
   battery)
     log.stat "Battery Status"
     pmset -g batt
+    ;;
+  airplay)
+    do_airplay
     ;;
   *)
     log.error "Invalid command: $command_name"
