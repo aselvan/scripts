@@ -52,7 +52,7 @@ remote_host3=penguin
 remote_user3=arul
 remote_path3="/home/arul/data/personal/keys"
 remote_scp_path3="$remote_user3@$remote_host3:$remote_path3"
-aruls_phone="arulspixel7"
+aruls_phone="arulspixel10"
 
 # additional storage to veracrypt (or other encrypted volumes)
 veracrypt_mount="/mnt/veracrypt"
@@ -190,18 +190,16 @@ else
 fi
 log.stat "Done" $green
 
-# finally, if we have the arulspixel7 phone connected to adb, push it there as well
+# finally, if we have the phone connected to adb, push it there as well
+# NOTE: we are using latest Linux vm on Google Pixel 10 which has access to /sdcard directly 
+# under a mounted directory called /mnt/shared -> /sdcard, so copying the encFile there so 
+# the Linux VM can access/decrypt etc using openssl
 log.stat "---------- Phone backup/storage ----------" $green
 log.stat "Checking for $aruls_phone ..."
 adb devices|awk 'NR>1 {print $1}'|grep $aruls_phone
 if [ $? -eq 0 ]; then
   log.stat "Backing up to $aruls_phone ..."
   $scripts_github/andriod/adb_push.sh -s $aruls_phone -f $encFileName -d /sdcard/data/docs/
-  # the termux app (we use that to decrypt the enc file) can access only media file, so add .jpg 
-  $scripts_github/andriod/adb_shell.sh -s $aruls_phone -c "cp /sdcard/data/docs/${encFileName} /sdcard/data/docs/${encFileName}.jpg"
-  
-  # copy for Android Linux VM (new on Pixel7+ from Mar 2025, enable it in Developer mode)
-  $scripts_github/andriod/adb_push.sh -s $aruls_phone -f $encFileName -d /sdcard/Download/data/
   log.stat "Done" $green
 else
   log.warn "$aruls_phone is not available, skipping ..."
