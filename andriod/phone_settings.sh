@@ -8,15 +8,16 @@
 # there are multiple devices paried, you need to specifiy device name using -s option.
 #
 # Author:  Arul Selvan
-# Version: Jan 6, 2018 --- original version
-# Version: Mar 1, 2023 --- updated with option and support for andrioid 10 or later.
+#   Jan 6,  2018 --- original version
+#   Mar 1,  2023 --- updated with option and support for andrioid 10 or later.
+#   Dec 11, 2025 --- Added printing WiFi, NFC current status, print device name etc
 #
 
 # ensure path for utilities
 export PATH="/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
 
 # version format YY.MM.DD
-version=24.01.06
+version=25.12.11
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="ADB wrapper script to set volume on andrioid phone"
@@ -66,6 +67,8 @@ EOF
 }
 
 check_device() {
+  log.stat "Device: $device"
+  
   log.info "check if the device ($device) is connected  ... "
   devices=$(adb devices|awk 'NR>1 {print $1}')
   for d in $devices ; do
@@ -102,7 +105,7 @@ check_device() {
   exit 1
 }
 
-list_devices() {
+list_devices() {  
   devices=$(adb devices|awk 'NR>1 {print $1}')
   log.stat "list of devices paired" $black
   log.stat "$devices" $green
@@ -123,14 +126,18 @@ display_values() {
   else
     log.stat "  DnD is: ON"
   fi
+  log.stat "  `adb $device shell "dumpsys wifi|grep 'Wi-Fi is'"`"
+  log.stat "  NFC: `adb $device shell "dumpsys nfc |grep mState"`"
 }
 
 enable_disable_wifi() {
+
   if [[ "$wifi_action" != "enable" && "$wifi_action" != "disable" ]] ; then
     log.error "Invalid -w argument. Must be 'enable' or 'disable'. See usage below"
     usage
   fi
   adb $device shell "svc wifi $wifi_action"
+  adb $device shell "dumpsys wifi|grep 'Wi-Fi is'"
 }
 
 # -------------------------------  main -------------------------------
