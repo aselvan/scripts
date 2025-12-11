@@ -26,8 +26,8 @@ scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 # commandline options
 options_list="s:l:d:w:vh"
 
-# default to my phone so less typing -Arul
-device="arulspixel7"
+# default to my phone so less typing :) 
+device="arulspixel10"
 source_location="/sdcard/DCIM/Camera"
 dest_location="."
 remove_location=""
