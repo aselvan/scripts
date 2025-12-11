@@ -27,8 +27,8 @@ options_list="s:r:vh"
 # ensure path for cron runs
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
 
-# default to my phone so less typing -Arul
-device="arulspixel7"
+# default to my phone so less typing :) 
+device="arulspixel10"
 default_remove_location="/sdcard/DCIM/Camera"
 remove_location=""
 
