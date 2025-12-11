@@ -29,8 +29,8 @@ scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 # commandline options
 options_list="s:r:m:a:w:lvh"
 
-# default to my phone so less typing :)  -Arul
-device="arulspixel4"
+# default phone so less typing :)
+device="arulspixel7"
 ring_vol=0
 media_vol=0
 alarm_vol=0
