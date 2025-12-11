@@ -27,11 +27,12 @@
 #   Aug 12, 2025 --- Added kext command
 #   Aug 20, 2025 --- Added cleanup command to wipe cache, log etc.
 #   Aug 31, 2025 --- Added monitor command for file, network, etc monitoring 
-#   Nov 22, 2025 --- Addded battery command to show battery status 
+#   Nov 22, 2025 --- Add battery command to show battery status 
+#   Dec 11, 2025 --- Add fan command (only for Intel) Apple M's dont allow reading fan
 ################################################################################
 
 # version format YY.MM.DD
-version=25.11.28
+version=25.12.11
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl tools for macOS all in one place"
@@ -47,7 +48,7 @@ options="c:l:a:d:r:p:n:kvh?"
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 arg=""
 command_name=""
-supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight|kill|disablespotlight|enablespotlight|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused|sysext|lsbom|user|users|kext|kmutil|power|cleanup|usb|btc|bta|hw|system|wifi|monitor|battery|airplay"
+supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight|kill|disablespotlight|enablespotlight|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused|sysext|lsbom|user|users|kext|kmutil|power|cleanup|usb|btc|bta|hw|system|wifi|monitor|battery|airplay|fan"
 # if -h argument comes after specifiying a valid command to provide specific command help
 command_help=0
 
@@ -605,6 +606,17 @@ do_airplay() {
   fi
 }
 
+do_fan() {
+  # only for intel mac
+  if [ $(macos_arch) == "Intel" ] ; then
+    check_root
+    log.stat "  `sudo powermetrics -i1 -n1  -ssmc|grep ^Fan`"
+  else
+    log.error "Fan access is not availabe in Apple Silicon based processors!"
+  fi
+}
+
+
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
 if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
@@ -619,6 +631,9 @@ else
 fi
 # init logs
 log.init $my_logfile
+
+# enforce we are running macOS
+check_mac
 
 trap signal_handler SIGINT
 
@@ -788,6 +803,9 @@ case $command_name in
     ;;
   airplay)
     do_airplay
+    ;;
+  fan)
+    do_fan
     ;;
   *)
     log.error "Invalid command: $command_name"
