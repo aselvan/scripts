@@ -27,12 +27,13 @@
 #   Aug 12, 2025 --- Added kext command
 #   Aug 20, 2025 --- Added cleanup command to wipe cache, log etc.
 #   Aug 31, 2025 --- Added monitor command for file, network, etc monitoring 
-#   Nov 22, 2025 --- Add battery command to show battery status 
-#   Dec 11, 2025 --- Add fan command (only for Intel) Apple M's dont allow reading fan
+#   Nov 22, 2025 --- Added battery command to show battery status 
+#   Dec 11, 2025 --- Added fan command (only for Intel) Apple M's dont allow reading fan
+#   Dec 12, 2025 --- Added multiple command support 
 ################################################################################
 
 # version format YY.MM.DD
-version=25.12.11
+version=25.12.12
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl tools for macOS all in one place"
@@ -96,7 +97,11 @@ Usage: $my_name -c <command> [options]
   -v                ---> enable verbose, otherwise just errors are printed
   -h                ---> print usage/help
 NOTE: For commands requiring args add -h after the command to see command specific usage.
-Ex: $my_name -c app -h
+
+Examples: 
+  $my_name -c app -h
+  $my_name -c mem,vmstat,cpu
+  $my_name -c "user,disk"
 
 Supported commands: 
 $(echo -e $supported_commands)
@@ -170,7 +175,7 @@ showbundle () {
     log.stat "Usage: $my_name -c bundle -a textedit  # this example shows details of textedit" $black
     exit 1
   fi
-  cmd="osascript -e 'id of app \"$arg\"'"
+  local cmd="osascript -e 'id of app \"$arg\"'"
   log.stat "\t`eval $cmd`" $green
 }
 
@@ -683,133 +688,139 @@ if [ -z "$command_name" ] ; then
   usage
 fi
 
-case $command_name in 
-  mem)
-    showmem
-    ;;
-  cpu)
-    showcpu
-    ;;
-  vmstat)
-    showvmstat   
-    ;;
-  version)
-    show_version 
-    ;;
-  system)
-    system_profiler SPSoftwareDataType   
-    ;;
-  serial)
-    ioreg -c IOPlatformExpertDevice -d 2 | awk -F\" '/IOPlatformSerialNumber/{print $(NF-1)}'  
-    ;;
-  volume)
-    do_volume  
-    ;;
-  swap)
-    showswap
-    ;;
-  disk)
-    showdisk
-    ;;
-  bundle)
-    showbundle
-    ;;
-  spotlight)
-    showspotlight
-    ;;
-  disablespotlight)
-    disablespotlight
-    ;;
-  enablespotlight)
-    enablespotlight
-    ;;
-  kill)
-    do_kill
-    ;;
-  arch)
-    log.stat "MacOS CPU Architecture: `macos_arch`"
-    ;;
-  cputemp)
-    show_cpu_temp
-    ;;
-  speed)
-    networkquality -s
-    ;;
-  app)
-    show_app
-    ;;
-  pids)
-    show_pids
-    ;;
-  procinfo)
-    show_procinfo
-    ;;
-  verify)
-    verify_code
-    ;;
-  log)
-    show_log
-    ;;
-  spaceused)
-    show_spaceused
-    ;;
-  sysext)
-    log.stat "System Extentions List"
-    systemextensionsctl list   
-    ;;
-  kext)
-    do_kext
-    ;;
-  kmutil)
-    do_kmutil
-    ;;
-  lsbom)
-    do_lsbom
-    ;;
-  user)
-    do_user
-    ;;
-  users)
-    do_users
-    ;;
-  power)
-    do_power
-    ;;
-  cleanup)
-    do_cleanup
-    ;;
-  usb)
-    system_profiler SPUSBDataType | awk '!/USB:/'
-    hidutil list --matching '{"Transport":"USB"}' | awk '/Devices:/ {show=1;next} show'
-    ;;
-  btc)
-    system_profiler SPBluetoothDataType  | awk '/Not Connected/ {exit} {print}'
-    ;;
-  bta)
-    system_profiler SPBluetoothDataType
-    ;;
-  hw)
-    system_profiler SPHardwareDataType
-    ;;
-  wifi)
-    system_profiler SPAirPortDataType -detailLevel mini
-    ;;
-  monitor)
-    do_monitor
-    ;;
-  battery)
-    log.stat "Battery Status"
-    pmset -g batt
-    ;;
-  airplay)
-    do_airplay
-    ;;
-  fan)
-    do_fan
-    ;;
-  *)
-    log.error "Invalid command: $command_name"
-    log.stat "Available commands: $supported_commands"
-    exit 1
-    ;;
-esac
+# Command possibly may have multiple entries separated by ',' so loop through and 
+# execute all of them
+IFS=',' read -ra commands <<< "$command_name"
+for item in "${commands[@]}"; do
+  cmd=$(echo "$item" | xargs)
+  case $cmd in 
+    mem)
+      showmem
+      ;;
+    cpu)
+      showcpu
+      ;;
+    vmstat)
+      showvmstat   
+      ;;
+    version)
+      show_version 
+      ;;
+    system)
+      system_profiler SPSoftwareDataType   
+      ;;
+    serial)
+      ioreg -c IOPlatformExpertDevice -d 2 | awk -F\" '/IOPlatformSerialNumber/{print $(NF-1)}'  
+      ;;
+    volume)
+      do_volume  
+      ;;
+    swap)
+      showswap
+      ;;
+    disk)
+      showdisk
+      ;;
+    bundle)
+      showbundle
+      ;;
+    spotlight)
+      showspotlight
+      ;;
+    disablespotlight)
+      disablespotlight
+      ;;
+    enablespotlight)
+      enablespotlight
+      ;;
+    kill)
+      do_kill
+      ;;
+    arch)
+      log.stat "MacOS CPU Architecture: `macos_arch`"
+      ;;
+    cputemp)
+      show_cpu_temp
+      ;;
+    speed)
+      networkquality -s
+      ;;
+    app)
+      show_app
+      ;;
+    pids)
+      show_pids
+      ;;
+    procinfo)
+      show_procinfo
+      ;;
+    verify)
+      verify_code
+      ;;
+    log)
+      show_log
+      ;;
+    spaceused)
+      show_spaceused
+      ;;
+    sysext)
+      log.stat "System Extentions List"
+      systemextensionsctl list   
+      ;;
+    kext)
+      do_kext
+      ;;
+    kmutil)
+      do_kmutil
+      ;;
+    lsbom)
+      do_lsbom
+      ;;
+    user)
+      do_user
+      ;;
+    users)
+      do_users
+      ;;
+    power)
+      do_power
+      ;;
+    cleanup)
+      do_cleanup
+      ;;
+    usb)
+      system_profiler SPUSBDataType | awk '!/USB:/'
+      hidutil list --matching '{"Transport":"USB"}' | awk '/Devices:/ {show=1;next} show'
+      ;;
+    btc)
+      system_profiler SPBluetoothDataType  | awk '/Not Connected/ {exit} {print}'
+      ;;
+    bta)
+      system_profiler SPBluetoothDataType
+      ;;
+    hw)
+      system_profiler SPHardwareDataType
+      ;;
+    wifi)
+      system_profiler SPAirPortDataType -detailLevel mini
+      ;;
+    monitor)
+      do_monitor
+      ;;
+    battery)
+      log.stat "Battery Status"
+      pmset -g batt
+      ;;
+    airplay)
+      do_airplay
+      ;;
+    fan)
+      do_fan
+      ;;
+    *)
+      log.error "Invalid command: $command_name"
+      log.stat "Available commands: $supported_commands"
+      exit 1
+      ;;
+  esac
+done
