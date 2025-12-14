@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+################################################################################
 #
 # phone_settings.sh --- simple wrapper to set volume on andrioid phone
 #
@@ -7,10 +8,14 @@
 # Note: in order for this script to work, you must have paired your phone w/ adb first. If 
 # there are multiple devices paried, you need to specifiy device name using -s option.
 #
-# Author:  Arul Selvan
+# Author:   Arul Selvan
+# Version: Jan 6, 2018
+################################################################################
+# Version History:
 #   Jan 6,  2018 --- original version
 #   Mar 1,  2023 --- updated with option and support for andrioid 10 or later.
 #   Dec 11, 2025 --- Added printing WiFi, NFC current status, print device name etc
+################################################################################
 #
 
 # ensure path for utilities
