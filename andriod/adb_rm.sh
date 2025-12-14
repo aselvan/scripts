@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+################################################################################
 #
 # adb_rm.sh --- simple wrapper over adb to delete files/directory.
 #
@@ -7,11 +8,14 @@
 #
 # Author:  Arul Selvan
 # Version: Oct 27, 2023
-#
-
+################################################################################
+# Version History:
+#   Oct 27, 2023 --- Original version
+#   Dec 14, 2025 --- Added short form to delete screenshots
+################################################################################
 
 # version format YY.MM.DD
-version=23.11.18
+version=25.12.14
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Wrapper over adb to delete files/directory"
@@ -29,21 +33,25 @@ export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
 
 # default to my phone so less typing :) 
 device="arulspixel10"
-default_remove_location="/sdcard/DCIM/Camera"
+camera_location="/sdcard/DCIM/Camera"
+screenshot_location="/sdcard/Pictures/Screenshots"
+default_remove_location="$camera_location"
 remove_location=""
 
 usage() {
   cat << EOF
 $my_name --- simple wrapper over adb to delete files/directory from phone.
-Usage: $my_name -s <device> -l <path> -r <path> [-d <path>] [-w <wildcard>] 
+Usage: $my_name -s <device> -r <path>
   -s <device>   ---> andrioid device id of your phone paired with adb
-  -r <path>     ---> delete everything under path [Default: '$default_remove_location']
+  -r <path>     ---> phone location. note: this can be "ss" for screenshots [Default: '$default_remove_location']
   -v            ---> enable verbose, otherwise just errors/warnings are printed      
   -h help
   
   Examples: 
     $my_name -s pixel:5555 -r /sdcard/DCIM/Camera
     $my_name -s pixel:5555 -r "/sdcard/DCIM/Camera/*.jpg"
+    $my_name -r ss  # This will delete screenshot directory from default phone ($device)
+    
 EOF
   exit
 }
@@ -77,23 +85,21 @@ check_device() {
   exit 1
 }
 
-confirm_action() {
-  local msg=$1
-  log.stat "$msg"
-  read -p "Are you sure? (y/n) " -n 1 -r
-  echo 
-  if [[ $REPLY =~ ^[Yy]$ ]] ; then
-    log.warn "Deleting..."
-    return
-  else
-    log.stat "Remove canceled, exiting..."
+remove_path() {
+  confirm_action "Are you sure you want to delete: '$remove_location'?"
+  if [ $? -eq 0 ] ; then
+    log.warn "  Aborting..."
+    exit 10
+  fi
+
+  log.stat "Deleting $remove_location from device: $device ..."
+  adb $device shell rm -rf $remove_location  2>&1 >> $my_logfile
+  if [ $? -ne 0 ] ; then
+    log.error "Error deleting '${remove_location}'!"
     exit 9
   fi
-}
 
-remove_path() {
-  confirm_action "Removing everything under this path: '$remove_location'"
-  adb $device shell rm -rf $remove_location  2>&1 | tee -a $my_logfile
+  log.stat "Sync'ing device: $device"
   adb $device shell sync 2>&1 | tee -a $my_logfile
 }
 
@@ -119,6 +125,9 @@ while getopts "$options_list" opt ; do
       ;;
     r)
       remove_location="$OPTARG"
+      if [ $remove_location == "ss" ] ; then
+        remove_location="$screenshot_location"
+      fi
       ;;
     v)
       verbose=1

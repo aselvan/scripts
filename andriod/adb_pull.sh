@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+################################################################################
 #
 # adb_pull.sh --- simple wrapper over adb to copy files from phone or delete.
 #
@@ -7,13 +8,17 @@
 #
 # Author:  Arul Selvan
 # Version: Oct 26, 2023
-#
+################################################################################
+# Version History:
+#   Oct 26, 2023 --- Original version
+#   Dec 14, 2025 --- Added short form to pull screenshots
+################################################################################
 
 # ensure path for cron runs
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
 
 # version format YY.MM.DD
-version=23.11.18
+version=25.12.14
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Sample script"
@@ -28,7 +33,9 @@ options_list="s:l:d:w:vh"
 
 # default to my phone so less typing :) 
 device="arulspixel10"
-source_location="/sdcard/DCIM/Camera"
+camera_location="/sdcard/DCIM/Camera"
+screenshot_location="/sdcard/Pictures/Screenshots"
+source_location="$camera_location"
 dest_location="."
 remove_location=""
 wild_card=""
@@ -39,7 +46,7 @@ $my_name --- simple wrapper over adb to copy files from phone or delete.
 
 Usage: $my_name -s <device> -l <path> -r <path> [-d <path>] [-w <wildcard>] 
   -s <device>   ---> andrioid device id of your phone paired with adb
-  -l <path>     ---> phone locaion to pull files/dir [Default: '$source_location']
+  -l <path>     ---> phone location. note: this can be "ss" for screenshots [Default: '$source_location']
   -d <path>     ---> destination path to copy files [Default: '$dest_location'] 
   -w <wildcard> ---> optional wildcard like *.jpg  [Default: '$wild_card']
   -v            ---> enable verbose mode, otherwise just errors/warnings are printed      
@@ -48,6 +55,8 @@ Usage: $my_name -s <device> -l <path> -r <path> [-d <path>] [-w <wildcard>]
   Examples: 
     $my_name -s pixel:5555 -l /sdcard/DCIM/Camera
     $my_name -s pixel:5555 -l /sdcard/DCIM/Camera -w PXL_20231024*
+    $my_name -l ss  # This will copy screenshot directory from default phone ($device)
+
 EOF
   exit
 }
@@ -85,10 +94,18 @@ copy_path() {
   # if wild card, we have to do one by one
   if [ ! -z $wild_card ] ; then
     for f in `adb $device shell ls ${source_location}/$wild_card` ; do 
-      adb $device pull -a $f $dest_location 2>&1 | tee -a $my_logfile
+      adb $device pull -a $f $dest_location 2>&1 >> $my_logfile
+      if [ $? -ne 0 ] ; then
+        log.error "Error copying, check '${source_location}' and retry"
+        exit 4
+      fi
     done
   else
-    adb $device pull -a $source_location $dest_location 2>&1 | tee -a $my_logfile
+    adb $device pull -a $source_location $dest_location 2>&1 >> $my_logfile
+    if [ $? -ne 0 ] ; then
+      log.error "Error copying, check '${source_location}' and retry"
+      exit 5
+    fi
   fi
 }
 
@@ -114,6 +131,9 @@ while getopts "$options_list" opt ; do
       ;;
     l)
       source_location="$OPTARG"
+      if [ $source_location == "ss" ] ; then
+        source_location="$screenshot_location"
+      fi
       ;;
     d)
       dest_location="$OPTARG"
