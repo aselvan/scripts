@@ -73,8 +73,7 @@ print_results() {
       log.stat "\tScore:      `cat $http_output|jq -r '.confidenceScore'`" 
       log.stat "\tMalicious:  `cat $http_output|jq -r '.reputation.malicious'`" 
       log.stat "\tSuspicious: `cat $http_output|jq -r '.reputation.suspicious'`" 
-      log.stat "\t`cat $http_output|jq -r '.sources[] | "\(.category): \(.status)"'`" 
-      log.stat "\tOutput:  $http_output"
+      log.stat "Full Result:\n`cat $http_output|jq`"
       ;;
     whois)
       log.stat "\tName:     `cat $http_output|jq -r '.whois.company.name'`" 
