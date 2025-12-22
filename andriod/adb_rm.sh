@@ -33,6 +33,7 @@ export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
 
 # default to my phone so less typing :) 
 device="arulspixel10"
+device_arg="-s $device"
 camera_location="/sdcard/DCIM/Camera"
 screenshot_location="/sdcard/Pictures/Screenshots"
 default_remove_location="$camera_location"
@@ -86,21 +87,22 @@ check_device() {
 }
 
 remove_path() {
-  confirm_action "Are you sure you want to delete: '$remove_location'?"
+  log.stat "Device:Path: $device:$remove_location"
+  confirm_action "Are you sure you want to delete above device:path?"
   if [ $? -eq 0 ] ; then
     log.warn "  Aborting..."
     exit 10
   fi
 
   log.stat "Deleting $remove_location from device: $device ..."
-  adb $device shell rm -rf $remove_location  2>&1 >> $my_logfile
+  adb $device_arg shell rm -rf $remove_location  2>&1 >> $my_logfile
   if [ $? -ne 0 ] ; then
     log.error "Error deleting '${remove_location}'!"
     exit 9
   fi
 
   log.stat "Sync'ing device: $device"
-  adb $device shell sync 2>&1 | tee -a $my_logfile
+  adb $device_arg shell sync 2>&1 | tee -a $my_logfile
 }
 
 # -------------------------------  main -------------------------------
@@ -140,7 +142,7 @@ done
 
 # check the device
 check_device
-device="-s $device"
+device_arg="-s $device"
 
 # first get device count and see if anything is parired
 device_count=`adb devices|awk 'NR>1 {print $1}'|wc -w|tr -d ' '`
