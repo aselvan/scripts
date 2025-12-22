@@ -10,8 +10,9 @@
 os_name=`uname -s`
 my_name=`basename $0`
 count=15
-options="mct:h"
+options="mcp:t:h"
 log_file="/tmp/$(echo $my_name|cut -d. -f1).log"
+pid=0
 
 usage() {
   cat <<EOF
@@ -19,12 +20,14 @@ usage() {
 Usage: $my_name [options]
   
   -m         ==> show top $count process consuming memory
+  -p <pid>   ==> show memory use of just the <pid> instead of all
   -c         ==> show top $count process consuming cpu [default w/ no args]
   -t <count> ==> set the number of process to list [must be first arg]
   -h         ==> help
 
-  example: $my_name -t 10 -m
-
+  examples: 
+    $my_name -t 10 -m
+    $my_name -p 706
 EOF
   exit 1
 }
@@ -72,17 +75,22 @@ do_cpu() {
 
 do_memory() {
   local ps_opt="--sort -rss -eo pid=,pmem=,rss=,vsz=,comm="
+  local pid_opt=""
   if [ $os_name = "Darwin" ] ; then
     ps_opt="-w -m -eo pid=,%mem=,rss=,vsz=,comm="
   fi
 
+  # if pid provided, use it
+  if [ $pid -ne 0 ] ; then
+    ps_opt="-w -m -o pid=,%mem=,rss=,vsz=,comm= -p $pid"
+  fi
   printf "%s\t%s\t%s\t%s\t  %s\n" PID %MEM RSS VSZ COMMAND
   while read -r pid mem rss vsz cmd; do
     cmd=`do_format_cmd "$cmd"`
     rss=`do_format_size $rss`
     vsz=`do_format_size $vsz`
     printf "%s\t%s\t%s\t%s\t  %s\n" "$pid" "$mem" "$rss" "$vsz" "$cmd"
-  done < <(ps $ps_opt | head -n$count)
+  done < <(ps $ps_opt $pid_opt | head -n$count)
   exit
 }
 
@@ -94,6 +102,10 @@ while getopts $options opt; do
       do_cpu
       ;;
     m)
+      do_memory
+      ;;
+    p)
+      pid="$OPTARG"
       do_memory
       ;;
     t)
