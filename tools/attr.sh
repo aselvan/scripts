@@ -74,7 +74,11 @@ do_show_linux() {
 
 do_show_mac() {
   log.stat "Extended Attributes:" 
-  log.stat "Flags: `ls -lO $file_name|awk '{print $5}'`"
+  if [ -d "$file_name" ] ; then
+    log.stat "\tFlags: `ls -ldO $file_name|awk '{print $5}'`"
+  else
+    log.stat "\tFlags: `ls -lO $file_name|awk '{print $5}'`"
+  fi
   if xattr "$file_name" | grep -q . ; then
     log.stat "`xattr -l "$file_name"`" $green
   else
