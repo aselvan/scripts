@@ -126,10 +126,12 @@ display_values() {
   vol=`adb $device shell cmd media_session volume --get --stream 4|awk '/volume is/ {print $4;}'`
   log.stat "  Alarm volume: $vol"
 
-  if [ "$dnd_status" -eq 0 ] ; then
-    log.stat "  DnD is: OFF"
-  else
-    log.stat "  DnD is: ON"
+  if [ -z "$dnd_status" ] ; then
+    log.stat "  DnD: Unknown"
+  elif [ "$dnd_status" -eq 0 ] ; then
+    log.stat "  DnD: OFF"
+  elif [ "$dnd_status" -ne 0 ] ; then
+    log.stat "  Dnd: ON"
   fi
   log.stat "  `adb $device shell "dumpsys wifi|grep 'Wi-Fi is'"`"
   log.stat "  NFC: `adb $device shell "dumpsys nfc |grep mState"`"
