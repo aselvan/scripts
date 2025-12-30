@@ -29,11 +29,12 @@
 #   Aug 31, 2025 --- Added monitor command for file, network, etc monitoring 
 #   Nov 22, 2025 --- Added battery command to show battery status 
 #   Dec 11, 2025 --- Added fan command (only for Intel) Apple M's dont allow reading fan
-#   Dec 12, 2025 --- Added multiple command support 
+#   Dec 12, 2025 --- Added multiple command support
+#   Dec 30, 2025 --- Changed verify, battery commands to show better data
 ################################################################################
 
 # version format YY.MM.DD
-version=25.12.12
+version=25.12.30
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl tools for macOS all in one place"
@@ -91,7 +92,7 @@ Usage: $my_name -c <command> [options]
   -r <number>       ---> used by "spaceused" to restrict rows to display [Default: $spaceused_rows]
   -n <number>       ---> used by "spaceused" to recurse n-depeth [Default: $spaceused_depth]
   -p <path>         ---> used by "spaceused" to recurse down path [Default: $spaceused_path]
-  -a <arg>          ---> arguments for commands like bundle|kill|app|procinfo|codesign|log|kext|user etc.
+  -a <arg>          ---> arguments for commands like bundle|kill|app|procinfo|verify|log|kext|user etc.
   -k                ---> enables writing $killed_list_file showing what was killed 
                          [note: the file may grow to large size]
   -v                ---> enable verbose, otherwise just errors are printed
@@ -320,15 +321,42 @@ show_procinfo() {
   sudo launchctl procinfo $arg 
 }
 
+check_brew() {
+  if [ `which otool` ]; then
+    # use otool
+    otool -L $arg |egrep '/opt/homebrew|/usr/local/opt' 2>&1 >/dev/null
+    if [ $? -eq 0 ] ; then
+      log.stat "This binary is installed by brew package manager." $cyan
+    else
+      log.error "This binary is unknown origin, not macOS distribution or brew package manager"
+    fi
+  else
+    if [[ "$arg" == *"/opt/homebrew"* || "$arg" == *"/usr/local/"* ]]; then
+      log.stat "This binary is likely installed by brew package manager." $cyan
+    else
+      log.error "This binary is unknown origin, not macOS distribution or brew package manager"      
+    fi
+  fi
+}
+
 verify_code() {
   if [ $command_help -eq 1 ] ||  [ -z "$arg" ]  ; then
-    log.stat "Usage: $my_name -c verify -a /sbin/disklabel  # check code sign details or error if not signed" $black
+    log.stat "Usage: $my_name -c verify -a /sbin/disklabel  # check binary origin and if signed or not" $black
     exit 1
   fi
 
-  codesign -d --verbose=2 $arg
+  log.stat "Verifying: $arg ..."
+  # check if this is an exectutable
+  if [ ! -x "$arg" ] || [ -d "$arg" ] ; then
+    log.error "This is not an executable!"
+    return
+  fi
+  
+  codesign -d --verbose=2 $arg 1>/dev/null
   if [ $? -ne 0 ]; then
-    log.error "${arg}: is not signed"
+    check_brew
+  else
+      log.stat "This binary is macOS installed and managed" $green
   fi
 }
 
@@ -601,6 +629,27 @@ do_monitor() {
   fi
 }
 
+do_battery() {
+  log.stat "Battery Status:"
+  local src=$(pmset -g batt | awk -F"'" '/drawing from/ {print $2}')
+  log.stat "  Power Source: $src" 
+  
+  local line=$(pmset -g batt | awk '/InternalBattery/')
+  # if this is a iMac or other device with no battery present, this 'line' will be empty
+  if [ -z "$line" ] ; then
+    return
+  fi
+  log.stat "  Battery Level: `echo "$line" | grep -o '[0-9]\+%'`"
+  log.stat "  Charger: `echo "$line" | awk -F';' '{print $2}'`"
+  log.stat "  Charging: `echo "$line" | awk -F';' '{print $3}' | awk '{print $1,$2}'`"
+  log.stat "  Battery Present: `echo "$line" | awk '{print $NF}'`"
+
+  local last=$(pmset -g log | grep "Using Batt" | tail -n1 | awk '{print $1 " " $2 " " $3}') 
+  local elapsed=$(( $(date +%s) - $(date -j -f "%Y-%m-%d %H:%M:%S %z" "$last" +%s) )) 
+  local s=$(printf "%02d:%02d:%02d\n" $((elapsed/3600)) $((elapsed%3600/60)) $((elapsed%60)))
+  log.stat "  On battery: $s (HH:MM:SS)"
+}
+
 do_airplay() {
   if [ ! -z "$arg" ] ; then
     log.stat "Details of airplay device $arg ..."
@@ -808,8 +857,7 @@ for item in "${commands[@]}"; do
       do_monitor
       ;;
     battery)
-      log.stat "Battery Status"
-      pmset -g batt
+      do_battery
       ;;
     airplay)
       do_airplay
