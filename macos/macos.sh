@@ -117,48 +117,48 @@ EOF
 
 man_page() {
   log.stat "---------- Summary of all supported commands ---------- "
-  log.stat "Command   Description" $cyan
+  log.stat "Command     Description" $cyan
   cat << EOF
-mem         Show physical memory, free memory, memory slots, size etc.
-vmstat      Show free, active inactive, speculative, wired, and many other memory stats
-cpu         Show hardware info, model, make, processor, firmware version etc.
-disk        Show disk size, usage, automount volume etc
-version     Show OS version, product codename, build etc.
-system      Show similar to version also user, SIP status, uptime etc.
-serial      Show serial number
-volume      Display/set speaker volumen level
-swap        Show current swap mode, usage etc
-bundle      Show the bundle name of an Apple distributed application
-sl          Show spotlight status
-slenable    enable spotlight
-sldisable   disable spotlight
-kill        Kill applications (default list) or specific apps.
-arch        Show system architecture i.e. Intel or Apple Silion
-cputemp     Shows cpu temperature
-speed       Runs a internet speed test using macos provided testing tool
+airplay     Show airplay devices
 app         Show all running app with great details
-pids        Show all running app/bundle name and corresponding pids
-procinfo    Show detailed process context given a pid
-verify      Verify if the app is macOS distributed, signed etc
-log         Search for string in system log
-spaceused   Show space usage of top 10 directory (takes a while to run)
-sysext      Show availabe system extenstions installed/activated etc
+arch        Show system architecture i.e. Intel or Apple Silion
+battery     Show battery status, charging, status, how long on battery etc
+bta         Lists everything about blutooth and devices connected
+btc         Lists bluetooth macaddress, chipset, status etc
+bundle      Show the bundle name of an Apple distributed application
+cleanup     Removes unneded logs, cache etc to reclaim space
+cpu         Show hardware info, model, make, processor, firmware version etc.
+cputemp     Shows cpu temperature
+disk        Show disk size, usage, automount volume etc
+fan         Show fanspeed in rpm
+hw          Show mac model,processor serial memory etc
+kext        Show all kernel Extention stats (excluding OS built-in)
+kill        Kill applications (default list) or specific apps.
+kmutil      Show kernel extenstions loaded and/or failed
 labom       list macOS distributed apps BOM list app location
+log         Search for string in system log
+mem         Show physical memory, free memory, memory slots, size etc.
+monitor     Monitor netowrk,fs, disk, file desc etc continually (ctrl+c to stop)
+pids        Show all running app/bundle name and corresponding pids
+power       Show top 10 power hungry apps in a duration of 30secs
+procinfo    Show detailed process context given a pid
+serial      Show serial number
+sl          Show spotlight status
+sldisable   disable spotlight
+slenable    enable spotlight
+spaceused   Show space usage of top 10 directory (takes a while to run)
+speed       Runs a internet speed test using macos provided testing tool
+swap        Show current swap mode, usage etc
+sysext      Show availabe system extenstions installed/activated etc
+system      Show similar to version also user, SIP status, uptime etc.
+usb         Lists all the USB hub, devices, controllers etc
 user        Show current user details
 users       Show all user details
-kext        Show all kernel Extention stats (excluding OS built-in)
-kmutil      Show kernel extenstions loaded and/or failed
-power       Show top 10 power hungry apps in a duration of 30secs
-cleanup     Removes unneded logs, cache etc to reclaim space
-usb         Lists all the USB hub, devices, controllers etc
-btc         Lists bluetooth macaddress, chipset, status etc
-bta         Lists everything about blutooth and devices connected
-hw          Show mac model,processor serial memory etc
+verify      Verify if the app is macOS distributed, signed etc
+version     Show OS version, product codename, build etc.
+vmstat      Show free, active inactive, speculative, wired, and many other memory stats
+volume      Display/set speaker volumen level
 wifi        Show all wifi device information, channel, mode etc
-monitor     Monitor netowrk,fs, disk, file desc etc continually (ctrl+c to stop)
-battery     Show battery status, charging, status, how long on battery etc
-airplay     Show airplay devices
-fan         Show fanspeed in rpm
 
 NOTE: Many commands take additional arg with '-a'. To get the syntax of how 
 it works, run wit a -h which will show details on what to pass for arg.
