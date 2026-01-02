@@ -31,10 +31,11 @@
 #   Dec 11, 2025 --- Added fan command (only for Intel) Apple M's dont allow reading fan
 #   Dec 12, 2025 --- Added multiple command support
 #   Dec 30, 2025 --- Changed verify, battery commands to show better data
+#   Jan 2,  2026 --- Added manpage for all commands
 ################################################################################
 
 # version format YY.MM.DD
-version=25.12.30
+version=26.01.02
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl tools for macOS all in one place"
@@ -45,12 +46,12 @@ default_scripts_github=$HOME/src/scripts.github
 scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
 # commandline options
-options="c:l:a:d:r:p:n:kvh?"
+options="c:l:a:d:r:p:n:kvh?M"
 
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 arg=""
 command_name=""
-supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|spotlight|kill|disablespotlight|enablespotlight|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused|sysext|lsbom|user|users|kext|kmutil|power|cleanup|usb|btc|bta|hw|system|wifi|monitor|battery|airplay|fan"
+supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|sl|kill|sldisable|slenable|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused|sysext|lsbom|user|users|kext|kmutil|power|cleanup|usb|btc|bta|hw|system|wifi|monitor|battery|airplay|fan"
 # if -h argument comes after specifiying a valid command to provide specific command help
 command_help=0
 
@@ -97,6 +98,7 @@ Usage: $my_name -c <command> [options]
                          [note: the file may grow to large size]
   -v                ---> enable verbose, otherwise just errors are printed
   -h                ---> print usage/help
+  -M                ---> info on all commands, somewhat like unix manpage
 NOTE: For commands requiring args add -h after the command to see command specific usage.
 
 Examples: 
@@ -109,6 +111,58 @@ $(echo -e $supported_commands)
 
 See also: process.sh network.sh security.sh
 
+EOF
+  exit 0
+}
+
+man_page() {
+  log.stat "---------- Summary of all supported commands ---------- "
+  log.stat "Command   Description" $cyan
+  cat << EOF
+mem         Show physical memory, free memory, memory slots, size etc.
+vmstat      Show free, active inactive, speculative, wired, and many other memory stats
+cpu         Show hardware info, model, make, processor, firmware version etc.
+disk        Show disk size, usage, automount volume etc
+version     Show OS version, product codename, build etc.
+system      Show similar to version also user, SIP status, uptime etc.
+serial      Show serial number
+volume      Display/set speaker volumen level
+swap        Show current swap mode, usage etc
+bundle      Show the bundle name of an Apple distributed application
+sl          Show spotlight status
+slenable    enable spotlight
+sldisable   disable spotlight
+kill        Kill applications (default list) or specific apps.
+arch        Show system architecture i.e. Intel or Apple Silion
+cputemp     Shows cpu temperature
+speed       Runs a internet speed test using macos provided testing tool
+app         Show all running app with great details
+pids        Show all running app/bundle name and corresponding pids
+procinfo    Show detailed process context given a pid
+verify      Verify if the app is macOS distributed, signed etc
+log         Search for string in system log
+spaceused   Show space usage of top 10 directory (takes a while to run)
+sysext      Show availabe system extenstions installed/activated etc
+labom       list macOS distributed apps BOM list app location
+user        Show current user details
+users       Show all user details
+kext        Show all kernel Extention stats (excluding OS built-in)
+kmutil      Show kernel extenstions loaded and/or failed
+power       Show top 10 power hungry apps in a duration of 30secs
+cleanup     Removes unneded logs, cache etc to reclaim space
+usb         Lists all the USB hub, devices, controllers etc
+btc         Lists bluetooth macaddress, chipset, status etc
+bta         Lists everything about blutooth and devices connected
+hw          Show mac model,processor serial memory etc
+wifi        Show all wifi device information, channel, mode etc
+monitor     Monitor netowrk,fs, disk, file desc etc continually (ctrl+c to stop)
+battery     Show battery status, charging, status, how long on battery etc
+airplay     Show airplay devices
+fan         Show fanspeed in rpm
+
+NOTE: Many commands take additional arg with '-a'. To get the syntax of how 
+it works, run wit a -h which will show details on what to pass for arg.
+  example: sudo macos.sh -cmonitor -h
 EOF
   exit 0
 }
@@ -230,7 +284,7 @@ showspotlight() {
   fi
 }
 
-disablespotlight() {
+enablespotlight() {
   log.stat "Disabling Spotlight completely!"
   mdutil -adE -i off >> $my_logfile 2>&1
   # on reboot this gets enabled on reboot though the -a above should disable all... so force again
@@ -239,7 +293,7 @@ disablespotlight() {
   rm -rf $spotlight_path
 }
 
-enablespotlight() {
+disablespotlight() {
   log.stat "Enabling Spotlight for $spotlight_volume"
   mdutil -adE -i off >> $my_logfile 2>&1
   log.stat "  ${spolight_path}: reclaimed: $(space_used $spolight_path)"
@@ -721,6 +775,9 @@ while getopts $options opt ; do
     v)
       verbose=1
       ;;
+    M)
+      man_page
+      ;;
     ?|h|*)
       if [[ -n "$command_name" ]] && valid_command "$command_name" "$supported_commands" ; then
         command_help=1
@@ -773,13 +830,13 @@ for item in "${commands[@]}"; do
     bundle)
       showbundle
       ;;
-    spotlight)
+    sl)
       showspotlight
       ;;
-    disablespotlight)
+    sldisable)
       disablespotlight
       ;;
-    enablespotlight)
+    slenable)
       enablespotlight
       ;;
     kill)
