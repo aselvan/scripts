@@ -18,10 +18,11 @@
 #   Dec 27, 2024 --- Added knock
 #   Jan 25, 2025 --- Added lstype, lsmedia etc.
 #   Jul 14, 2025 --- Added help syntax for commands with args
+#   Jan 3,  2026 --- Added manpage, added reduce command
 ################################################################################
 
 # version format YY.MM.DD
-version=25.07.14
+version=26.01.03
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl util tools wrapper all in one place"
@@ -33,7 +34,7 @@ scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 
 # commandline options
-options="c:n:i:o:a:q:Q:d:s:vh?"
+options="c:n:i:o:a:q:Q:d:s:m:vh?M"
 
 command_name=""
 supported_commands="tohex|todec|toascii|calc|rsync|knock|compresspdf|dos2unix|tx2mp3|vid2gif|resize|lsmedia|lstype"
@@ -50,6 +51,7 @@ delay=3 # for vid2gif
 host_port="" # for knock
 image_quality=100
 image_resize="75%"
+image_reduce_mb=3
 media_types="jpg jpeg png heic mov mp4 mpeg"
 
 # ensure path for cron runs (prioritize usr/local first)
@@ -68,29 +70,56 @@ Usage: $my_name -c <command> [options]
   -d <delay>     ---> frame delay used for vid2gif [Default: $delay]
   -s <host:port> ---> for 'knock'; need hostname and port knock open using fwknop client
   -q <quality>   ---> for compresspdf: options are "/printer|/ebook|/screen" [Default: $pdf_quality]
-  -Q <quality>   ---> for resize: options are "50 - 100 [Default: $image_quality]
-  -r <percent>   ---> resize image [Default: $image_resize]
+  -Q <quality>   ---> used in resize command. options are "50 - 100 [Default: $image_quality]
+  -r <percent>   ---> used in resize command [Default: $image_resize]
+  -m <mb>        ---> used in reduce command [Default: $image_reduce_mb MB]
   -v             ---> enable verbose, otherwise just errors are printed
   -h             ---> print usage/help
 
 NOTE: For commands requiring args add -h after the command to see command specific usage.
-Ex: $my_name -c lsmedia -h
+Ex: $my_name -cresize -i <image> -Q $image_quality -r $image_resize # convert image quality [0-100]; size 0-100%" 
 
 Supported commands: 
   $supported_commands  
-
-See also: process.sh network.sh security.sh macos.sh
 
 example(s): 
   $my_name -c tohex -n 1000
   $my_name -c lsmedia -i ~/Pictures/Photos
   $my_name -c lstype  -i /path/ -a "pdf txt doc xlsx"
+
+See also: process.sh network.sh security.sh macos.sh
+EOF
+  exit 0
+}
+
+man_page() {
+  log.stat "---------- Summary of all supported commands ---------- "
+  log.stat "Command     Description" $cyan
+  cat << EOF
+tohex       Convert decimal to hex
+todec       Convert hex to decimal
+toascii     Convert to asciii
+calc        Wrapper of bc to do math
+rsync       Wrapper over rsync to do simple things
+knock       Do the knock for knockd service
+compresspdf Compress PDF to different size
+dos2unix    Convert text files to remove CR
+txt2mp3     create mp3 from text using lame
+vid2gif     create gif from a mp4
+resize      resize image files to a specified size or resolution
+lsmedia     list all the media files in a directory
+lstype      list all the given media files in a path
+reduce      Similar to resize but reduces quality to fit a specified size
+
+NOTE: Many commands take additional arg with '-a'. To get the syntax of how 
+it works, run wit a -h which will show details on what to pass for arg.
+  Ex: $my_name -cresize -h
 EOF
   exit 0
 }
 
 function do_tohex() {
-  if [ $command_help -eq 1 ] ||  [ -z "$number" ]  ; then
+  if [ $command_help -eq 1 ] ||  [ -z "$number" ] ; then
     log.stat "Usage: $my_name -c tohex -n 1234  # convert 1234 to hex" $black
     exit 1
   fi
@@ -221,7 +250,7 @@ function do_knock() {
 }
 
 function do_resize() {
-  if [ $command_help -eq 1 ] ||  [ -z "$host_port" ]  ; then
+  if [ $command_help -eq 1 ] ; then
     log.stat "Usage: $my_name -c $command_name -i <image> -Q $image_quality -r $image_resize # convert image quality [0-100]; size 0-100%" $black
     exit 1
   fi
@@ -235,7 +264,6 @@ function do_resize() {
 
   log.stat "\tresizing "$ifile" to $image_resize with quality $image_quality ..."
   mogrify "$ifile" -quality $image_quality -resize $image_resize \*
-
 }
 
 function do_lsmedia() {
@@ -265,6 +293,22 @@ function do_lstype() {
   filter="${filter%-o*}"
   # need use eval to avoid shell interpreting paranthesis
   eval "find $ifile -type f \( $filter \) -print"
+}
+
+function do_reduce() {
+  if [ $command_help -eq 1 ] ; then
+    log.stat "Usage: $my_name -c $command_name -i <image> -m <megabyte> # reduce qulity to fit a specific size in MB" $black
+    exit 1
+  fi
+
+  check_installed magick
+  if [ -z "$ifile" ] ; then
+    log.error "resize needs input image to reduce, see usage"
+    usage
+  fi
+
+  log.stat "\treducing "$ifile" to $image_reduce_mb MB ..."
+  magick "$ifile" -define jpeg:extent=${image_reduce_mb}MB "${ifile}.tmp" && mv "${ifile}.tmp" "$ifile"
 }
 
 # -------------------------------  main -------------------------------
@@ -315,8 +359,14 @@ while getopts $options opt ; do
     s)
       host_port="$OPTARG"
       ;;
+    m)
+      image_reduce_mb="$OPTARG"
+      ;;
     v)
       verbose=1
+      ;;
+    M)
+      man_page
       ;;
     ?|h|*)
       if [[ -n "$command_name" ]] && valid_command "$command_name" "$supported_commands" ; then
@@ -374,6 +424,9 @@ case $command_name in
     ;;
   lstype)
     do_lstype
+    ;;
+  reduce)
+    do_reduce
     ;;
   *)
     log.error "Invalid command: $command_name"
