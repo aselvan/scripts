@@ -56,7 +56,7 @@ skip_tag="-wm cg"
 # defaukt metadata
 artist="Arul Selvan"
 owner="Arul Selvan"
-copyright="Copyright (c) 2023-2025 SelvanSoft, LLC."
+copyright="Copyright (c) 2023-2026 SelvanSoft, LLC."
 description="Media by SelvanSoft, LLC."
 
 usage() {
