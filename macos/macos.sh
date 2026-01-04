@@ -51,7 +51,7 @@ options="c:l:a:d:r:p:n:kvh?M"
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 arg=""
 command_name=""
-supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|sl|kill|sldisable|slenable|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused|sysext|lsbom|user|users|kext|kmutil|power|cleanup|usb|btc|bta|hw|system|wifi|monitor|battery|airplay|fan"
+supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|sl|kill|disablesl|enablesl|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused|sysext|lsbom|user|users|kext|kmutil|power|cleanup|usb|btc|bta|hw|system|wifi|monitor|battery|airplay|fan"
 # if -h argument comes after specifiying a valid command to provide specific command help
 command_help=0
 
@@ -144,8 +144,8 @@ power       Show top 10 power hungry apps in a duration of 30secs
 procinfo    Show detailed process context given a pid
 serial      Show serial number
 sl          Show spotlight status
-sldisable   disable spotlight
-slenable    enable spotlight
+disablesl   disable spotlight
+enablesl    enable spotlight
 spaceused   Show space usage of top 10 directory (takes a while to run)
 speed       Runs a internet speed test using macos provided testing tool
 swap        Show current swap mode, usage etc
@@ -284,7 +284,7 @@ showspotlight() {
   fi
 }
 
-enablespotlight() {
+disablespotlight() {
   log.stat "Disabling Spotlight completely!"
   mdutil -adE -i off >> $my_logfile 2>&1
   # on reboot this gets enabled on reboot though the -a above should disable all... so force again
@@ -293,7 +293,7 @@ enablespotlight() {
   rm -rf $spotlight_path
 }
 
-disablespotlight() {
+enablespotlight() {
   log.stat "Enabling Spotlight for $spotlight_volume"
   mdutil -adE -i off >> $my_logfile 2>&1
   log.stat "  ${spolight_path}: reclaimed: $(space_used $spolight_path)"
@@ -609,7 +609,8 @@ do_cleanup() {
   # remove all the spaces
   log.stat "Removing everying listed above..."
   dscl . -list /Users UniqueID | awk '$2 >= 501 {print $1}' | while read u; do
-    home=$(dscl . read /Users/$u NFSHomeDirectory 2>/dev/null | awk '{print $2}')    
+    home=$(dscl . read /Users/$u NFSHomeDirectory 2>/dev/null | awk '{print $2}')
+    log.stat "Removing cache/logs for user $u"
     if [ -d "${home}/${cache_path}" ]; then
       rm -rf ${home}/${cache_path}/*  >> $my_logfile  2>&1
     fi
@@ -619,6 +620,7 @@ do_cleanup() {
   done
 
   # system space
+  log.stat "Removing system cache/logs ..."  
   if [ ! -z "$cache_path" ] && [ -d $cache_path ] ; then
     rm -rf ${cache_path}/* >> $my_logfile  2>&1
   fi
@@ -632,11 +634,13 @@ do_cleanup() {
     mdutil -a -i off >> $my_logfile 2>&1
     # on reboot $spotlight_volume gets enabled though the -a above should disable all...so force again
     mdutil -i off $spotlight_volume >> $my_logfile 2>&1
+    log.stat "Removing spotlight space..."
     rm -rf ${spotlight_path}/*
   fi
 
   # revision space
   if [ -d $doc_revision_path ] ; then
+    log.stat "Removing revision space..."
     rm -rf ${doc_revision_path}/*
   fi
 
@@ -646,6 +650,7 @@ do_cleanup() {
   if [ $? -eq 0 ] ; then
     log.warn "Skiping AUL purge."
   else
+    log.stat "Removing AUL logs ..."
     log erase --all >> $my_logfile 2>&1
     if [ -d "$aul_p1" ] ; then
       rm -rf ${aul_p1}/*
@@ -833,10 +838,10 @@ for item in "${commands[@]}"; do
     sl)
       showspotlight
       ;;
-    sldisable)
+    disablesl)
       disablespotlight
       ;;
-    slenable)
+    enablesl)
       enablespotlight
       ;;
     kill)
