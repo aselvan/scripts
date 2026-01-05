@@ -378,7 +378,7 @@ show_procinfo() {
 check_brew() {
   if [ `which otool` ]; then
     # use otool
-    otool -L $arg |egrep '/opt/homebrew|/usr/local/opt' 2>&1 >/dev/null
+    otool -L $arg |egrep '/opt/homebrew|/usr/local/' 2>&1 >/dev/null
     if [ $? -eq 0 ] ; then
       log.stat "This binary is installed by brew package manager." $cyan
     else
