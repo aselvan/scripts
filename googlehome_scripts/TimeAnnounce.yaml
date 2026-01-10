@@ -12,21 +12,21 @@ automations:
         at: 7:00 AM
     actions:
       - type: assistant.command.Broadcast
-        message: Time is 7.01 am, start of the day!
+        message: Time is 7 am, start of the day!
         devices: kitchen - Kitchen
   - starters:
       - type: time.schedule
         at: 8:00 AM
     actions:
       - type: assistant.command.Broadcast
-        message: Time is 8.01 am.
+        message: Time is 8 am.
         devices: kitchen - Kitchen
   - starters:
       - type: time.schedule
         at: 9:00 AM
     actions:
       - type: assistant.command.Broadcast
-        message: It is 9.01 am now.
+        message: It is 9 am now.
         devices: kitchen - Kitchen
   - starters:
       - type: time.schedule
