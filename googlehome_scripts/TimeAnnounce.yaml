@@ -4,7 +4,7 @@
 # Version: Jun 17, 2023
 #
 metadata:
-  name: Time Announce v1
+  name: Time Announce
   description: hourly time announcement (this is silly ofcourse)
 automations:
   - starters:
