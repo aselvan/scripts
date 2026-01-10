@@ -8,14 +8,14 @@ metadata:
   description: Bedside lamp on (or off) at dawn/dusk as well as with voice command.
 automations:
   - starters:
-      - type: time.schedule
-        at: sunset-15min
       - type: assistant.event.OkGoogle
         eventData: query
         is: "bedside on"
       - type: assistant.event.OkGoogle
         eventData: query
         is: "lamp on"
+      - type: time.schedule
+        at: sunset-16min
     actions:
       - type: device.command.OnOff # Turn the device on or off.
         on: true
@@ -30,7 +30,7 @@ automations:
         eventData: query
         is: "lamp off"
       - type: time.schedule
-        at: 11:30 PM
+        at: 10:45 PM
       - type: time.schedule
         at: 12:30 AM
       - type: time.schedule
