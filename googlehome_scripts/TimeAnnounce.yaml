@@ -4,7 +4,7 @@
 # Version: Jun 17, 2023
 #
 metadata:
-  name: Time Announce
+  name: Time Announce v1
   description: hourly time announcement (this is silly ofcourse)
 automations:
   - starters:
@@ -12,21 +12,21 @@ automations:
         at: 7:00 AM
     actions:
       - type: assistant.command.Broadcast
-        message: Time is 7 am, start of the day!
+        message: Time is 7.01 am, start of the day!
         devices: kitchen - Kitchen
   - starters:
       - type: time.schedule
         at: 8:00 AM
     actions:
       - type: assistant.command.Broadcast
-        message: Time is 8 am.
+        message: Time is 8.01 am.
         devices: kitchen - Kitchen
   - starters:
       - type: time.schedule
         at: 9:00 AM
     actions:
       - type: assistant.command.Broadcast
-        message: It is 9 am now.
+        message: It is 9.01 am now.
         devices: kitchen - Kitchen
   - starters:
       - type: time.schedule
@@ -34,6 +34,13 @@ automations:
     actions:
       - type: assistant.command.Broadcast
         message: Time is 10 am!
+        devices: kitchen - Kitchen
+  - starters:
+      - type: time.schedule
+        at: 11:00 AM
+    actions:
+      - type: assistant.command.Broadcast
+        message: Time is 11 am!
         devices: kitchen - Kitchen
   - starters:
       - type: time.schedule
@@ -48,6 +55,13 @@ automations:
     actions:
       - type: assistant.command.Broadcast
         message: Well, it is 1 pm now, almost half day over.
+        devices: kitchen - Kitchen
+  - starters:
+      - type: time.schedule
+        at: 2:00 PM
+    actions:
+      - type: assistant.command.Broadcast
+        message: The time is 2pm now.
         devices: kitchen - Kitchen
   - starters:
       - type: time.schedule
