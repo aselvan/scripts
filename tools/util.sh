@@ -22,7 +22,7 @@
 ################################################################################
 
 # version format YY.MM.DD
-version=26.01.03
+version=26.01.11
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl util tools wrapper all in one place"
@@ -37,7 +37,7 @@ arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 options="c:n:i:o:a:q:Q:d:s:m:vh?M"
 
 command_name=""
-supported_commands="tohex|todec|toascii|calc|rsync|knock|compresspdf|dos2unix|tx2mp3|vid2gif|resize|lsmedia|lstype"
+supported_commands="tohex|todec|toascii|calc|rsync|knock|compresspdf|dos2unix|tx2mp3|vid2gif|resize|reduce|lsmedia|lstype"
 # if -h argument comes after specifiying a valid command to provide specific command help
 command_help=0
 number=""
@@ -77,7 +77,6 @@ Usage: $my_name -c <command> [options]
   -h             ---> print usage/help
 
 NOTE: For commands requiring args add -h after the command to see command specific usage.
-Ex: $my_name -cresize -i <image> -Q $image_quality -r $image_resize # convert image quality [0-100]; size 0-100%" 
 
 Supported commands: 
   $supported_commands  
@@ -86,6 +85,7 @@ example(s):
   $my_name -c tohex -n 1000
   $my_name -c lsmedia -i ~/Pictures/Photos
   $my_name -c lstype  -i /path/ -a "pdf txt doc xlsx"
+  $my_name -c reduce -i <image> -m $image_reduce_mb # reduces size to $image_reduce_mb MB
 
 See also: process.sh network.sh security.sh macos.sh
 EOF
@@ -301,14 +301,39 @@ function do_reduce() {
     exit 1
   fi
 
+  # check for tools needed
   check_installed magick
+
   if [ -z "$ifile" ] ; then
     log.error "resize needs input image to reduce, see usage"
     usage
   fi
 
-  log.stat "\treducing "$ifile" to $image_reduce_mb MB ..."
-  magick "$ifile" -define jpeg:extent=${image_reduce_mb}MB "${ifile}.tmp" && mv "${ifile}.tmp" "$ifile"
+  # if filename provided is a directory, do all files
+  if [ -d "$ifile" ] ; then
+    log.stat "reducing all media files under the path $ifile to ~$image_reduce_mb MB"
+    local flist=`ls -1 $ifile`
+    for fn in ${flist} ;  do
+      local fpath="${ifile}/${fn}"
+      # if filename is directory, skip
+      if [ -d ${fpath} ] ; then
+        log.warn "  ${fpath} is a directory, skipping ..."
+        continue
+      fi
+      # ensure the file is a media file
+      is_media ${fpath}
+      if [ $? -ne 0 ] ; then
+        log.warn "  ${fpath} is not known media type, skipping ..."
+        continue
+      fi
+      log.stat "  reducing ${fpath} ..."
+      # CAUTION: magick in somecases messes up exteded XMP data but that should not hurt anything
+      magick "${fpath}" -define jpeg:extent=${image_reduce_mb}MB "${fpath}.tmp" && mv "${fpath}.tmp" "${fpath}"
+    done
+  else
+    log.stat "  reducing "$ifile" to ~$image_reduce_mb MB ..."
+    magick "$ifile" -define jpeg:extent=${image_reduce_mb}MB "${ifile}.tmp" && mv "${ifile}.tmp" "$ifile"
+  fi
 }
 
 # -------------------------------  main -------------------------------
