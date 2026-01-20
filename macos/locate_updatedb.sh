@@ -97,7 +97,7 @@ chmod +x /tmp/${locate_updatedb_bin}
 
 # note: the locate.updatedb script is stupid and doesn't work if we aren't in that directory!
 cd /tmp
-./$locate_updatedb_bin >> $my_logfile 2>&1
+`pwd`/$locate_updatedb_bin >> $my_logfile 2>&1
 
 log.stat "Total runtime: $(elapsed_time)"
 
