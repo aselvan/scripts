@@ -32,10 +32,11 @@
 #   Dec 12, 2025 --- Added multiple command support
 #   Dec 30, 2025 --- Changed verify, battery commands to show better data
 #   Jan 2,  2026 --- Added manpage for all commands
+#   Jan 20, 2026 --- Changed system to show more information, model/year etc
 ################################################################################
 
 # version format YY.MM.DD
-version=26.01.02
+version=26.01.20
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl tools for macOS all in one place"
@@ -342,7 +343,123 @@ show_version() {
   log.stat "\tVendor:   $(os_vendor)"
   log.stat "\tCodeName: $(os_code_name)"
   log.stat "\tVersion:  $(os_version)"
+  log.stat "\tKernel:   $(os_kernel)"
   log.stat "\tBuild:    $(os_build)"
+}
+
+id2model() {
+  local id="$1"
+
+  case "$id" in
+    # iMac
+    iMac4,* ) echo "Intel Core Duo | 2006" ;;
+    iMac5,* ) echo "Core 2 Duo | 2006-2007" ;;
+    iMac7,* ) echo "Aluminum (Santa Rosa) | 2007" ;;
+    iMac8,* ) echo "Penryn | 2008" ;;
+    iMac9,* ) echo "Early Nehalem | 2009" ;;
+    iMac10,* ) echo "Late 2009 | 2009" ;;
+    iMac11,* ) echo "Nehalem/Westmere | 2010" ;;
+    iMac12,* ) echo "Sandy Bridge | 2011" ;;
+    iMac13,* ) echo "Ivy Bridge | 2012-2013" ;;
+    iMac14,* ) echo "Haswell | 2013-2014" ;;
+    iMac15,* ) echo "Broadwell (Retina 5K) | 2014-2015" ;;
+    iMac16,* ) echo "Skylake | 2015" ;;
+    iMac17,1 ) echo "Skylake (5K) | 2015" ;;
+    iMac18,* ) echo "Kaby Lake | 2017" ;;
+    iMac19,* ) echo "Coffee Lake | 2019" ;;
+    iMac20,* ) echo "Comet Lake | 2020" ;;
+    iMac21,* ) echo "Apple M1 | 2021" ;;
+    iMac22,* ) echo "Apple M3 | 2023" ;;
+
+    # MacBook Pro
+    MacBookPro1,* ) echo "Core Duo | 2006" ;;
+    MacBookPro2,* ) echo "Core 2 Duo | 2006" ;;
+    MacBookPro3,* ) echo "Santa Rosa | 2007" ;;
+    MacBookPro4,* ) echo "Penryn | 2008" ;;
+    MacBookPro5,* ) echo "Unibody | 2008-2009" ;;
+    MacBookPro6,* ) echo "Arrandale | 2010" ;;
+    MacBookPro8,* ) echo "Sandy Bridge | 2011" ;;
+    MacBookPro9,* ) echo "Ivy Bridge | 2012" ;;
+    MacBookPro10,* ) echo "Retina (Ivy/Haswell) | 2012-2013" ;;
+    MacBookPro11,* ) echo "Haswell | 2013-2014" ;;
+    MacBookPro12,1 ) echo "Broadwell | 2015" ;;
+    MacBookPro13,* ) echo "Skylake/Kaby Lake (Touch Bar) | 2016" ;;
+    MacBookPro14,* ) echo "Kaby Lake | 2017" ;;
+    MacBookPro15,* ) echo "Coffee Lake | 2018-2019" ;;
+    MacBookPro16,* ) echo "Coffee Lake/Comet Lake | 2019" ;;
+    MacBookPro17,1 ) echo "Apple M1 | 2020" ;;
+    MacBookPro18,* ) echo "Apple M1 Pro/Max | 2021" ;;
+    Mac14,8 ) echo "Apple M3 | 2023" ;;
+    Mac14,9 ) echo "Apple M3 Pro | 2023" ;;
+    Mac14,10 ) echo "Apple M3 Max | 2023" ;;
+    Mac15,* ) echo "Apple M4 family | 2024-2025" ;;
+
+    # MacBook Air
+    MacBookAir1,1 ) echo "Core 2 Duo | 2008" ;;
+    MacBookAir2,1 ) echo "Core 2 Duo | 2009" ;;
+    MacBookAir3,* ) echo "Arrandale | 2010" ;;
+    MacBookAir4,* ) echo "Sandy Bridge | 2011" ;;
+    MacBookAir5,* ) echo "Ivy Bridge | 2012" ;;
+    MacBookAir6,* ) echo "Haswell | 2013-2014" ;;
+    MacBookAir7,* ) echo "Broadwell | 2015-2017" ;;
+    MacBookAir8,1 ) echo "Retina (Amber Lake) | 2018" ;;
+    MacBookAir9,1 ) echo "Ice Lake | 2020" ;;
+    MacBookAir10,1 ) echo "Apple M1 | 2020" ;;
+    MacBookAir15,2 ) echo "Apple M2 | 2022" ;;
+    Mac14,7 ) echo "Apple M2 (15-inch) | 2023" ;;
+    Mac15,* ) echo "Apple M3/M4 | 2024-2025" ;;
+
+    # Mac mini
+    Macmini1,1 ) echo "Core Duo | 2006" ;;
+    Macmini2,1 ) echo "Core 2 Duo | 2007" ;;
+    Macmini3,1 ) echo "Core 2 Duo | 2009" ;;
+    Macmini4,1 ) echo "Core 2 Duo | 2010" ;;
+    Macmini5,* ) echo "Sandy Bridge | 2011" ;;
+    Macmini6,* ) echo "Ivy Bridge | 2012" ;;
+    Macmini7,1 ) echo "Haswell | 2014" ;;
+    Macmini8,1 ) echo "Coffee Lake | 2018" ;;
+    Macmini9,1 ) echo "Apple M1 | 2020" ;;
+    Mac14,1 ) echo "Apple M2 | 2023" ;;
+    Mac14,2 ) echo "Apple M2 Pro | 2023" ;;
+    Mac14,3 ) echo "Apple M2 Pro (alt) | 2023" ;;
+    Mac15,* ) echo "Apple M3/M4 | 2024-2025" ;;
+
+    # Mac Studio
+    Mac13,1 ) echo "Apple M1 Max | 2022" ;;
+    Mac13,2 ) echo "Apple M1 Ultra | 2022" ;;
+    Mac14,5 ) echo "Apple M2 Max | 2023" ;;
+    Mac14,6 ) echo "Apple M2 Ultra | 2023" ;;
+    Mac15,* ) echo "Apple M3/M4 | 2024-2025" ;;
+
+    # Mac Pro
+    MacPro1,1 ) echo "Xeon Woodcrest | 2006" ;;
+    MacPro2,1 ) echo "Xeon Clovertown | 2007" ;;
+    MacPro3,1 ) echo "Xeon Harpertown | 2008" ;;
+    MacPro4,1 ) echo "Xeon Nehalem | 2009" ;;
+    MacPro5,1 ) echo "Xeon Westmere | 2010-2012" ;;
+    MacPro6,1 ) echo "Xeon Ivy Bridge (trash can) | 2013" ;;
+    MacPro7,1 ) echo "Xeon W Cascade Lake | 2019" ;;
+    MacPro8,1 ) echo "Apple M2 Ultra | 2023" ;;
+
+    # MacBook (non‑Air/Pro)
+    MacBook1,1 ) echo "Core Duo | 2006" ;;
+    MacBook2,1 ) echo "Core 2 Duo | 2006-2007" ;;
+    MacBook3,1 ) echo "Santa Rosa | 2007" ;;
+    MacBook4,1 ) echo "Penryn | 2008" ;;
+    MacBook5,* ) echo "Unibody | 2008-2009" ;;
+    MacBook6,1 ) echo "Core 2 Duo | 2009" ;;
+    MacBook7,1 ) echo "Core 2 Duo | 2010" ;;
+    MacBook8,1 ) echo "12-inch Retina (Broadwell) | 2015" ;;
+    MacBook9,1 ) echo "12-inch Retina (Skylake) | 2016" ;;
+    MacBook10,1 ) echo "12-inch Retina (Kaby Lake) | 2017" ;;
+    * ) echo "Unknown | Unknown" ;;
+  esac
+}
+
+show_system() {
+  local id=`system_profiler SPHardwareDataType|grep "Model Identifier"|awk '{print $3}'`
+  log.stat "      Model Year: $(id2model $id)"
+  log.stat "`system_profiler SPHardwareDataType | tail +5`"
 }
 
 show_app() {
@@ -818,7 +935,7 @@ for item in "${commands[@]}"; do
       show_version 
       ;;
     system)
-      system_profiler SPSoftwareDataType   
+      show_system
       ;;
     serial)
       ioreg -c IOPlatformExpertDevice -d 2 | awk -F\" '/IOPlatformSerialNumber/{print $(NF-1)}'  
