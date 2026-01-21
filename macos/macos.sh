@@ -33,10 +33,11 @@
 #   Dec 30, 2025 --- Changed verify, battery commands to show better data
 #   Jan 2,  2026 --- Added manpage for all commands
 #   Jan 20, 2026 --- Changed system to show more information, model/year etc
+#   Jan 21, 2026 --- Added orphan command to check container space to cleanup
 ################################################################################
 
 # version format YY.MM.DD
-version=26.01.20
+version=26.01.21
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl tools for macOS all in one place"
@@ -52,7 +53,7 @@ options="c:l:a:d:r:p:n:kvh?M"
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 arg=""
 command_name=""
-supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|sl|kill|disablesl|enablesl|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused|sysext|lsbom|user|users|kext|kmutil|power|cleanup|usb|btc|bta|hw|system|wifi|monitor|battery|airplay|fan"
+supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|sl|kill|disablesl|enablesl|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused|sysext|lsbom|user|users|kext|kmutil|power|cleanup|usb|btc|bta|hw|system|wifi|monitor|battery|airplay|fan|orphan"
 # if -h argument comes after specifiying a valid command to provide specific command help
 command_help=0
 
@@ -160,6 +161,7 @@ version     Show OS version, product codename, build etc.
 vmstat      Show free, active inactive, speculative, wired, and many other memory stats
 volume      Display/set speaker volumen level
 wifi        Show all wifi device information, channel, mode etc
+orphan      Check orphaned container space to cleanup after app is deleted.
 
 NOTE: Many commands take additional arg with '-a'. To get the syntax of how 
 it works, run wit a -h which will show details on what to pass for arg.
@@ -846,6 +848,56 @@ do_fan() {
   fi
 }
 
+do_orphan() {
+  if [ $command_help -eq 1 ] ; then
+    log.stat "Usage: $my_name -c $command_name [-a <user]"
+    log.stat "Example(s):"
+    log.stat "  $my_name -c $command_name                 # check orphaned container space for current user"
+    log.stat "  sudo $my_name -c $command_name -a <user>  # check orphaned container space any user"
+    exit 1
+  fi
+  local u=$USER
+  if [ ! -z "$arg" ] ; then
+    check_root
+    u=$arg
+  fi
+  
+  log.stat "Checking orphaned container space..."
+  local base="/Users/$u/Library/Containers"
+  
+  for c in "$base"/*; do
+    # Skip Apple containers
+    [[ "$(basename "$c")" == com.apple.* ]] && continue
+
+    log.debug "Checking container: $c"
+    local plist="$c/Container.plist"
+    [[ ! -f "$plist" ]] && continue
+   
+    # Extract *all* occurrences of application_bundle values
+    # plutil -p prints JSON-like output; grep filters; sed extracts the value
+    local bundles
+    bundles=$(plutil -p "$plist" 2>/dev/null \
+      | grep '"application_bundle"' \
+      | sed -E 's/.*"application_bundle" => "(.*)"/\1/')
+
+    # If no application_bundle key exists, skip (likely helper/agent)
+    [[ -z "$bundles" ]] && continue
+
+    # Check each bundle path found
+    local orphan=true
+    while IFS= read -r path; do
+      if [[ -e "$path" ]]; then
+        orphan=false
+        break
+      fi
+    done <<< "$bundles"
+
+    if $orphan; then
+      log.stat "Orphaned Container: $(basename "$c")"
+      log.stat "  Size: `du -sh $c`" 
+    fi
+  done
+}
 
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
@@ -1043,6 +1095,9 @@ for item in "${commands[@]}"; do
       ;;
     fan)
       do_fan
+      ;;
+    orphan)
+      do_orphan
       ;;
     *)
       log.error "Invalid command: $command_name"
