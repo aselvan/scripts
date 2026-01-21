@@ -341,8 +341,24 @@ os_vendor() {
       echo "Unknown"
       ;;
   esac
-
 }
+
+os_kernel() {
+  case $os_name in 
+    Darwin)
+      local t=`sysctl -n kern.ostype`
+      local r=`sysctl -n kern.osrelease`
+      echo "$t v${r}"
+      ;;
+    Linux)
+      echo "`uname -r`"
+      ;;
+    *)
+      echo "Unknown"
+      ;;
+  esac
+}
+
 
 check_installed() {
   local app=$1
