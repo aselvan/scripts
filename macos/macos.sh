@@ -849,6 +849,9 @@ do_fan() {
 }
 
 do_orphan() {
+  local tsize=0
+  local csize=0
+
   if [ $command_help -eq 1 ] ; then
     log.stat "Usage: $my_name -c $command_name [-a <user]"
     log.stat "Example(s):"
@@ -862,7 +865,7 @@ do_orphan() {
     u=$arg
   fi
   
-  log.stat "Checking orphaned container space..."
+  log.stat "List of orphaned container space & potential space savings"
   local base="/Users/$u/Library/Containers"
   
   for c in "$base"/*; do
@@ -893,10 +896,20 @@ do_orphan() {
     done <<< "$bundles"
 
     if $orphan; then
-      log.stat "Orphaned Container: $(basename "$c")"
-      log.stat "  Size: `du -sh $c`" 
+      tsize=$((tsize + `du -sk $c 2>/dev/null|awk '{print $1}'`))
+      csize=`du -sh $c|awk '{print $1}'`
+      log.stat "  $(basename "$c") ---> $csize"
     fi
   done
+  
+  # convert tsize from KB to GB
+  tsize=$(echo "scale=2; $tsize / (1024 * 1024)" | bc)
+  log.stat "Total space can be reclaimed: $tsize GB\n" $cyan
+  log.warn "CAUTION:" 
+  log.warn "  This script will not delete these entries as some apps make things complicated by"
+  log.warn "  renaming location ex: /Applications/OneDrive.localized/ while the plist points "
+  log.warn "  non-existent path so the script can't determine accuratly if they are orphaned or "
+  log.warn "  not. You have to manually examine each entry and delete them as per your needs."
 }
 
 # -------------------------------  main -------------------------------
