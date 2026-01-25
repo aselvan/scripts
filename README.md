@@ -5,20 +5,20 @@
 ## Overview
 This repo contains a large collection of random scripts that I have written over the years for automating repetitive things. I have the habit of scripting any tasks even if there is a slight chance that I may have to repeat the same task. While some are specific to my needs that can be customized for anyone, majority of them are parameterized so they work as is for anyone as a general handy tool. More than 90% of these are bash shell scripts but it also has some with perl, python and even PHP. While all of these run natively on Linux or MacOS, some require additional binaries installed on your OS with package managers like brew (on macOS) or apt/yum/other (on Linux). I usually mention at the top a script if it requires such binary packages that may or may not be part of the basic OS. I do use a lot of these on a day to day basis and some are old/obsolete etc. Follow the setup section below on how to set them up and use them.
 
-## Setup 
-While many of these can run standalone, I started requiring common functions located in util/logger.sh & util/functions.sh as includes. So the best way to install them is to clone the entire repository (it is pretty small i.e. < 5Mb) instead of cherry picking one or more scripts. You can choose one of the following methods (homebrew, or installer script or manual) to install. Enjoy!
+## Install/Setup 
+While many of these can run standalone, I started requiring common functions located in util/logger.sh & util/functions.sh as includes. So the best way to install them is to clone the entire repository (it is pretty small i.e. < 5Mb) instead of cherry picking one or more scripts. You can choose one of the following 3 methods to install/setup. Method #1 is the easiest option, so I strongly recommend using it. Not only is it simple, but you’ll also receive updates automatically whenever you update your Homebrew package manager. Enjoy!
 
-#### Homebrew
-* If you are a homebrew user, you can use brew to install which is the easiest of all. Keep in mind you have to add the environment variable to your ~/.bashrc manually as brew does not recomend modifying users settings. With that said, do the following to install via brew.
+#### Method#1: Homebrew
+* If you are a homebrew user, you can use brew to install which is the easiest of all. Keep in mind you have to add the environment variable to your ~/.bashrc manually as brew does not recomend modifying users settings. With that said, run the following to commands install via brew package manager.
 
   - ```brew tap aselvan/formulas```
   - ```brew install aselvan-scripts```
 
-#### Install script
+#### Method#2: Install script
 * Open a terminial on your machine and run install script exactly as shown below (just copy/paste). This script clones the repo and adds path variable to your .bashrc.
   - ```curl -s https://raw.githubusercontent.com/aselvan/scripts/master/install.sh | bash -s```
 
-#### Manual
+#### Method#3: Manual
 * Clone to your HOME directory like shown below $HOME/src/scripts.github (or) clone to any other directory as long as you set a bash env variable SCRIPTS_GITHUB to point to the toplevel directory.
   - ```mkdir -p $HOME/src``` [ create if $HOME/src directory did not exist ]
   - ```git clone https://github.com/aselvan/scripts.git $HOME/src/scripts.github```
@@ -27,7 +27,7 @@ While many of these can run standalone, I started requiring common functions loc
 ## Toplevel directories
 
 - #### /android
-  Andrioid adb scripts, busybox setup, cron, phone status/settings & misl scripts
+  Andrioid adb scripts, adb wifi, busybox setup, cron, phone status/settings & misl scripts
 
 - #### /car/tesla
   Wrapper script to call tesla API to do various things like lock/unlock door, honk, location, enable keyless drive, etc.
@@ -36,13 +36,19 @@ While many of these can run standalone, I started requiring common functions loc
   Lot of useful/generic wrapper scripts here for file/directory/media manipulation etc.
 
 - #### /macos
-  MacOS only scripts to manupilate things under MacOS like cache cleanup, free wifi, network, launchctl cleanup etc.
+  MacOS only scripts to view/change things like version, disks, process, cpu, power, battery, reclaim space, wifi, network, cleanup etc.
+
+- #### /security
+  Security, password, encryption related random scripts
+
+- #### /tools
+  Random scripts for various things
 
 - #### /raspberrypi
   Various tools/scripts/howtos to build a image for RaspberryPI to be used as IoT device or pentest device
 
 - #### /firewall
-  PF (packet filter) based firewall script to tighten your macOS (works on Yosemite onwards) with your own firewall. Very simple to setup by editing the /etc/pf.conf file (read the pf_rules_simple.conf)
+  PF (packet filter) based firewall script to tighten your macOS (works on Yosemite onwards) with your own firewall rules. Very simple to setup by editing the /etc/pf.conf file (read the pf_rules_simple.conf)
 
 - #### /iot/kasa
   Simple script to call Kasa (TPlink) IoT bulb to turn on/off commandline. The kasa phone app is terrible and often looses connection to bulb and this script is very handy and reliable.
@@ -71,13 +77,6 @@ While many of these can run standalone, I started requiring common functions loc
 - #### /router/asus-gt-ax11000
   Misl notes and worarounds scripts for ASUS GT-AX11000 router. 
   
-- #### /security
-  Security, password, encryption related random scripts
-
-- #### /tools
-  Random scripts for various things
-
 - #### /wifi-sdcards
   Scripts for wifi enabled SD cards
-
 
