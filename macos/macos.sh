@@ -851,6 +851,7 @@ do_fan() {
 do_orphan() {
   local tsize=0
   local csize=0
+  local sample=""
 
   if [ $command_help -eq 1 ] ; then
     log.stat "Usage: $my_name -c $command_name [-a <user]"
@@ -867,6 +868,7 @@ do_orphan() {
   
   log.stat "List of orphaned container space & potential space savings"
   local base="/Users/$u/Library/Containers"
+  log.stat "Container Path: $base"
   
   for c in "$base"/*; do
     # Skip Apple containers
@@ -899,17 +901,24 @@ do_orphan() {
       tsize=$((tsize + `du -sk $c 2>/dev/null|awk '{print $1}'`))
       csize=`du -sh $c|awk '{print $1}'`
       log.stat "  $(basename "$c") ---> $csize"
+      sample=$c
     fi
   done
   
-  # convert tsize from KB to GB
-  tsize=$(echo "scale=2; $tsize / (1024 * 1024)" | bc)
-  log.stat "Total space can be reclaimed: $tsize GB\n" $cyan
-  log.warn "CAUTION:" 
-  log.warn "  This script will not delete these entries as some apps make things complicated by"
-  log.warn "  renaming location ex: /Applications/OneDrive.localized/ while the plist points "
-  log.warn "  non-existent path so the script can't determine accuratly if they are orphaned or "
-  log.warn "  not. You have to manually examine each entry and delete them as per your needs."
+  # print the details only if we found at least one item
+  if [ ! -z "$sample" ] ; then
+    # convert tsize from KB to GB
+    tsize=$(echo "scale=2; $tsize / (1024 * 1024)" | bc)
+    log.stat "Total space can be reclaimed: $tsize GB\n" $cyan
+    log.warn "NOTE: This script will not delete these entries as some apps make things complicated"
+    log.warn "  by renaming location ex: /Applications/OneDrive.localized/ while the plist points "
+    log.warn "  non-existent path so the script can't determine accuratly if they are orphaned or "
+    log.warn "  not. You have to manually examine each entry and delete them as per your needs.\n"
+    log.stat "If you are confident, these are orphaned you can remove them maually as shown below"
+    log.stat "  example: rm -rf $sample"
+  else
+    log.stat "No orphaned app containers is found!"
+  fi
 }
 
 # -------------------------------  main -------------------------------
