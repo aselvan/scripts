@@ -37,7 +37,7 @@
 ################################################################################
 
 # version format YY.MM.DD
-version=26.01.21
+version=26.01.26
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl tools for macOS all in one place"
@@ -58,8 +58,8 @@ supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle
 command_help=0
 
 volume_level=""
-spolight_path="/System/Volumes/Data/.Spotlight-V100"
 spotlight_volume="/System/Volumes/Data"
+spotlight_data_path="${spotlight_volume}/.Spotlight-V100"
 xpc_activity_plist="$HOME/Library/Preferences/com.apple.xpc.activity2.plist"
 killed_list_file="/tmp/$(echo $my_name|cut -d. -f1)_killed_list.txt"
 do_killed_list=0
@@ -71,7 +71,6 @@ receipt_path="/var/db/receipts"
 power_sample_secs=30
 cache_path="/Library/Caches"
 logs_path="/Library/Logs"
-spotlight_path="/System/Volumes/Data/.Spotlight-V100"
 doc_revision_path="/System/Volumes/Data/.DocumentRevisions-V100"
 aul_p1="/var/db/diagnostics/"
 aul_p2="/var/db/uuidtext"
@@ -282,26 +281,32 @@ showspotlight() {
   check_root  
   log.stat "Spotlight status:" 
   mdutil -as
-  if [ -d $spolight_path ] ; then
-    log.stat "spotlight space used: $(space_used $spolight_path)"
+  if [ -d "$spotlight_data_path" ] ; then
+    log.stat "Spotlight system space: $(space_used $spotlight_data_path)"
+  fi
+  if [ -d "${HOME}/Library/Metadata/CoreSpotlight" ] ; then
+    log.stat "Spotlight user space: $(space_used ${HOME}/Library/Metadata/CoreSpotlight)"
   fi
 }
 
 disablespotlight() {
   log.stat "Disabling Spotlight completely!"
+  log.stat "  Spotlight system space reclaimed: $(space_used $spotlight_data_path)"
+  log.stat "  Spotlight user space reclaimed:   $(space_used ${HOME}/Library/Metadata/CoreSpotlight)"
   mdutil -adE -i off >> $my_logfile 2>&1
   # on reboot this gets enabled on reboot though the -a above should disable all... so force again
   mdutil -i off $spotlight_volume >> $my_logfile 2>&1
-  log.stat "  ${spolight_path}: reclaimed: $(space_used $spolight_path)"
-  rm -rf $spotlight_path
+  rm -rf $spotlight_data_path
+  rm -rf "${HOME}/Library/Metadata/CoreSpotlight"
 }
 
 enablespotlight() {
   log.stat "Enabling Spotlight for $spotlight_volume"
   mdutil -adE -i off >> $my_logfile 2>&1
-  log.stat "  ${spolight_path}: reclaimed: $(space_used $spolight_path)"
-  rm -rf $spotlight_path
-  mdutil -i on $spotlight_volume >> $my_logfile 2>&1  
+  rm -rf $spotlight_data_path
+  rm -rf "${HOME}/Library/Metadata/CoreSpotlight"
+  mdutil -i on $spotlight_volume >> $my_logfile 2>&1
+  log.stat "mds will now start indexing, be paitent for it to complete"
 }
 
 
@@ -689,10 +694,10 @@ do_cleanup() {
   log.stat "  Log:   $(space_used $logs_path)"
 
   log.stat "Type: Spotlight Space"
-  if [ -d "$spotlight_path" ] ; then
-    tsize=$((tsize + `du -I private -sk $spotlight_path 2>/dev/null|awk '{print $1}'`))
+  if [ -d "$spotlight_data_path" ] ; then
+    tsize=$((tsize + `du -I private -sk $spotlight_data_path 2>/dev/null|awk '{print $1}'`))
   fi
-  log.stat "  Used: $(space_used $spotlight_path)"
+  log.stat "  Used: $(space_used $spotlight_data_path)"
 
   log.stat "Type: Document Revisions Space"
   if [ -d "$doc_revision_path" ] ; then
@@ -748,13 +753,13 @@ do_cleanup() {
   fi
 
   # spotlight space
-  if [ ! -z "$spotlight_path" ] && [ -d $spotlight_path ] ; then
+  if [ ! -z "$spotlight_data_path" ] && [ -d $spotlight_data_path ] ; then
     log.stat "Disabling spotlight to remove spotlight data. Enable if you need it"
     mdutil -a -i off >> $my_logfile 2>&1
     # on reboot $spotlight_volume gets enabled though the -a above should disable all...so force again
     mdutil -i off $spotlight_volume >> $my_logfile 2>&1
     log.stat "Removing spotlight space..."
-    rm -rf ${spotlight_path}/*
+    rm -rf ${spotlight_data_path}/*
   fi
 
   # revision space
