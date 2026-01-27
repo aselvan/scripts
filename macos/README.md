@@ -8,7 +8,7 @@
 - #### /diskutil.sh
   wrapper script over diskutils to format disk on MacOS
 
-- LaunchDaemons/
+- #### /LaunchDaemons
   This directory contains my crontab entries converted to LaunchDaemon plist. Since Tahoe 26.2, Apple 
   decided to do the dumbest thing by killing cron i.e. not allowing cron "full disk access". Not sure
   what prompted them to kill this *nix gem that has been around almost 50 years!. Feel free to take
