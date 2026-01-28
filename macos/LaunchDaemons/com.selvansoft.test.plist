@@ -49,6 +49,13 @@
     </dict>
   </array>
   -->
+
+  <!-- 
+  LowPriorityIO: When the system detects heavy disk usage from a "foreground" application, the 
+  kernel will intentionally slow down the I/O requests from this service
+  -->
+  <key>LowPriorityIO</key>
+    <true/>
   
   <!-- This is an example of running every 2 min (120sec) -->
   <key>StartInterval</key>
