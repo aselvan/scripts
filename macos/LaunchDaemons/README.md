@@ -15,21 +15,33 @@ the steps below to validate, install, test and/or remove each item as needed.
 Copy the plist file to /Library/LaunchDaemons/. The file needs to be owend by root:wheel 
 with of 644 (owner rw other r).
 
-- cp com.selvansoft.test.plist /Library/LaunchDaemons/.
-- sudo chown root:wheel /Library/LaunchDaemons/com.selvansoft.test.plist
-- sudo chmod 644 /Library/LaunchDaemons/com.selvansoft.test.plist
+```bash
+cp com.selvansoft.test.plist /Library/LaunchDaemons/.
+sudo chown root:wheel /Library/LaunchDaemons/com.selvansoft.test.plist
+sudo chmod 644 /Library/LaunchDaemons/com.selvansoft.test.plist
+```
 
 ##### Check and validate plist
-- plutil -lint /Library/LaunchDaemons/com.selvansoft.test.plist
+```bash 
+plutil -lint /Library/LaunchDaemons/com.selvansoft.test.plist
+```
 
 ##### Register/add
-- sudo launchctl bootstrap system /Library/LaunchDaemons/com.selvansoft.test.plist
+```bash 
+sudo launchctl bootstrap system /Library/LaunchDaemons/com.selvansoft.test.plist
+```
 
 ##### Validate launch item is shown by launchctl
-- sudo launchctl print system/com.selvansoft.test
+```bash 
+sudo launchctl print system/com.selvansoft.test
+```
 
 ##### Manualy trigger to test
-- sudo launchctl kickstart -p system/com.selvansoft.test
+```bash
+sudo launchctl kickstart -p system/com.selvansoft.test
+```
 
 ##### How to remove
-- sudo launchctl bootout system /Library/LaunchDaemons/com.selvansoft.taskname.plist
+```bash
+sudo launchctl bootout system /Library/LaunchDaemons/com.selvansoft.taskname.plist
+```
