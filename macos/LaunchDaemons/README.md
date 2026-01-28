@@ -12,8 +12,9 @@ my crontab entries are from root crontab so the setup below is for system level 
 the steps below to validate, install, test and/or remove each item as needed.
 
 ##### The plist file requirment
-Copy the plist file to /Library/LaunchDaemons/. The file needs to be owend by root:wheel 
-with of 644 (owner rw other r).
+Copy each of the plist file to /Library/LaunchDaemons/. These files needs to be owend by root:wheel 
+with of 644 (owner rw other r). The following is an example of setup with the test task which doesn't
+do much other than echo runtime to a stdout.
 
 ```bash
 cp com.selvansoft.test.plist /Library/LaunchDaemons/.
