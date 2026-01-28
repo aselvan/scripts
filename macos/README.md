@@ -9,10 +9,10 @@
   wrapper script over diskutils to format disk on MacOS
 
 - #### /LaunchDaemons
-  This directory contains my crontab entries converted to LaunchDaemon plist. Since Tahoe 26.2, Apple 
-  decided to do the dumbest thing by killing cron i.e. not allowing cron "full disk access". Not sure
-  what prompted them to kill this *nix gem that has been around almost 50 years!. Feel free to take
-  these scripts and change it to fit your needs.
+  This directory contains most of my crontab entries converted into LaunchDaemon plist files. Starting 
+  with Tahoe 26.2, Apple made the dumbest decision by effectively killing cron by removing Full Disk 
+  Access to cron. I have no idea what motivated them to retire a Unix tool that has been 
+  around for nearly fifty years. Feel free to use these scripts and modify them to suit your needs.
 
 - #### /cleanup_cash.sh
   Script to cleanup cache/log to reclaim space [DEPRICATED: use macos.sh -c cleanup]
