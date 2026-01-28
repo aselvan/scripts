@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+
+<!--
+  File: com.selvansoft.purge.plist
+  Author: Arul Selvan
+  Version: Jan 27, 2026
+  Description: Run purge to flush disk buffer cache and forces all disk-paged memory to be freed 
+-->
+
+<dict>
+  <key>Label</key>
+  <string>com.selvansoft.purge</string>
+
+  <key>ProgramArguments</key>
+    <array>
+      <string>/usr/sbin/purge</string>
+  </array>
+
+  <!--- Run purge twice a day 6.01am and 6.01pm -->
+  <key>StartCalendarInterval</key>
+    <array>
+        <dict>
+            <key>Hour</key>
+            <integer>6</integer>
+            <key>Minute</key>
+            <integer>1</integer>
+        </dict>
+        <dict>
+            <key>Hour</key>
+            <integer>18</integer>
+            <key>Minute</key>
+            <integer>1</integer>
+        </dict>
+    </array>
+
+  <key>StandardOutPath</key>
+    <string>/tmp/com.selvansoft.purge.stdout.log</string>
+  <key>StandardErrorPath</key>
+    <string>/tmp/com.selvansoft.purge.stderr.log</string>
+
+</dict>
+</plist>
+
