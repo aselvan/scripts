@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+
+<!--
+  File: com.selvansoft.test.plist
+  Author: Arul Selvan
+  Version: Jan 27, 2026
+  Description: Just a test task. Can be used as a template model to build working tasks 
+-->
+
+<dict>
+  <key>Label</key>
+  <string>com.selvansoft.test</string>
+
+  <!--
+  <key>ProgramArguments</key>
+  <array>
+      <string>/usr/local/bin/your_script.sh</string>
+  </array>
+  -->
+
+  <key>ProgramArguments</key>
+    <array>
+      <string>/bin/bash</string>
+      <string>-c</string>
+      <string>echo "com.selvansoft.test run at $(date)"</string>
+  </array>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+      <key>PATH</key>
+      <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/sbin:/usr/sbin</string>
+      <key>HOME</key>
+      <string>/Users/arul</string>
+      <key>SCRIPTS_GITHUB</key>
+      <string>/Users/arul/src/scripts.github</string>
+  </dict>
+
+  <!-- This can be an array for multiple time intervals -->
+  <!-- Day (1-31) Month (1-12), Weekday (0-7sunday) Hour (0-23) Min (0-59) etc 
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict>
+      <key>Hour</key>
+      <integer>8</integer>
+      <key>Minute</key>
+      <integer>30</integer>
+    </dict>
+  </array>
+  -->
+  
+  <!-- This is an example of running every 2 min (120sec) -->
+  <key>StartInterval</key>
+  <integer>120</integer>
+
+  <key>StandardOutPath</key>
+  <string>/tmp/com.selvansoft.test.stdout.log</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/com.selvansoft.test.stderr.log</string>
+
+  <key>RunAtLoad</key>
+    <true/>
+  <key>AbandonProcessGroup</key>
+    <true/>
+</dict>
+</plist>
+
