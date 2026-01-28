@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+
+<!--
+  File: com.selvansoft.clamav-update.plist
+  Author: Arul Selvan
+  Version: Jan 28, 2026
+  Description: task to update clamAV signatures for subsequent clamAV scans (tue,wed,thu,fri,sat,sun)
+-->
+
+<dict>
+  <key>Label</key>
+  <string>com.selvansoft.clamav-update</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/opt/homebrew/opt/aselvan-scripts/security/clamscan.sh</string>
+    <string>-u</string>
+  </array>
+
+  <!-- 
+  LowPriorityIO: When there are heavy disk usage from a "foreground" application, the 
+  kernel will intentionally slow down the I/O requests from this service
+  -->
+  <key>LowPriorityIO</key>
+    <true/>
+
+  <key>EnvironmentVariables</key>
+    <dict>
+      <key>PATH</key>
+      <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/sbin:/usr/sbin</string>
+      <key>HOME</key>
+      <string>/Users/arul</string>
+      <key>SCRIPTS_GITHUB</key>
+      <string>/opt/homebrew/opt/aselvan-scripts</string>
+  </dict>
+
+  <!-- Run 5.01am tue,we,thu,fri -->
+  <!-- Unfortunately we have to list each day because of Apple's shitty design. -->
+  <!-- They managed to kill cron that was arround for 50 years and replaced with crap -->
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict>
+        <key>Weekday</key>
+        <integer>2</integer>
+        <key>Hour</key>
+        <integer>5</integer>
+        <key>Minute</key>
+        <integer>1</integer>
+    </dict>
+    <dict>
+        <key>Weekday</key>
+        <integer>3</integer>
+        <key>Hour</key>
+        <integer>5</integer>
+        <key>Minute</key>
+        <integer>1</integer>
+    </dict>
+    <dict>
+        <key>Weekday</key>
+        <integer>4</integer>
+        <key>Hour</key>
+        <integer>5</integer>
+        <key>Minute</key>
+        <integer>1</integer>
+    </dict>
+    <dict>
+        <key>Weekday</key>
+        <integer>5</integer>
+        <key>Hour</key>
+        <integer>5</integer>
+        <key>Minute</key>
+        <integer>1</integer>
+    </dict>
+  </array>
+
+  <key>StandardOutPath</key>
+  <string>/tmp/com.selvansoft.clamav-update.stdout.log</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/com.selvansoft.clamav-update.stderr.log</string>
+
+  <key>AbandonProcessGroup</key>
+    <true/>
+</dict>
+</plist>
+
+
