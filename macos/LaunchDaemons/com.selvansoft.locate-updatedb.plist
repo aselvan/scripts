@@ -44,8 +44,6 @@
   <key>StandardErrorPath</key>
   <string>/tmp/com.selvansoft.locate-updatedb.stderr.log</string>
 
-  <key>RunAtLoad</key>
-    <true/>
   <key>AbandonProcessGroup</key>
     <true/>
 </dict>

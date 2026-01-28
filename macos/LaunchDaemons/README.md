@@ -42,6 +42,11 @@ sudo launchctl print system/com.selvansoft.test
 sudo launchctl kickstart -p system/com.selvansoft.test
 ```
 
+##### Test/Debug: check last run exit code
+```bash
+sudo launchctl print system/com.selvansoft.test | grep "last exit code"
+````
+
 ##### How to remove
 ```bash
 sudo launchctl bootout system /Library/LaunchDaemons/com.selvansoft.taskname.plist
