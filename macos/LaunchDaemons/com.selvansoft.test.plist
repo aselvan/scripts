@@ -59,8 +59,11 @@
   <key>StandardErrorPath</key>
   <string>/tmp/com.selvansoft.test.stderr.log</string>
 
+  <!-- This is needed if you want the task to run on-load in addition to schedule -->
   <key>RunAtLoad</key>
     <true/>
+
+  <!-- This is needed if the script or process might create subprocess that needs to run after task complete-->
   <key>AbandonProcessGroup</key>
     <true/>
 </dict>
