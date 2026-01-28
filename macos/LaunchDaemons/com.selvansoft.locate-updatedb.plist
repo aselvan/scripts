@@ -15,7 +15,7 @@
 
   <key>ProgramArguments</key>
   <array>
-    <string>/Users/arul/src/scripts.github/macos/locate_updatedb.sh</string>
+    <string>/opt/homebrew/opt/aselvan-scripts/macos/locate_updatedb.sh</string>
   </array>
 
   <key>EnvironmentVariables</key>
@@ -25,7 +25,7 @@
       <key>HOME</key>
       <string>/Users/arul</string>
       <key>SCRIPTS_GITHUB</key>
-      <string>/Users/arul/src/scripts.github</string>
+      <string>/opt/homebrew/opt/aselvan-scripts</string>
   </dict>
 
   <!-- locate.updatedb to run 12:01am everyday -->
