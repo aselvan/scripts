@@ -19,13 +19,6 @@
     <string>-u</string>
   </array>
 
-  <!-- 
-  LowPriorityIO: When there are heavy disk usage from a "foreground" application, the 
-  kernel will intentionally slow down the I/O requests from this service
-  -->
-  <key>LowPriorityIO</key>
-    <true/>
-
   <key>EnvironmentVariables</key>
     <dict>
       <key>PATH</key>
