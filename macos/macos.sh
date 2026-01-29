@@ -8,36 +8,15 @@
 # See Also: process.sh
 ################################################################################
 #
-# Version History:
+# Version History: (original & last 3)
 #   Aug 25, 2024 --- Original version
-#   Nov 11, 2024 --- Added showipexternal command, show interface on showip command
-#   Nov 26, 2024 --- Moved all network functions related to tools/network.sh script
-#   Feb 1,  2025 --- Print swap filename/size, disk usage etc.
-#   Feb 20, 2025 --- Added spotlight info
-#   Feb 21, 2025 --- Added kill command for macOS cpu hogs we can't get rid of.
-#   Feb 22, 2025 --- Added disablespotlight
-#   Feb 28, 2025 --- Added arch, cputemp etc
-#   Mar 6,  2025 --- Remove xpc plist on kill, also added kill list file option
-#   Apr 20, 2025 --- Added pids, procinfo commands
-#   Jun 22, 2025 --- Added verify (check if code is signed), and log commands
-#   Jun 25, 2025 --- Added "spaceused" command
-#   Jun 25, 2025 --- Added "disablespotlight" command
-#   Jul 9,  2025 --- Added help syntax for each supported commands
-#   Jul 22, 2025 --- Added sysext (uses systemextensionsctl list) and lsbom 
-#   Aug 12, 2025 --- Added kext command
-#   Aug 20, 2025 --- Added cleanup command to wipe cache, log etc.
-#   Aug 31, 2025 --- Added monitor command for file, network, etc monitoring 
-#   Nov 22, 2025 --- Added battery command to show battery status 
-#   Dec 11, 2025 --- Added fan command (only for Intel) Apple M's dont allow reading fan
-#   Dec 12, 2025 --- Added multiple command support
-#   Dec 30, 2025 --- Changed verify, battery commands to show better data
-#   Jan 2,  2026 --- Added manpage for all commands
 #   Jan 20, 2026 --- Changed system to show more information, model/year etc
 #   Jan 21, 2026 --- Added orphan command to check container space to cleanup
+#   Jan 29, 2026 --- Added command to list Launch[Agents|Daemons] services
 ################################################################################
 
 # version format YY.MM.DD
-version=26.01.26
+version=26.01.29
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl tools for macOS all in one place"
@@ -53,7 +32,7 @@ options="c:l:a:d:r:p:n:kvh?M"
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 arg=""
 command_name=""
-supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|sl|kill|disablesl|enablesl|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused|sysext|lsbom|user|users|kext|kmutil|power|cleanup|usb|btc|bta|hw|system|wifi|monitor|battery|airplay|fan|orphan"
+supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|sl|kill|disablesl|enablesl|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused|sysext|lsbom|user|users|kext|kmutil|power|cleanup|usb|btc|bta|hw|system|wifi|monitor|battery|airplay|fan|orphan|la|ld"
 # if -h argument comes after specifiying a valid command to provide specific command help
 command_help=0
 
@@ -74,6 +53,9 @@ logs_path="/Library/Logs"
 doc_revision_path="/System/Volumes/Data/.DocumentRevisions-V100"
 aul_p1="/var/db/diagnostics/"
 aul_p2="/var/db/uuidtext"
+ld_path="/Library/LaunchDaemons"
+la_path="/Library/LaunchAgents"
+launchctl_domains="system user/`id -u` gui/`id -u`"
 
 # default kill list
 #
@@ -136,10 +118,13 @@ hw          Show mac model,processor serial memory etc
 kext        Show all kernel Extention stats (excluding OS built-in)
 kill        Kill applications (default list) or specific apps.
 kmutil      Show kernel extenstions loaded and/or failed
+la          List LaunchAgent task details
 labom       list macOS distributed apps BOM list app location
+ld          List LaunchDaemons task details
 log         Search for string in system log
 mem         Show physical memory, free memory, memory slots, size etc.
 monitor     Monitor netowrk,fs, disk, file desc etc continually (ctrl+c to stop)
+orphan      Check orphaned container space to cleanup after app is deleted.
 pids        Show all running app/bundle name and corresponding pids
 power       Show top 10 power hungry apps in a duration of 30secs
 procinfo    Show detailed process context given a pid
@@ -160,7 +145,6 @@ version     Show OS version, product codename, build etc.
 vmstat      Show free, active inactive, speculative, wired, and many other memory stats
 volume      Display/set speaker volumen level
 wifi        Show all wifi device information, channel, mode etc
-orphan      Check orphaned container space to cleanup after app is deleted.
 
 NOTE: Many commands take additional arg with '-a'. To get the syntax of how 
 it works, run wit a -h which will show details on what to pass for arg.
@@ -926,6 +910,59 @@ do_orphan() {
   fi
 }
 
+list_launchctl_items() {
+  local plist_path=$1
+  local label=""
+
+  for pl in $plist_path/*.plist ; do
+
+    if ! label=$(plutil -extract Label raw "$pl" 2>/dev/null) ; then
+      label=$(basename "$pl" .plist)
+    fi
+
+    # Probe system, user, and gui domains
+    for domain in $launchctl_domains ; do
+      if launchctl print "$domain/$label" >/dev/null 2>&1 ; then
+        log.stat "  Service: $label"
+        log.stat "    Domain: $domain"
+        # check if it is loaded
+        launchctl list |grep $label >/dev/null 2>&1
+        if [ $? -eq 0 ] ; then
+          log.stat "    Loaded: Yes"
+        else
+          log.stat "    Loaded: No"
+        fi
+        local active_flag=$(sudo sfltool dumpbtm | grep -A 15 "$label" | awk -F'[()]' '/Disposition/ {print $2}'|head -n1)
+        if (( (active_flag & 2) != 0 )) ; then
+          log.stat "    Active: Yes"
+        else
+          log.stat "    Active: No"
+        fi
+        break
+      fi
+    done
+  done
+
+}
+
+do_ld() {
+  check_root
+  log.stat "Launch Daemon Services: $ld_path"
+  list_launchctl_items $ld_path
+}
+
+do_la() {
+  # /Library/LaunchAgents
+  log.stat "Launch Agent Services: $la_path [NOTE: need to provide sudo password]"
+  list_launchctl_items $la_path
+
+  # $HOME/Library/LaunchAgents
+  log.stat "Launch Agent Services: ${HOME}/$la_path"
+  list_launchctl_items ${HOME}/$la_path
+  
+}
+
+
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
 if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
@@ -1125,6 +1162,12 @@ for item in "${commands[@]}"; do
       ;;
     orphan)
       do_orphan
+      ;;
+    la)
+      do_la
+      ;;
+    ld)
+      do_ld
       ;;
     *)
       log.error "Invalid command: $command_name"
