@@ -19,6 +19,10 @@
     <string>-u</string>
   </array>
 
+  <!-- hit to kernel to wake the hardware from sleep to run job at the exact StartCalendarInterval -->
+  <key>WakeSystem</key>
+    <true/>
+
   <key>EnvironmentVariables</key>
     <dict>
       <key>PATH</key>
