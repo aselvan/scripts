@@ -56,7 +56,11 @@
   -->
   <key>LowPriorityIO</key>
     <true/>
-  
+ 
+  <!-- hit to kernel to wake the hardware from sleep to run job at the exact StartCalendarInterval -->
+  <key>WakeSystem</key>
+    <true/>
+
   <!-- This is an example of running every 2 min (120sec) -->
   <key>StartInterval</key>
   <integer>120</integer>
