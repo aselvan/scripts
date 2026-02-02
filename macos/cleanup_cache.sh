@@ -11,18 +11,15 @@
 # Version: Jun 14, 2020
 ################################################################################
 #
-# Version History:
+# Version History: (original & last 3)
 #   Jun 14, 2020 --- Original version
-#   May 4,  2024 --- delete document revisions wasting space, optionally remove 
-#                    spotlight index
-#   Feb 20, 2025 --- Remove spotlight indexing on / when cleanup requested
-#   Feb 22, 2025 --- Remove spotlight indexing on *all* volumes
 #   Mar 18, 2025 --- Use effective_user in place of get_current_user
 #   Jul 1,  2025 --- Now prints how much space is reclaimed, also dry run option
+#   Feb 2,  2026 --- ***DEPRICATED*** in favor of macos.sh version of cleanup
 #################################################################################
 
 # version format YY.MM.DD
-version=25.07.01
+version=26.02.02
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Wipe macOS cache, logs, revision backup, spotlight etc."
@@ -59,6 +56,21 @@ Usage: $my_name [options]
 example(s): 
   $my_name 
   $my_name -u "user1 user2 user3" -s -i
+  
+EOF
+  exit 0
+}
+
+depricated() {
+  cat << EOF
+This script it *DEPRICATED* in favour of macos.sh in the same directory which has
+more up-to-date version of cleanup and also does all users at the same. The following
+are some examples of macos.sh cleanup options.
+
+example(s): 
+  macos.sh -c cleanup                # does the cleanup to reclaim space
+  macos.sh -c orphan                 # check orphaned container space for current user
+  sudo macos.sh -c orphan -a <user>  # check orphaned container space of any user
   
 EOF
   exit 0
@@ -146,6 +158,9 @@ else
 fi
 # init logs
 log.init $my_logfile
+
+# ***DEPRICATED***
+depricated
 
 # process commandline
 while getopts "$options_list" opt; do
