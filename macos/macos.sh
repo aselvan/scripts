@@ -772,6 +772,15 @@ do_cleanup() {
   log.warn "Note: If you purged, AUL, you must reboot now to get logs working!"
 }
 
+do_wifi() {
+  check_root
+  log.stat "Wi-Fi Hardware details"
+  system_profiler SPAirPortDataType -detailLevel mini
+  
+  log.stat "\nWi-Fi Connection details"
+  sudo wdutil info | sed -n '/^WIFI$/,+30p'
+}
+
 do_monitor() {
   check_root
 
@@ -1146,7 +1155,7 @@ for item in "${commands[@]}"; do
       system_profiler SPHardwareDataType
       ;;
     wifi)
-      system_profiler SPAirPortDataType -detailLevel mini
+      do_wifi
       ;;
     monitor)
       do_monitor
