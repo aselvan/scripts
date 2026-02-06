@@ -773,6 +773,17 @@ do_cleanup() {
   log.warn "Note: If you purged, AUL, you must reboot now to get logs working!"
 }
 
+do_usb() {
+  log.stat "\nUSB Data type"
+  system_profiler SPUSBDataType | awk '!/USB:/'
+
+  log.stat "\nUSB Devices"
+  hidutil list --matching '{"Transport":"USB"}' | awk '/Devices:/ {show=1;next} show'
+
+  log.stat "\nUSB Mass storage (if any)"
+  ioreg -p IOUSB -c IOUSBHostDevice
+}
+
 do_wifi() {
   check_root
   log.stat "Wi-Fi Hardware details"
@@ -1147,8 +1158,7 @@ for item in "${commands[@]}"; do
       do_cleanup
       ;;
     usb)
-      system_profiler SPUSBDataType | awk '!/USB:/'
-      hidutil list --matching '{"Transport":"USB"}' | awk '/Devices:/ {show=1;next} show'
+      do_usb
       ;;
     btc)
       system_profiler SPBluetoothDataType  | awk '/Not Connected/ {exit} {print}'
