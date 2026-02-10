@@ -209,7 +209,9 @@ showdisk() {
   local df_output=`df -h /System/Volumes/Data/|tail -1`
   
   log.stat "Overall Disk Usage:"
-  log.stat "`echo $df_output|awk '{print "  Total: ",$2,"\n  Used:  ",$3,"(",$5,")","\n  Free:  ",$4,"\n  Inode used:  ",$8}'`"
+  log.stat "`echo $df_output|awk '{print "  Total: ",$2,"\n  Used:  ",$3,"(",$5,")","\n  Free:  ",$4,"\n  Inode: ",$8, "(metadata)"}'`"
+  log.stat "\nNote: If inode usage reaches 100% you can't create files even if you have ton of free space."
+  log.stat "      If it is large, typically, it is indicative of millions of tiny files."
 }
 
 showbundle () {
