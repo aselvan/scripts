@@ -265,7 +265,6 @@ do_kill() {
 }
 
 showspotlight() {
-  check_root  
   log.stat "Spotlight status:" 
   mdutil -as
   if [ -d "$spotlight_data_path" ] ; then
@@ -277,6 +276,7 @@ showspotlight() {
 }
 
 disablespotlight() {
+  check_root  
   log.stat "Disabling Spotlight completely!"
   log.stat "  Spotlight system space reclaimed: $(space_used $spotlight_data_path)"
   log.stat "  Spotlight user space reclaimed:   $(space_used ${HOME}/Library/Metadata/CoreSpotlight)"
@@ -288,6 +288,7 @@ disablespotlight() {
 }
 
 enablespotlight() {
+  check_root  
   log.stat "Enabling Spotlight for $spotlight_volume"
   mdutil -adE -i off >> $my_logfile 2>&1
   rm -rf $spotlight_data_path
@@ -517,7 +518,7 @@ verify_code() {
     return
   fi
   
-  codesign -d --verbose=2 $arg 1>/dev/null
+  codesign -d --verbose=2 $arg 2>&1 |grep "Apple Root CA"
   if [ $? -ne 0 ]; then
     check_brew
   else
