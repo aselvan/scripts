@@ -220,7 +220,7 @@ showbundle () {
     exit 1
   fi
   local cmd="osascript -e 'id of app \"$arg\"'"
-  log.stat "\t`eval $cmd`" $green
+  log.stat "  Bundle ID: `eval $cmd`" $green
 }
 
 do_kill() {
