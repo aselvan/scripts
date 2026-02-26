@@ -181,13 +181,13 @@ strip_ansi_codes() {
 }
 
 file_type() {
-  local f=$1
-  local ftype=`file -b --mime-type $f | cut -d '/' -f 1|head -n1`
+  local f="$1"
+  local ftype=`file -b --mime-type "$f" | cut -d '/' -f 1|head -n1`
   echo $ftype
 }
 file_content() {
-  local f=$1
-  local ftype=`file -b --mime-type $f | cut -d '/' -f 2|head -n1`
+  local f="$1"
+  local ftype=`file -b --mime-type "$f" | cut -d '/' -f 2|head -n1`
   echo $ftype
 }
 

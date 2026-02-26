@@ -75,9 +75,9 @@ do_show_linux() {
 do_show_mac() {
   log.stat "Extended Attributes:" 
   if [ -d "$file_name" ] ; then
-    log.stat "\tFlags: `ls -ldO $file_name|awk '{print $5}'`"
+    log.stat "\tFlags: `ls -ldO "$file_name" |awk '{print $5}'`"
   else
-    log.stat "\tFlags: `ls -lO $file_name|awk '{print $5}'`"
+    log.stat "\tFlags: `ls -lO "$file_name" |awk '{print $5}'`"
   fi
   if xattr "$file_name" | grep -q . ; then
     log.stat "`xattr -l "$file_name"`" $green
@@ -108,8 +108,8 @@ do_show() {
   # standard attributes same across all OS
   log.stat "Standard Attributes: "
   log.stat "\tName: $file_name" $green
-  log.stat "\tType: `file_type $file_name`" $green 
-  log.stat "\tContent: `file_content $file_name`" $green
+  log.stat "\tType: `file_type "$file_name"`" $green 
+  log.stat "\tContent: `file_content "$file_name"`" $green
   if is_media $file_name ; then
     log.stat "\tIs Media?: YES" $green
   else
