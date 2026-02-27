@@ -32,7 +32,7 @@ options="c:l:a:d:r:p:n:kvh?M"
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 arg=""
 command_name=""
-supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|sl|kill|disablesl|enablesl|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused|sysext|lsbom|user|users|kext|kmutil|power|cleanup|usb|btc|bta|hw|system|wifi|monitor|battery|airplay|fan|orphan|la|ld|mdm"
+supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|sl|kill|disablesl|enablesl|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused|sysext|lsbom|user|users|kext|kmutil|power|cleanup|usb|btc|bta|hw|system|wifi|monitor|battery|airplay|fan|orphan|la|ld|mdm|ftype|showmounts"
 # if -h argument comes after specifiying a valid command to provide specific command help
 command_help=0
 
@@ -114,6 +114,7 @@ cpu         Show hardware info, model, make, processor, firmware version etc.
 cputemp     Shows cpu temperature
 disk        Show disk size, usage, automount volume etc
 fan         Show fanspeed in rpm
+ftype       Show file type
 hw          Show mac model,processor serial memory etc
 kext        Show all kernel Extention stats (excluding OS built-in)
 kill        Kill applications (default list) or specific apps.
@@ -133,6 +134,7 @@ serial      Show serial number
 sl          Show spotlight status
 disablesl   disable spotlight
 enablesl    enable spotlight
+showmounts  show all the external drives mounted under /Volume and their size
 spaceused   Show space usage of top 10 directory (takes a while to run)
 speed       Runs a internet speed test using macos provided testing tool
 swap        Show current swap mode, usage etc
@@ -867,7 +869,7 @@ do_orphan() {
   local sample=""
 
   if [ $command_help -eq 1 ] ; then
-    log.stat "Usage: $my_name -c $command_name [-a <user]"
+    log.stat "Usage: $my_name -c $command_name [-a <user>]"
     log.stat "Example(s):"
     log.stat "  $my_name -c $command_name                 # check orphaned container space for current user"
     log.stat "  sudo $my_name -c $command_name -a <user>  # check orphaned container space any user"
@@ -989,6 +991,43 @@ do_la() {
 do_mdm() {
   log.stat "Mobile Device Management info"
   profiles status -type enrollment
+}
+
+do_ftype() {
+ if [ $command_help -eq 1 ] ; then
+    log.stat "Usage: $my_name -c $command_name -a <filename>"
+    exit 1
+  fi
+  if [ -z "$arg" ] ; then
+    log.error "missing required filename argument!"
+    exit
+  fi
+  if [ -d "$arg" ]; then
+    log.error "${arg} is a directory, filename expected!"
+    exit
+  fi
+  
+  log.stat "\tName: $arg" $green
+  log.stat "\tType: `file_type "$arg"`" $green
+  log.stat "\tContent: `file_content \"$arg\"`" $green
+  if is_media "$arg" ; then
+    log.stat "\tMedia?: YES" $green
+  else
+    log.stat "\tMedia?: NO" $green
+  fi
+  log.stat "\tFlags: `ls -lO "$arg" |awk '{print $5}'`" $green
+  local exatt=$(xattr -l "$arg")
+  if [ ! -z "$exatt" ]; then
+    log.stat "\tExtended: `echo $exatt|tr -d '\n'`" $green
+  fi
+}
+
+do_showmounts() {
+  log.stat "List of mounted external drives"
+  for mp in `mount|awk '{print $3}'|grep '^/Volumes'` ; do 
+    log.stat "Mount Point: $mp"
+    df -h $mp |awk 'NR >1 {print "   Size:",$2,"\n  ","Used:",$3,"\n  ","Free: ",$4}'
+  done
 }
 
 # -------------------------------  main -------------------------------
@@ -1198,6 +1237,12 @@ for item in "${commands[@]}"; do
       ;;
     mdm)
       do_mdm
+      ;;
+    ftype)
+      do_ftype
+      ;;
+    showmounts)
+      do_showmounts
       ;;
     *)
       log.error "Invalid command: $command_name"
