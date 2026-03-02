@@ -206,6 +206,21 @@ is_media() {
   esac
 }
 
+# get the extended attribute
+file_xattr() {
+  local f="$1"
+  if [ ! -f "$f" ] ; then
+    echo "File is invalid"
+    return
+  fi
+  local fxattr=`xattr -x "$f"`
+  if [ -z "$fxattr" ] ; then
+    echo "None"
+  else
+    echo `echo $fxattr|tr '\n' ';'`
+  fi
+}
+
 # return the total used size of path passed
 space_used() {
   local p=$1
