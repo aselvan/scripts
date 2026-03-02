@@ -10,13 +10,13 @@
 #
 # Version History: (original & last 3)
 #   Aug 25, 2024 --- Original version
-#   Jan 21, 2026 --- Added orphan command to check container space to cleanup
 #   Jan 29, 2026 --- Added command to list Launch[Agents|Daemons] services
 #   Feb 02, 2026 --- Added mdm command
+#   Mar 02, 2026 --- Added lap command (list launch agent program and its attribute)
 ################################################################################
 
 # version format YY.MM.DD
-version=26.02.05
+version=26.03.02
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl tools for macOS all in one place"
@@ -32,7 +32,7 @@ options="c:l:a:d:r:p:n:kvh?M"
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 arg=""
 command_name=""
-supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|sl|kill|disablesl|enablesl|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused|sysext|lsbom|user|users|kext|kmutil|power|cleanup|usb|btc|bta|hw|system|wifi|monitor|battery|airplay|fan|orphan|la|ld|mdm|ftype|showmounts"
+supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|sl|kill|disablesl|enablesl|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused|sysext|lsbom|user|users|kext|kmutil|power|cleanup|usb|btc|bta|hw|system|wifi|monitor|battery|airplay|fan|orphan|la|lap|ld|mdm|ftype|showmounts"
 # if -h argument comes after specifiying a valid command to provide specific command help
 command_help=0
 
@@ -120,7 +120,8 @@ kext        Show all kernel Extention stats (excluding OS built-in)
 kill        Kill applications (default list) or specific apps.
 kmutil      Show kernel extenstions loaded and/or failed
 la          List LaunchAgent task details
-labom       list macOS distributed apps BOM list app location
+lap         List actual programs executed by examining all .plist files
+labom       List macOS distributed apps BOM list app location
 ld          List LaunchDaemons task details
 log         Search for string in system log
 mdm         Show MDM enrollment
@@ -985,8 +986,24 @@ do_la() {
   # $HOME/Library/LaunchAgents
   log.stat "Launch Agent Services: ${HOME}/$la_path"
   list_launchctl_items ${HOME}/$la_path
-  
 }
+
+do_lap() {
+  local pm=""
+  local xa=""
+
+  shopt -s nullglob
+  for pl in /Library/LaunchDaemons/*.plist $HOME/Library/LaunchAgents/*.plist ; do
+    log.stat "  Launch plist: $pl" $green
+    if pm=$(plutil -extract Program raw $pl 2>/dev/null) ; then
+      log.stat "  Binary name: $pm" $green
+      log.stat "  Xattr: $(file_xattr "$pm")\n" $green
+    else
+      log.stat "  Binary name:  None\n" $green
+    fi
+  done
+}
+
 
 do_mdm() {
   log.stat "Mobile Device Management info"
@@ -1016,10 +1033,7 @@ do_ftype() {
     log.stat "\tMedia?: NO" $green
   fi
   log.stat "\tFlags: `ls -lO "$arg" |awk '{print $5}'`" $green
-  local exatt=$(xattr -l "$arg")
-  if [ ! -z "$exatt" ]; then
-    log.stat "\tExtended: `echo $exatt|tr -d '\n'`" $green
-  fi
+  log.stat "\tExtended: $(file_xattr "$arg")" $green
 }
 
 do_showmounts() {
@@ -1231,6 +1245,9 @@ for item in "${commands[@]}"; do
       ;;
     la)
       do_la
+      ;;
+    lap)
+      do_lap
       ;;
     ld)
       do_ld
