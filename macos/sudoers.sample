@@ -1,0 +1,15 @@
+#
+# Sample for creating a custom sudoers file for macOS
+#
+# Author:  Arul Selvan
+# Version: Mar 5, 2026
+# Location: /etc/sudoers.d/
+#
+
+# Define the apps
+Cmnd_Alias BREW_BINS  = /opt/homebrew/bin/brew, /usr/local/bin/brew
+Cmnd_Alias NET_BINS   = /sbin/ifconfig, /usr/sbin/tcpdump
+Cmnd_Alias MACOS_BINS = /usr/sbin/diskutil 
+
+# granular sudo'ablity permission for user for specific binaries 
+deepak ALL=(ALL) BREW_BINS, NET_BINS, MACOS_BINS
