@@ -10,13 +10,13 @@
 #
 # Version History: (original & last 3)
 #   Aug 25, 2024 --- Original version
-#   Jan 29, 2026 --- Added command to list Launch[Agents|Daemons] services
 #   Feb 02, 2026 --- Added mdm command
 #   Mar 02, 2026 --- Added lap command (list launch agent program and its attribute)
+#   Mar 07, 2026 --- Added command to show total used space of all Applications category
 ################################################################################
 
 # version format YY.MM.DD
-version=26.03.02
+version=26.03.07
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl tools for macOS all in one place"
@@ -32,7 +32,7 @@ options="c:l:a:d:r:p:n:kvh?M"
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 arg=""
 command_name=""
-supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|sl|kill|disablesl|enablesl|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused|sysext|lsbom|user|users|kext|kmutil|power|cleanup|usb|btc|bta|hw|system|wifi|monitor|battery|airplay|fan|orphan|la|lap|ld|mdm|ftype|showmounts"
+supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|sl|kill|disablesl|enablesl|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused|sysext|lsbom|user|users|kext|kmutil|power|cleanup|usb|btc|bta|hw|system|wifi|monitor|battery|airplay|fan|orphan|la|lap|ld|mdm|ftype|showmounts|appspace"
 # if -h argument comes after specifiying a valid command to provide specific command help
 command_help=0
 
@@ -104,6 +104,7 @@ man_page() {
   cat << EOF
 airplay     Show airplay devices
 app         Show all running app with great details
+appspace    Show total used space of all Applications category
 arch        Show system architecture i.e. Intel or Apple Silion
 battery     Show battery status, charging, status, how long on battery etc
 bta         Lists everything about blutooth and devices connected
@@ -1044,6 +1045,12 @@ do_showmounts() {
   done
 }
 
+do_appspace() {
+  check_root
+  log.stat "Calculating space used by Application category. Please wait ..."
+  sudo sh -c 'du -shc /Applications /Users/*/Applications /Users/*/Library/Containers  /Users/*/Library/Application\ Support|sort -h'
+}
+
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
 if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
@@ -1260,6 +1267,9 @@ for item in "${commands[@]}"; do
       ;;
     showmounts)
       do_showmounts
+      ;;
+    appspace)
+      do_appspace
       ;;
     *)
       log.error "Invalid command: $command_name"
