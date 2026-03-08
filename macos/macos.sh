@@ -10,13 +10,13 @@
 #
 # Version History: (original & last 3)
 #   Aug 25, 2024 --- Original version
-#   Feb 02, 2026 --- Added mdm command
 #   Mar 02, 2026 --- Added lap command (list launch agent program and its attribute)
 #   Mar 07, 2026 --- Added command to show total used space of all Applications category
+#   Mar 08, 2026 --- Added command to remove user cache files from /var/folders
 ################################################################################
 
 # version format YY.MM.DD
-version=26.03.07
+version=26.03.08
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl tools for macOS all in one place"
@@ -32,7 +32,7 @@ options="c:l:a:d:r:p:n:kvh?M"
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 arg=""
 command_name=""
-supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|sl|kill|disablesl|enablesl|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused|sysext|lsbom|user|users|kext|kmutil|power|cleanup|usb|btc|bta|hw|system|wifi|monitor|battery|airplay|fan|orphan|la|lap|ld|mdm|ftype|showmounts|appspace"
+supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|sl|kill|disablesl|enablesl|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused|sysext|lsbom|user|users|kext|kmutil|power|cleanup|usb|btc|bta|hw|system|wifi|monitor|battery|airplay|fan|orphan|la|lap|ld|mdm|ftype|showmounts|appspace|rmusercache"
 # if -h argument comes after specifiying a valid command to provide specific command help
 command_help=0
 
@@ -136,6 +136,7 @@ serial      Show serial number
 sl          Show spotlight status
 disablesl   disable spotlight
 enablesl    enable spotlight
+rmusercache remove user cache files i.e. getconf DARWIN_USER_CACHE_DIR
 showmounts  show all the external drives mounted under /Volume and their size
 spaceused   Show space usage of top 10 directory (takes a while to run)
 speed       Runs a internet speed test using macos provided testing tool
@@ -1051,6 +1052,27 @@ do_appspace() {
   sudo sh -c 'du -shc /Applications /Users/*/Applications /Users/*/Library/Containers  /Users/*/Library/Application\ Support|sort -h'
 }
 
+do_rmusercache() {
+  local user_cache_dir=`getconf DARWIN_USER_CACHE_DIR`
+
+  check_root
+  log.warn "Removing user cache files, make sure all apps are closed"
+  confirm_action "WARNING: Removing user cach files under '$user_cache_dir'. Make sure all apps are closed"
+  if [ $? -eq 0 ] ; then
+    log.warn "cancelled user cache removal"
+    exit 11
+  fi
+
+  if [ ! -d $user_cache_dir ] ; then
+    log.error "user_cache dir not found: $user_cache_dir"
+    return
+  fi
+  
+  # remove everything except com.apple (probably should remove this too?)
+  ls -d1 $user_cache_dir/* 2>/dev/null|grep -v com.apple|xargs rm -rf
+}
+
+
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
 if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
@@ -1270,6 +1292,9 @@ for item in "${commands[@]}"; do
       ;;
     appspace)
       do_appspace
+      ;;
+    rmusercache)
+      do_rmusercache
       ;;
     *)
       log.error "Invalid command: $command_name"
