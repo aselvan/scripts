@@ -144,6 +144,30 @@ pidof() {
   ps axc|awk "\$5 ~ /$1/ {print \$1;}"
 }
 
+# yt-dlp handy functions
+ytaudio() {
+  url=$1
+  out=$2
+  if [[ -z $url || -z $out ]] ; then
+    echo "Usage: ytaudio <url_in_quotes> <outputfile>"
+    return
+  else
+    yt-dlp -x --audio-format mp3 --audio-quality 0  "$url" -o "$out"
+  fi
+}
+
+ytvideo() {
+  url=$1
+  out=$2
+  if [[ -z $url || -z $out ]] ; then
+    echo "Usage: ytvideo <url_in_quotes> <outputfile>"
+    return
+  else
+    yt-dlp -S "ext:mp4:m4a,res,vbr" --merge-output-format mp4  "$url" -o "$out"
+  fi
+}
+
+
 # ----------------------- custom entries ----------------------------
 # Finally, include any custom local bashrc if present that may include 
 # env/alias/functions that may not be suitable for public version of 
