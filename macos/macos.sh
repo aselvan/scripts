@@ -10,13 +10,13 @@
 #
 # Version History: (original & last 3)
 #   Aug 25, 2024 --- Original version
-#   Mar 02, 2026 --- Added lap command (list launch agent program and its attribute)
 #   Mar 07, 2026 --- Added command to show total used space of all Applications category
 #   Mar 08, 2026 --- Added command to remove user cache files from /var/folders
+#   Mar 15, 2026 --- Added command to reset text file handler to be org.vim.MacVim
 ################################################################################
 
 # version format YY.MM.DD
-version=26.03.08
+version=26.03.16
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl tools for macOS all in one place"
@@ -32,7 +32,7 @@ options="c:l:a:d:r:p:n:kvh?M"
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 arg=""
 command_name=""
-supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|sl|kill|disablesl|enablesl|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused|sysext|lsbom|user|users|kext|kmutil|power|cleanup|usb|btc|bta|hw|system|wifi|monitor|battery|airplay|fan|orphan|la|lap|ld|mdm|ftype|showmounts|appspace|rmusercache"
+supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|sl|kill|disablesl|enablesl|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused|sysext|lsbom|user|users|kext|kmutil|power|cleanup|usb|btc|bta|hw|system|wifi|monitor|battery|airplay|fan|orphan|la|lap|ld|mdm|ftype|showmounts|appspace|rmusercache|txthandler"
 # if -h argument comes after specifiying a valid command to provide specific command help
 command_help=0
 
@@ -56,6 +56,9 @@ aul_p2="/var/db/uuidtext"
 ld_path="/Library/LaunchDaemons"
 la_path="/Library/LaunchAgents"
 launchctl_domains="system user/`id -u` gui/`id -u`"
+text_editor_bundle="org.vim.MacVim"
+text_types=("public.plain-text" "public.unix-executable" "public.data" "com.netscape.javascript-source" ".txt")
+lsregister="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister"
 
 # default kill list
 #
@@ -114,6 +117,7 @@ cleanup     Removes unneded logs, cache etc to reclaim space
 cpu         Show hardware info, model, make, processor, firmware version etc.
 cputemp     Shows cpu temperature
 disk        Show disk size, usage, automount volume etc
+txthandler  reset txt file handler i.e. org.vim.MacVim for all .txt etc
 fan         Show fanspeed in rpm
 ftype       Show file type
 hw          Show mac model,processor serial memory etc
@@ -1072,6 +1076,23 @@ do_rmusercache() {
   ls -d1 $user_cache_dir/* 2>/dev/null|grep -v com.apple|xargs rm -rf
 }
 
+do_txthandler() {
+  # require duti tool
+  check_installed duti
+  
+  log.stat "Resetting TXT file handler to: $text_editor_bundle"
+  for type in "${text_types[@]}"; do
+    duti -s $text_editor_bundle $type all
+  done
+
+  # really not sure this is needed but this whole reset of filetype thing 
+  # on macOS is more like a art than technology!
+  #defaults write com.apple.LaunchServices LSHandlers -array-add "{LSHandlerContentType = 'public.plain-text'; LSHandlerRoleAll = 'org.vim.MacVim';}"
+  #$lsregister -kill -r -domain local -domain system -domain user
+
+  log.stat "Now run 'killall Finder' to refresh the change"
+}
+
 
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
@@ -1295,6 +1316,9 @@ for item in "${commands[@]}"; do
       ;;
     rmusercache)
       do_rmusercache
+      ;;
+    txthandler)
+      do_txthandler
       ;;
     *)
       log.error "Invalid command: $command_name"
