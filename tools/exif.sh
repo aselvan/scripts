@@ -17,12 +17,12 @@
 #
 # Version History:
 #   Jan 13, 2023 --- Original version
-#   Dec 9,  2024 --- Added more functions consolidated from bashrc
 #   Mar 1,  2025 --- Moved megapixel function & made it command based vs options
+#   Mar 15, 2026 --- Print both calcualted and metadata based megapixel
 ################################################################################
 
 # version format YY.MM.DD
-version=25.03.01
+version=26.03.15
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Wrapper script to prints various metadata."
@@ -92,12 +92,16 @@ megapixel_from_file() {
   fi
   # get width & height
   IFS="," read width height megapixel <<< "$width_height_megapixel"
-  if [ -z $megapixel ] ; then
+  log.stat "  File:      `basename $source_path`" $green
+  log.stat "  Geometry:  ${width}x${height}" $green
+  if [ -z "$megapixel" ] ; then
     log.stat "`basename $source_path`: does not contain megapixel info, calculating based on geomerty"
     megapixel=$(echo "scale=2; ($width * $height) / $million" | bc)
-    log.stat "Calculated: Megapixel: ${megapixel} MP ; Geometry: ${width}x${height} " $green
+    log.stat "  Megapixel: ${megapixel} MP (calculated -- no metadata present) " $green
   else
-    log.stat "`basename $source_path`: Megapixel: ${megapixel} MP ; Geometry: ${width}x${height}" $green
+    log.stat "  Megapixel: ${megapixel} MP (from metadata)" $green
+    megapixel=$(echo "scale=2; ($width * $height) / $million" | bc)
+    log.stat "  Megapixel: ${megapixel} MP (calculated -- may differ from metadata) " $green
   fi
 }
 
