@@ -10,13 +10,13 @@
 #
 # Version History: (original & last 3)
 #   Aug 25, 2024 --- Original version
-#   Mar 07, 2026 --- Added command to show total used space of all Applications category
 #   Mar 08, 2026 --- Added command to remove user cache files from /var/folders
 #   Mar 15, 2026 --- Added command to reset text file handler to be org.vim.MacVim
+#   Mar 21, 2026 --- Added color to la and ld commands
 ################################################################################
 
 # version format YY.MM.DD
-version=26.03.16
+version=26.03.21
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl tools for macOS all in one place"
@@ -956,20 +956,20 @@ list_launchctl_items() {
     # Probe system, user, and gui domains
     for domain in $launchctl_domains ; do
       if launchctl print "$domain/$label" >/dev/null 2>&1 ; then
-        log.stat "  Service: $label"
-        log.stat "    Domain: $domain"
+        log.stat "  Service: $label" $green
+        log.stat "    Domain: $domain" $green
         # check if it is loaded
         launchctl list |grep $label >/dev/null 2>&1
         if [ $? -eq 0 ] ; then
-          log.stat "    Loaded: Yes"
+          log.stat "    Loaded: Yes" $green
         else
-          log.stat "    Loaded: No"
+          log.stat "    Loaded: No" $green
         fi
         local active_flag=$(sudo sfltool dumpbtm | grep -A 15 "$label" | awk -F'[()]' '/Disposition/ {print $2}'|head -n1)
         if (( (active_flag & 2) != 0 )) ; then
-          log.stat "    Active: Yes"
+          log.stat "    Active: Yes" $green
         else
-          log.stat "    Active: No"
+          log.stat "    Active: No" $green
         fi
         break
       fi
@@ -990,7 +990,7 @@ do_la() {
   list_launchctl_items $la_path
 
   # $HOME/Library/LaunchAgents
-  log.stat "Launch Agent Services: ${HOME}/$la_path"
+  log.stat "Launch Agent Services: ${HOME}${la_path}"
   list_launchctl_items ${HOME}/$la_path
 }
 
