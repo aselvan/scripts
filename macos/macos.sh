@@ -12,11 +12,11 @@
 #   Aug 25, 2024 --- Original version
 #   Mar 08, 2026 --- Added command to remove user cache files from /var/folders
 #   Mar 15, 2026 --- Added command to reset text file handler to be org.vim.MacVim
-#   Mar 21, 2026 --- Added color to la and ld commands
+#   Mar 22, 2026 --- Color to la and ld commands, reworked rmusercache,cleanup
 ################################################################################
 
 # version format YY.MM.DD
-version=26.03.21
+version=26.03.22
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl tools for macOS all in one place"
@@ -86,6 +86,7 @@ Usage: $my_name -c <command> [options]
   -h                ---> print usage/help
   -M                ---> info on all commands, somewhat like unix manpage
 NOTE: For commands requiring args add -h after the command to see command specific usage.
+For a brief manpage of various commands, run $my_name -M
 
 Examples: 
   $my_name -c app -h
@@ -712,9 +713,13 @@ do_cleanup() {
     log.stat "  Used (uuidtext): $(space_used $aul_p2)"
   fi
 
+  log.stat "Type: /Users/Shared"
+  log.stat "  Used: $(space_used "/Users/Shared")"
+  log.warn "  Note: /Users/Shared size is listed for information only, if it is excessive, manually remove."
+
   log.stat "Type: /var/folders"
   log.stat "  Used: $(space_used "/var/folders")"
-  log.warn "Note: /var/folders size is information only, if it is excessive, reboot to reduce.\n"
+  log.warn "  Note: /var/folders size listed for information only, if it is excessive, reboot to reduce.\n"
 
   # convert tsize from KB to GB
   tsize=$(echo "scale=2; $tsize / (1024 * 1024)" | bc)
@@ -923,7 +928,7 @@ do_orphan() {
       tsize=$((tsize + `du -sk $c 2>/dev/null|awk '{print $1}'`))
       csize=`du -sh $c|awk '{print $1}'`
       log.stat "  $(basename "$c") ---> $csize"
-      sample=$c
+      sample="$sample $c"
     fi
   done
   
@@ -936,8 +941,10 @@ do_orphan() {
     log.warn "  by renaming location ex: /Applications/OneDrive.localized/ while the plist points "
     log.warn "  non-existent path so the script can't determine accuratly if they are orphaned or "
     log.warn "  not. You have to manually examine each entry and delete them as per your needs.\n"
-    log.stat "If you are confident, these are orphaned you can remove them maually as shown below"
-    log.stat "  example: rm -rf $sample"
+    log.stat "If you are confident, the below items are orphaned, remove them maually as shown below.\n"
+    for s in $sample ; do
+      log.stat "  rm -rf $s"
+    done
   else
     log.stat "No orphaned app containers is found!"
   fi
@@ -1057,11 +1064,12 @@ do_appspace() {
 }
 
 do_rmusercache() {
-  local user_cache_dir=`getconf DARWIN_USER_CACHE_DIR`
-
   check_root
-  log.warn "Removing user cache files, make sure all apps are closed"
-  confirm_action "WARNING: Removing user cach files under '$user_cache_dir'. Make sure all apps are closed"
+  local user_cache_dir=`sudo -u $SUDO_USER getconf DARWIN_USER_CACHE_DIR`
+  local ts=`ls -d1 ${user_cache_dir}/* 2>/dev/null|grep -v com.apple|xargs du -shc|awk '/total/ {print $1}'`
+  log.stat "Total space can be reclaimed: $ts"
+  log.warn "Make sure all apps are closed before proceeding..."
+  confirm_action "WARNING: Removing user cach files under '$user_cache_dir'"
   if [ $? -eq 0 ] ; then
     log.warn "cancelled user cache removal"
     exit 11
