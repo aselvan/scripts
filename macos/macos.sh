@@ -5,7 +5,7 @@
 # Author:  Arul Selvan
 # Created: Aug 25, 2024
 #
-# See Also: process.sh
+# See Also: process.sh diskutil.sh keychain.sh ... etc
 ################################################################################
 #
 # Version History: (original & last 3)
@@ -13,10 +13,11 @@
 #   Mar 08, 2026 --- Added command to remove user cache files from /var/folders
 #   Mar 15, 2026 --- Added command to reset text file handler to be org.vim.MacVim
 #   Mar 22, 2026 --- Color to la and ld commands, reworked rmusercache,cleanup
+#   Mar 24, 2026 --- Added sleep command
 ################################################################################
 
 # version format YY.MM.DD
-version=26.03.22
+version=26.03.24
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl tools for macOS all in one place"
@@ -32,7 +33,8 @@ options="c:l:a:d:r:p:n:kvh?M"
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 arg=""
 command_name=""
-supported_commands="mem|vmstat|cpu|disk|version|system|serial|volume|swap|bundle|sl|kill|disablesl|enablesl|arch|cputemp|speed|app|pids|procinfo|verify|log|spaceused|sysext|lsbom|user|users|kext|kmutil|power|cleanup|usb|btc|bta|hw|system|wifi|monitor|battery|airplay|fan|orphan|la|lap|ld|mdm|ftype|showmounts|appspace|rmusercache|txthandler"
+supported_commands="airplay|app|appspace|arch|battery|bta|btc|bundle|cleanup|cpu|cputemp|disablesl|disk|enablesl|fan|ftype|hw|kext|kill|kmutil|la|lap|ld|log|lsbom|mdm|mem|monitor|orphan|pids|power|procinfo|rmusercache|serial|showmounts|sl|spaceused|speed|swap|sysext|system|system|txthandler|usb|user|users|verify|version|vmstat|volume|wifi"
+
 # if -h argument comes after specifiying a valid command to provide specific command help
 command_help=0
 
@@ -142,6 +144,7 @@ sl          Show spotlight status
 disablesl   disable spotlight
 enablesl    enable spotlight
 rmusercache remove user cache files i.e. getconf DARWIN_USER_CACHE_DIR
+sleep       show sleep settings
 showmounts  show all the external drives mounted under /Volume and their size
 spaceused   Show space usage of top 10 directory (takes a while to run)
 speed       Runs a internet speed test using macos provided testing tool
@@ -1101,6 +1104,13 @@ do_txthandler() {
   log.stat "Now run 'killall Finder' to refresh the change"
 }
 
+do_sleep() {
+  check_root
+  log.stat "Sleep settings:"
+  log.stat "  `systemsetup -getdisplaysleep`" $green
+  log.stat "  `systemsetup -getcomputersleep`" $green
+  log.stat "  `systemsetup -getharddisksleep`" $green
+}
 
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
@@ -1327,6 +1337,9 @@ for item in "${commands[@]}"; do
       ;;
     txthandler)
       do_txthandler
+      ;;
+    sleep)
+      do_sleep
       ;;
     *)
       log.error "Invalid command: $command_name"
