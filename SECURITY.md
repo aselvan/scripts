@@ -5,7 +5,7 @@
 The repo is mainly made of shell scripts and I am not aware of any security vulnerability 
 on any of them.
 
-Note: All script files committed in this repo are digitially signed by me with my key below.
+Note: All script files committed in this repo are digitially signed by me with my PGP/GPG key listed below.
 
 [PGP fingerprint: 272D 038D 3AA1 E240 0ECC  9FF7 9C75 DE35 451A 1B6C](http://biglumber.com/x/web?pk=272D038D3AA1E2400ECC9FF79C75DE35451A1B6C)
 
@@ -16,4 +16,5 @@ Note: All script files committed in this repo are digitially signed by me with m
 
 ## Reporting a Vulnerability
 
-If you find anything to report, please contact the maintainer directly.
+If you find anything to report, please contact the maintainer directly or report any security issues privately via the direct link below
+[GitHub Private Vulnerability Reporting](https://github.com/aselvan/scripts/security/advisories/new).
