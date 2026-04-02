@@ -10,14 +10,14 @@
 #
 # Version History: (original & last 3)
 #   Aug 25, 2024 --- Original version
-#   Mar 08, 2026 --- Added command to remove user cache files from /var/folders
 #   Mar 15, 2026 --- Added command to reset text file handler to be org.vim.MacVim
 #   Mar 22, 2026 --- Color to la and ld commands, reworked rmusercache,cleanup
 #   Mar 24, 2026 --- Added sleep command
+#   Apr 02, 2026 --- Changed pids to lcpids to show all launchd managed processes
 ################################################################################
 
 # version format YY.MM.DD
-version=26.03.24
+version=26.04.02
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl tools for macOS all in one place"
@@ -33,7 +33,7 @@ options="c:l:a:d:r:p:n:kvh?M"
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 arg=""
 command_name=""
-supported_commands="airplay|app|appspace|arch|battery|bta|btc|bundle|cleanup|cpu|cputemp|disablesl|disk|enablesl|fan|ftype|hw|kext|kill|kmutil|la|lap|ld|log|lsbom|mdm|mem|monitor|orphan|pids|power|procinfo|rmusercache|serial|showmounts|sl|spaceused|speed|swap|sysext|system|system|txthandler|usb|user|users|verify|version|vmstat|volume|wifi"
+supported_commands="airplay|app|appspace|arch|battery|bta|btc|bundle|cleanup|cpu|cputemp|disablesl|disk|enablesl|fan|ftype|hw|kext|kill|kmutil|la|lap|lcpids|ld|log|lsbom|mdm|mem|monitor|orphan|power|procinfo|rmusercache|serial|showmounts|sl|spaceused|speed|swap|sysext|system|system|txthandler|usb|user|users|verify|version|vmstat|volume|wifi"
 
 # if -h argument comes after specifiying a valid command to provide specific command help
 command_help=0
@@ -136,7 +136,7 @@ mdm         Show MDM enrollment
 mem         Show physical memory, free memory, memory slots, size etc.
 monitor     Monitor netowrk,fs, disk, file desc etc continually (ctrl+c to stop)
 orphan      Check orphaned container space to cleanup after app is deleted.
-pids        Show all running app/bundle name and corresponding pids
+lcpids      Show launchd managed process pid,usename, & processname.
 power       Show top 10 power hungry apps in a duration of 30secs
 procinfo    Show detailed process context given a pid
 serial      Show serial number
@@ -485,9 +485,19 @@ show_app() {
 
 }
 
-show_pids() {
-  check_root  
-  sudo launchctl list | awk '{if ($1 ~ /^[0-9]+$/) print $3,"("$1")"}'  
+show_lcpids() {
+  if [ $command_help -eq 1 ]  ; then
+    log.stat "examples:" $black
+    log.stat "  $my_name -c lcpids       # show pid,user,processname of launchd managed items (user level)" $black
+    log.stat "  sudo $my_name -c lcpids  # show pid,user,processname of launchd managed items (admin user level)" $black
+    exit 1
+  fi
+  log.stat "All running processes started & managed by launchd..." $green
+  log.stat "PID   USER COMMAND"
+  launchctl list | awk 'NR > 1 && $1 != "-" {print $1}' | xargs ps -o pid,user=,command -p | sed 1d
+  log.stat "\nProcesses started & managed by launchd that exited abnormally before" $green
+  launchctl list | awk 'NR>1 && $2 != 0 {print $3, ": Last run failed with exit code ", $2}'
+  
 }
 
 show_procinfo() {
@@ -1241,8 +1251,8 @@ for item in "${commands[@]}"; do
     app)
       show_app
       ;;
-    pids)
-      show_pids
+    lcpids)
+      show_lcpids
       ;;
     procinfo)
       show_procinfo
