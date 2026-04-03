@@ -492,11 +492,14 @@ show_allpids() {
     log.stat "  $my_name -c allpids -a 10 # show top 10 process sorted by cpu and memory" $black
     exit 1
   fi
-  log.stat "All running processes sorted by CPU usage and memory..." $green
   if [ -n "$arg" ] && [ "$arg" -eq "$arg" ] 2>/dev/null; then
+    log.stat "Top $arg running processes sorted by CPU usage and memory..." $green
     ps -eo pid,ppid,pcpu,rss,comm | awk 'NR==1{print;next} {print | "sort -rn -k 3 -k 4"}' | head -n$arg
   else
-    log.warn "Ignoring invalid argument '$arg' is not integer"
+    log.stat "All running processes sorted by CPU usage and memory..." $green
+    if [ ! -z "$arg" ] ; then
+      log.warn "Argument must be integer, ignoring invalid argument '$arg'"
+    fi
     ps -eo pid,ppid,pcpu,rss,comm | awk 'NR==1{print;next} {print | "sort -rn -k 3 -k 4"}'
   fi
 }
