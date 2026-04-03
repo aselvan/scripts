@@ -10,14 +10,13 @@
 #
 # Version History: (original & last 3)
 #   Aug 25, 2024 --- Original version
-#   Mar 15, 2026 --- Added command to reset text file handler to be org.vim.MacVim
-#   Mar 22, 2026 --- Color to la and ld commands, reworked rmusercache,cleanup
 #   Mar 24, 2026 --- Added sleep command
 #   Apr 02, 2026 --- Changed pids to lcpids to show all launchd managed processes
+#   Apr 03, 2026 --- Added allpids command
 ################################################################################
 
 # version format YY.MM.DD
-version=26.04.02
+version=26.04.03
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl tools for macOS all in one place"
@@ -33,7 +32,7 @@ options="c:l:a:d:r:p:n:kvh?M"
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 arg=""
 command_name=""
-supported_commands="airplay|app|appspace|arch|battery|bta|btc|bundle|cleanup|cpu|cputemp|disablesl|disk|enablesl|fan|ftype|hw|kext|kill|kmutil|la|lap|lcpids|ld|log|lsbom|mdm|mem|monitor|orphan|power|procinfo|rmusercache|serial|showmounts|sl|spaceused|speed|swap|sysext|system|system|txthandler|usb|user|users|verify|version|vmstat|volume|wifi"
+supported_commands="airplay|allpids|app|appspace|arch|battery|bta|btc|bundle|cleanup|cpu|cputemp|disablesl|disk|enablesl|fan|ftype|hw|kext|kill|kmutil|la|lap|lcpids|ld|log|lsbom|mdm|mem|monitor|orphan|power|procinfo|rmusercache|serial|showmounts|sl|spaceused|speed|swap|sysext|system|system|txthandler|usb|user|users|verify|version|vmstat|volume|wifi"
 
 # if -h argument comes after specifiying a valid command to provide specific command help
 command_help=0
@@ -109,6 +108,7 @@ man_page() {
   log.stat "Command     Description" $cyan
   cat << EOF
 airplay     Show airplay devices
+allpids     Show all running process sorted by cpu and memory
 app         Show all running app with great details
 appspace    Show total used space of all Applications category
 arch        Show system architecture i.e. Intel or Apple Silion
@@ -483,6 +483,22 @@ show_app() {
     lsappinfo list
   fi
 
+}
+
+show_allpids() {
+  if [ $command_help -eq 1 ]  ; then
+    log.stat "example:" $black
+    log.stat "  $my_name -c allpids       # show all process sorted by cpu and memory" $black
+    log.stat "  $my_name -c allpids -a 10 # show top 10 process sorted by cpu and memory" $black
+    exit 1
+  fi
+  log.stat "All running processes sorted by CPU usage and memory..." $green
+  if [ -n "$arg" ] && [ "$arg" -eq "$arg" ] 2>/dev/null; then
+    ps -eo pid,ppid,pcpu,rss,comm | awk 'NR==1{print;next} {print | "sort -rn -k 3 -k 4"}' | head -n$arg
+  else
+    log.warn "Ignoring invalid argument '$arg' is not integer"
+    ps -eo pid,ppid,pcpu,rss,comm | awk 'NR==1{print;next} {print | "sort -rn -k 3 -k 4"}'
+  fi
 }
 
 show_lcpids() {
@@ -1253,6 +1269,9 @@ for item in "${commands[@]}"; do
       ;;
     lcpids)
       show_lcpids
+      ;;
+    allpids)
+      show_allpids
       ;;
     procinfo)
       show_procinfo
