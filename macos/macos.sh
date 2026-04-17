@@ -10,9 +10,9 @@
 #
 # Version History: (original & last 3)
 #   Aug 25, 2024 --- Original version
-#   Mar 24, 2026 --- Added sleep command
 #   Apr 02, 2026 --- Changed pids to lcpids to show all launchd managed processes
 #   Apr 03, 2026 --- Added allpids command
+#   Apr 17, 2026 --- Added dasd to kill list as it goes wild at times
 ################################################################################
 
 # version format YY.MM.DD
@@ -60,6 +60,9 @@ launchctl_domains="system user/`id -u` gui/`id -u`"
 text_editor_bundle="org.vim.MacVim"
 text_types=("public.plain-text" "public.unix-executable" "public.data" "com.netscape.javascript-source" ".txt")
 lsregister="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister"
+power_telemetry_log_dir="/var/db/powerlog/Library/PerfPowerTelemetry/BackgroundProcessing"
+dasd_cpu_threshold=25
+
 
 # default kill list
 #
@@ -247,16 +250,7 @@ do_kill() {
     klist="$arg"
   fi
   
-  # TODO: remove the xpc plist if present. This one drives many unnecessary 
-  # background tasks and is written by something often. I am not 100% sure 
-  # about this but for now get rid of these and monitor for a while to make 
-  # sure nothing is broken.
-  if [ -f $xpc_activity_plist ] ; then
-    log.stat "Removing $xpc_activity_plist ..."
-    rm -rf $xpc_activity_plist
-  fi
-
-  log.debug "Kill list: $klist"
+  log.stat "Checking kill list: $klist"
   for pname in $klist ; do
     pid=$(pidof $pname)
     if [ ! -z "$pid" ] ; then
@@ -275,6 +269,30 @@ do_kill() {
       log.debug "No process running with name: $pname"
     fi
   done
+
+  # TODO: remove the xpc plist if present. This one drives many unnecessary 
+  # background tasks and is written by something often. I am not 100% sure 
+  # about this but for now get rid of these and monitor for a while to make 
+  # sure nothing is broken.
+  if [ -f $xpc_activity_plist ] ; then
+    log.stat "Removing $xpc_activity_plist ..."
+    rm -rf $xpc_activity_plist
+  fi
+
+  # from Tahoe 26.x.x onwards (not sure exactly which version), the fucking dasd goes 
+  # psycho by spining out of control every now and then, definitely after reboot. 
+  # check if dasd going wild, and kill that fucker if it takes > $dasd_cpu_threshold
+  local dasd_pid=$(pidof dasd)
+  log.stat "Checking dasd($dasd_pid) ..."
+  if [ ! -z "$dasd_pid" ] ; then
+    local dasd_cpu=$(ps -p $dasd_pid -opcpu= | awk '{printf "%d",$1}')
+    log.stat "  dasd is consuming ${dasd_cpu}% of CPU"
+    if [ "$dasd_cpu" -gt $dasd_cpu_threshold ] ; then
+      log.warn "  Killing damn dasd($dasd_pid) since it is consuming more than ${dasd_cpu_threshold}% CPU"
+      kill -9 $dasd_pid
+    fi
+  fi
+
 }
 
 showspotlight() {
