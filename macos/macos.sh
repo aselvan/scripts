@@ -257,7 +257,7 @@ do_kill() {
     if [ $? -eq 0 ] ; then
       log.stat "  Killed: $pname"
       if [ $do_killed_list -ne 0 ] ; then
-        echo "`date +"%m/%d/%Y %H:%M"`: killed $pname($pid)" >> $killed_list_file
+        echo "`date +"%m/%d/%Y %H:%M"`: killed $pname" >> $killed_list_file
       fi
     else
         log.stat "  No proecess running with name: $pname"
