@@ -12,11 +12,11 @@
 #   Aug 25, 2024 --- Original version
 #   Apr 02, 2026 --- Changed pids to lcpids to show all launchd managed processes
 #   Apr 03, 2026 --- Added allpids command
-#   Apr 17, 2026 --- Added dasd to kill list as it goes wild at times
+#   Apr 18, 2026 --- Added dasd to kill list, modified to use killall vs. kill
 ################################################################################
 
 # version format YY.MM.DD
-version=26.04.03
+version=26.04.18
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl tools for macOS all in one place"
@@ -250,23 +250,17 @@ do_kill() {
     klist="$arg"
   fi
   
-  log.stat "Checking kill list: $klist"
+  log.stat "Kill list: $klist" $green
   for pname in $klist ; do
-    pid=$(pidof $pname)
-    if [ ! -z "$pid" ] ; then
-      # be nice first by using SIGINT, if not dying kill with SIGKILL
-      kill -2 $pid
-      if [ $? -ne 0 ] ; then
-        log.warn "Forcing w/ SIGKILL as $pname ($pid) is refusing to die!"
-        kill -9 $pid
-      else
-        log.stat "Killed: $pname ($pid)"
-      fi
+    # kill using killall as there is a chance multiple processes running by same name
+    killall -SIGKILL $pname 2>/dev/null
+    if [ $? -eq 0 ] ; then
+      log.stat "  Killed: $pname"
       if [ $do_killed_list -ne 0 ] ; then
-        echo "`date +"%m/%d/%Y %H:%M"`: killed $pname ($pid)" >> $killed_list_file
+        echo "`date +"%m/%d/%Y %H:%M"`: killed $pname($pid)" >> $killed_list_file
       fi
     else
-      log.debug "No process running with name: $pname"
+        log.stat "  No proecess running with name: $pname"
     fi
   done
 
@@ -292,7 +286,6 @@ do_kill() {
       kill -9 $dasd_pid
     fi
   fi
-
 }
 
 showspotlight() {
