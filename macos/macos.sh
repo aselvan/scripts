@@ -277,8 +277,8 @@ do_kill() {
   # psycho by spining out of control every now and then, definitely after reboot. 
   # check if dasd going wild, and kill that fucker if it takes > $dasd_cpu_threshold
   local dasd_pid=$(pidof dasd)
-  log.stat "Checking dasd($dasd_pid) ..."
   if [ ! -z "$dasd_pid" ] ; then
+    log.stat "Checking dasd($dasd_pid) ..."
     local dasd_cpu=$(ps -p $dasd_pid -opcpu= | awk '{printf "%d",$1}')
     log.stat "  dasd is consuming ${dasd_cpu}% of CPU"
     if [ "$dasd_cpu" -gt $dasd_cpu_threshold ] ; then
