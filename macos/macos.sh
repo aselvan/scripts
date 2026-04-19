@@ -255,12 +255,12 @@ do_kill() {
     # kill using killall as there is a chance multiple processes running by same name
     killall -SIGKILL $pname 2>/dev/null
     if [ $? -eq 0 ] ; then
-      log.stat "  Killed: $pname"
+      log.stat "  $pname: Killed successfully"
       if [ $do_killed_list -ne 0 ] ; then
         echo "`date +"%m/%d/%Y %H:%M"`: killed $pname" >> $killed_list_file
       fi
     else
-        log.stat "  No proecess running with name: $pname"
+        log.stat "  $pname: Not running" $grey
     fi
   done
 
