@@ -10,13 +10,13 @@
 #
 # Version History: (original & last 3)
 #   Aug 25, 2024 --- Original version
-#   Apr 02, 2026 --- Changed pids to lcpids to show all launchd managed processes
 #   Apr 03, 2026 --- Added allpids command
 #   Apr 18, 2026 --- Added dasd to kill list, modified to use killall vs. kill
+#   Apr 23, 2026 --- Made kill command to require root
 ################################################################################
 
 # version format YY.MM.DD
-version=26.04.18
+version=26.04.23
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl tools for macOS all in one place"
@@ -240,6 +240,8 @@ showbundle () {
 }
 
 do_kill() {
+  check_root
+
   if [ $command_help -eq 1 ] ; then
     log.stat "Usage: $my_name -c kill -a \"photoanalysisd photolibraryd\" # kill the list of apps" $black
     exit 1
@@ -282,7 +284,12 @@ do_kill() {
     local dasd_cpu=$(ps -p $dasd_pid -opcpu= | awk '{printf "%d",$1}')
     log.stat "  dasd is consuming ${dasd_cpu}% of CPU"
     if [ "$dasd_cpu" -gt $dasd_cpu_threshold ] ; then
-      log.warn "  Killing damn dasd($dasd_pid) since it is consuming more than ${dasd_cpu_threshold}% CPU"
+      # get rid of the stupid background processing DB which makes dasd go fucking nutts?
+      if [ -d "$power_telemetry_log_dir" ] ; then
+        log.stat "  wiping $power_telemetry_log_dir ..."
+        rm -rf $power_telemetry_log_dir/*
+      fi
+      log.warn "  Kill damn dasd($dasd_pid) since it is consuming more than ${dasd_cpu_threshold}% CPU"
       kill -9 $dasd_pid
     fi
   fi
