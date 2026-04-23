@@ -44,16 +44,26 @@ log.init() {
   fi
   logger_init=1
   logger_file=$1
-  if [ -f "$logger_file" ] ; then
-    rm -f $logger_file
-  fi
+
+  #if [ -f "$logger_file" ] ; then
+  #  rm -f $logger_file
+  #fi
  
   if [ ! -z "$logger_file" ] ; then
-    # ensure log file is owned by effective user
-    touch $logger_file
-    if [ ! -z "$effective_user" ] ; then
-      chown $effective_user $logger_file
+    # ensure log file created with umask 000 so anyone can write
+    (umask 000 && touch $logger_file)
+    
+    # if this was a sudo run, just ensure file permission always stays world write
+    if [ "$EUID" -eq 0 ] ; then
+      chmod 666 $logger_file
     fi
+
+    # empty file to start with
+    echo -n > $logger_file
+    
+    #  if [ ! -z "$effective_user" ] ; then
+    #    chown $effective_user $logger_file
+    #  fi
   fi
 
   # if logger filename is not provided, just log to console
