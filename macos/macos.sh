@@ -1193,6 +1193,7 @@ while getopts $options opt ; do
       ;;
     k)
       do_killed_list=1
+      create_writable_file $killed_list_file
       ;;
     d)
       log_duration="$OPTARG"
