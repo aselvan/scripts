@@ -14,6 +14,7 @@
 #   Nov 14, 2023 --- Original version
 #   Mar 9,  2025 --- Ensure logger file can be writable for effective user
 #   Mar 18, 2025 --- Defined effective_user and replaced SUDO_USER usage.
+#   Apr 24, 2026 --- Changed init function to create a world writable log file
 ################################################################################
 
 logger_file=""
@@ -32,10 +33,6 @@ white=37
 black=39
 default=$black
 
-# this is also defined in functions.sh but we redefine it here in case if
-# if this file is included first.
-effective_user=`who -m | awk '{print $1;}'`
-
 # -- Log functions ---
 log.init() {
   # first check if we are called already, then do nothing
@@ -45,10 +42,6 @@ log.init() {
   logger_init=1
   logger_file=$1
 
-  #if [ -f "$logger_file" ] ; then
-  #  rm -f $logger_file
-  #fi
- 
   if [ ! -z "$logger_file" ] ; then
     # ensure log file created with umask 000 so anyone can write
     (umask 000 && touch $logger_file)
@@ -60,10 +53,6 @@ log.init() {
 
     # empty file to start with
     echo -n > $logger_file
-    
-    #  if [ ! -z "$effective_user" ] ; then
-    #    chown $effective_user $logger_file
-    #  fi
   fi
 
   # if logger filename is not provided, just log to console

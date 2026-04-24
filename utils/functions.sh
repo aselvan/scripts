@@ -16,6 +16,7 @@
 #   Mar 4,  2025 --- Scripts no longer need to set PATH overrides
 #   Mar 18, 2025 --- Defined effective_user.
 #   Mar 25, 2025 --- Added os_relese, os_vendor, os_codename functions
+#   Apr 24, 2026 --- Added create_writable_file
 ################################################################################
 
 # os and other vars
@@ -167,6 +168,27 @@ extend_ntfs_partition() {
 
 
 # --- file utils ---
+
+# create a world writable file so sudo and non-sudo runs will be able to write to it
+create_writable_file() {
+  local fp=$1
+  if [ -z "$fp" ] ; then
+    log.error "${FUNCNAME[0]}(): filename to create is empty!"
+    return
+  fi
+
+  # ensure log file created with umask 000 so anyone can write
+  (umask 000 && touch $fp)
+  
+  # if this was a sudo run, just ensure file permission always stays world write
+  if [ "$EUID" -eq 0 ] ; then
+    chmod 666 $fp
+  fi
+
+  # empty file to start with
+  echo -n > $fp
+  log.debug "Created file: $fp"
+}
 
 # Strip ansi codes from input file (note: this creates a temp file)
 strip_ansi_codes() {
