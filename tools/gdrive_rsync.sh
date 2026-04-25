@@ -1,26 +1,32 @@
 #!/usr/bin/env bash
-#
+################################################################################
 # gdrive_rsync.sh
-#   Wrapper script to backup (i.e. copy www/photos, www/video to gdrive) using google-drive-ocamlfuse 
-#   client that mounts the gdrive as a fuse filesystem under ~/gdrive [create the directory first]
+#   Wrapper script to backup (i.e. copy www/photos, www/video to gdrive) using 
+#   google-drive-ocamlfuse client that mounts the gdrive as a fuse filesystem 
+#   under ~/gdrive [create the directory first]
 #
 # ref: https://github.com/astrada/google-drive-ocamlfuse
 #
 # Author:  Arul Selvan
-# Version History: 
-#   May 17, 2015 - Original
-#   Oct 22, 2022 - Removed video backup to conserve space since we have videos in onedirve which is 1TB size
-#   Jan 10, 2024 - Use logger.sh and function.sh
+# Created: May 17, 2015 
+################################################################################
 #
+# Version History: 
+#   May 17, 2015 - Original version
+#   Oct 22, 2022 - Removed video backup to conserve space on gdrive
+#   Jan 10, 2024 - Use logger.sh and function.sh
+#   Apr 25, 2026 - Added log file, ignore timestamp < 2secs to avoid fuse limitation
+################################################################################
 
 # version format YY.MM.DD
-version=24.01.10
+version=26.04.25
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="gDrive rsync script for backup"
 my_dirname=`dirname $0`
 my_path=$(cd $my_dirname; pwd -P)
 my_logfile="/tmp/$(echo $my_name|cut -d. -f1).log"
+rsync_logfile="/tmp/$(echo $my_name|cut -d. -f1)_changes.log"
 default_scripts_github=$HOME/src/scripts.github
 scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
@@ -32,7 +38,9 @@ export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
 
 # rsync options
 # note: -a option contains -l and -D so we use no-XXX to remove them as we don't need them
-rsync_opts="-aq --no-links --no-D --delete --inplace --exclude=*.html --exclude=*.htm --exclude=*.backup --exclude=*.m3u --exclude=*.sh --exclude=thumb --exclude=jdothumb --exclude=*.exe --exclude=*.EXE --delete-excluded"
+#       --modify-window=2 says ignore minor differences in subsecond or second 
+rsync_opts="-aq --no-links --no-D --delete --inplace --exclude=*.html --exclude=*.htm --exclude=*.backup --exclude=*.m3u --exclude=*.sh --exclude=thumb --exclude=jdothumb --exclude=*.exe --exclude=*.EXE --delete-excluded --modify-window=2 --log-file=$rsync_logfile"
+rsync_verbose=""
 
 # TODO: backup locations (change as needed)
 photos_src="/var/www/photos"
@@ -120,11 +128,15 @@ fi
 # init logs
 log.init $my_logfile
 
+# create world readble rsync log file
+create_writable_file $rsync_logfile
+
 # process commandline
 while getopts "$options_list" opt; do
   case $opt in
     v)
       verbose=1
+      rsync_verbose="-v -i"
       ;;
     e)
       email_address="$OPTARG"
@@ -140,7 +152,7 @@ check_gdrive
 
 # sync photos
 log.stat "Backup of $photos_src starting at: `date +%r`"
-/usr/bin/rsync $rsync_opts $photos_src $gdrive_dest >> $my_logfile 2>&1
+/usr/bin/rsync $rsync_opts $rsync_verbose $photos_src $gdrive_dest >> $my_logfile 2>&1
 rc=$?
 if [ $rc -ne 0 ]; then
   log.error "Error while rsync; error = $rc ... terminating." 
@@ -152,7 +164,7 @@ log.stat "Backup of $photos_src completed at: `date +%r`"
 
 # sync scrapbooks
 log.stat "Backup of $scrapbooks_src starting at: `date +%r`"
-/usr/bin/rsync $rsync_opts $scrapbooks_src $gdrive_dest >>$my_logfile 2>&1
+/usr/bin/rsync $rsync_opts $rsync_verbose $scrapbooks_src $gdrive_dest >>$my_logfile 2>&1
 rc=$?
 if [ $rc -ne 0 ]; then
   log.error "Error while rsync; error = $rc ... terminating."
@@ -171,7 +183,7 @@ log.stat "Backup of $scrapbooks_src completed at: `date +%r`"
 ####################################################################
 # sync videos
 #log.stat "Backup of $videos_src starting at: `date +%r`"
-#/usr/bin/rsync $rsync_opts $videos_src $gdrive_dest >>$my_logfile 2>&1
+#/usr/bin/rsync $rsync_opts $rsync_verbose $videos_src $gdrive_dest >>$my_logfile 2>&1
 #rc=$?
 #if [ $rc -ne 0 ]; then
 #  log.error "Error while rsync; error = $rc ... terminating." >> $my_logfile
