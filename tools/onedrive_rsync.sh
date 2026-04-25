@@ -1,22 +1,27 @@
 #!/usr/bin/env bash
+################################################################################
 #
 # onedrive_rsync.sh
 #   Wrapper script to backup data to onedrive using rclone mount.
 #
 # Prereq: rclone must be installed
 #
-# Note: by default this script assumes rclone is configured with onedrive root as "[onedrive]" as 
-#   shown below or you can specify a different label using -l <label> option.
+# Note: by default this script assumes rclone is configured with onedrive root 
+#   as "[onedrive]" as shown below or you can specify a different label 
+#   using -l <label> option.
 #
 # [onedrive]
 # type = onedrive
 # token = {"access_token":"zQrtZltT5ln5aFElma+hUKt9K1pL0a0R....}
 #
 # Author:  Arul Selvan
+# Created: Aug 21, 2022
+################################################################################
 # Version history: 
 #   Aug 21, 2022 --- Original version
 #   Jan 11, 2024 --- refactor to use logger and function includes
 #   May 3,  2024 --- refactor to use rclone sync instead of mount & use OS rsync
+################################################################################
 
 # version format YY.MM.DD
 version=24.05.03
