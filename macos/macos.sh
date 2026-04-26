@@ -5,18 +5,18 @@
 # Author:  Arul Selvan
 # Created: Aug 25, 2024
 #
-# See Also: process.sh diskutil.sh keychain.sh ... etc
+# See Also: process.sh diskutil.sh keychain.sh spoof_mac.sh ... etc
 ################################################################################
 #
 # Version History: (original & last 3)
 #   Aug 25, 2024 --- Original version
-#   Apr 03, 2026 --- Added allpids command
 #   Apr 18, 2026 --- Added dasd to kill list, modified to use killall vs. kill
 #   Apr 23, 2026 --- Made kill command to require root
+#   Apr 26, 2026 --- Added mac command to show macaddress
 ################################################################################
 
 # version format YY.MM.DD
-version=26.04.23
+version=26.04.26
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl tools for macOS all in one place"
@@ -27,12 +27,12 @@ default_scripts_github=$HOME/src/scripts.github
 scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
 # commandline options
-options="c:l:a:d:r:p:n:kvh?M"
+options="c:l:a:d:r:p:n:i:kvh?M"
 
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 arg=""
 command_name=""
-supported_commands="airplay|allpids|app|appspace|arch|battery|bta|btc|bundle|cleanup|cpu|cputemp|disablesl|disk|enablesl|fan|ftype|hw|kext|kill|kmutil|la|lap|lcpids|ld|log|lsbom|mdm|mem|monitor|orphan|power|procinfo|rmusercache|serial|showmounts|sl|spaceused|speed|swap|sysext|system|system|txthandler|usb|user|users|verify|version|vmstat|volume|wifi"
+supported_commands="airplay|allpids|app|appspace|arch|battery|bta|btc|bundle|cleanup|cpu|cputemp|disablesl|disk|enablesl|fan|ftype|hw|kext|kill|kmutil|la|lap|lcpids|ld|log|lsbom|mac|mdm|mem|monitor|orphan|power|procinfo|rmusercache|serial|showmounts|sl|spaceused|speed|swap|sysext|system|system|txthandler|usb|user|users|verify|version|vmstat|volume|wifi"
 
 # if -h argument comes after specifiying a valid command to provide specific command help
 command_help=0
@@ -62,6 +62,7 @@ text_types=("public.plain-text" "public.unix-executable" "public.data" "com.nets
 lsregister="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister"
 power_telemetry_log_dir="/var/db/powerlog/Library/PerfPowerTelemetry/BackgroundProcessing"
 dasd_cpu_threshold=25
+iface=""
 
 
 # default kill list
@@ -135,6 +136,7 @@ lap         List actual programs executed by examining all .plist files
 labom       List macOS distributed apps BOM list app location
 ld          List LaunchDaemons task details
 log         Search for string in system log
+mac         Show mac address of wifi device. Use -i <device> for specific device
 mdm         Show MDM enrollment
 mem         Show physical memory, free memory, memory slots, size etc.
 monitor     Monitor netowrk,fs, disk, file desc etc continually (ctrl+c to stop)
@@ -1159,6 +1161,24 @@ do_sleep() {
   log.stat "  `systemsetup -getharddisksleep`" $green
 }
 
+do_mac() {
+  if [ $command_help -eq 1 ] ; then
+    log.stat "Usage: $my_name -c $command_name [-i <device>]"
+    exit 1
+  fi
+
+  # if no device provided, detect the Wi-Fi device name and show macaddress
+  if [ -z "$iface" ] ; then
+    iface=`networksetup -listallhardwareports | awk '/Hardware Port: Wi-Fi/{getline; print $2}'`
+  fi
+
+  local mac=`ifconfig $iface|grep ether|awk '{print $2;}'`
+  log.stat "  Device: $iface" $green
+  log.stat "  MAC:    $mac" $green
+
+}
+
+
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
 if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
@@ -1190,6 +1210,9 @@ while getopts $options opt ; do
       ;;
     a)
       arg="$OPTARG"
+      ;;
+    i)
+      iface="$OPTARG"
       ;;
     k)
       do_killed_list=1
@@ -1391,6 +1414,9 @@ for item in "${commands[@]}"; do
       ;;
     sleep)
       do_sleep
+      ;;
+    mac)
+      do_mac
       ;;
     *)
       log.error "Invalid command: $command_name"
