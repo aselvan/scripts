@@ -405,7 +405,8 @@ check_installed() {
       log.warn "${FUNCNAME[0]}(): required binary \"$app\" is missing, continuing w/out the binary ..."
       return 1
     else
-      log.error "${FUNCNAME[0]}(): required binary \"$app\" is missing, install it and try again, exiting."
+      log.error "${FUNCNAME[0]}(): required binary \"$app\" is missing!"
+      log.error "Please install with 'brew install $app' or by other means and try again. Exiting..."
       exit 2
     fi
   fi
