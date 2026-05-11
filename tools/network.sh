@@ -3,27 +3,22 @@
 #
 # network.sh --- Wrapper for many useful network commands.
 #
-# Though these info are readily available with different commandline tools, this script
-# is a hany wrapoper to get a simple output of all you need to know.
+# Though these info are readily available with different commandline tools, 
+# this script is a hany wrapoper to get a simple output of all you need to know.
 #
 # Author:  Arul Selvan
 # Created: Jul 29, 2023
 #
 ###############################################################################
-# Version History:
+# Version History: (original and last 3)
 #   Jul 29, 2023 --- Original version
-#   Nov 26, 2024 --- Renamed to network.sh (was network_info.sh) and added new functionality
-#   Dec 25, 2024 --- Added wifi stats, ssid etc
-#   Mar 18, 2025 --- Use effective_user in place of get_current_user. Also
-#                    implemented interface related functions in Linux
-#   Jun 3,  2025 --- Added restoremac command
-#   Jun 5,  2025 --- Added speed test command
 #   Jun 30, 2025 --- Added openport command
 #   Jul 12, 2025 --- Added help syntax for each supported commands
+#   May 11, 2026 --- mac command now prints mac of physical and iterface
 ###############################################################################
 
 # version format YY.MM.DD
-version=25.07.12
+version=26.05.11
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl network tools wrapper all in one place"
@@ -299,7 +294,20 @@ function info() {
 function showmac() {
   mac_addr=`ifconfig $iface | grep ether| awk '{print $2;}'`
   echo $mac_addr | $pbc
-  log.stat "\tCurrent MAC address of $iface is: $mac_addr" $green
+  local mac_addr_phy
+  case $os_name in
+      Darwin)
+      mac_addr_phy=$(networksetup -listallhardwareports | grep -A 1 "Device: $iface" | awk '/Ethernet Address/{print $3}')
+      ;;
+    Linux)
+      mac_addr_phy=`cat /sys/class/net/$iface/address`
+      ;;
+    *)
+      mac_addr_phy="Unknown"
+      ;;
+  esac
+  log.stat "  MAC address (physical):        $mac_addr_phy" $green
+  log.stat "  MAC address (interface: $iface):  $mac_addr" $green
 }
 
 function showdhcp() {
