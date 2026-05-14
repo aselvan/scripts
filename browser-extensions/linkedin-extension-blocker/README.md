@@ -4,9 +4,9 @@
 
 ## Overview
 
-LinkedIn repeatedly scans your browser for thousands of known extensions, which is not only a privacy concern but also wastes CPU cycles, especially if you keep LinkedIn open as an active tab, as many users do. I found that LinkedIn website runs a poorly designed detection loop that attempts to load a specific resource from each extension to determine whether it is installed or not. When this process is repeated across thousands of extensions, it results in unnecessary CPU usage with no real benefit. I found that LinkedIn looped through 4,678 extension IDs on every refresh, while others have reported more than 6,000+. Regardless of the exact count, pounding your CPU with thousands of pointless checks is downright insane!
+LinkedIn repeatedly scans your browser for thousands of known extensions, which is not only a privacy concern but also wastes CPU cycles, especially if you keep LinkedIn open as an active tab, as many users do. I found that LinkedIn website runs a poorly designed detection loop that attempts to load a specific resource from each extension to determine whether it is installed or not. When this process is repeated across thousands of extensions, it results in unnecessary CPU usage with no real benefit. I found that LinkedIn looped through 4,678 extension IDs on every refresh, while others have reported more than 6,000+. Regardless of the exact count, pounding your CPU with thousands of pointless checks is **downright insane!**
 
-Read the link below for additional details
+Read the link below for additional details.
 
 [LinkedIn browser survillance](https://www.linkedin.com/pulse/linkedin-accused-extensive-browser-surveillance-pdfze/)
 
