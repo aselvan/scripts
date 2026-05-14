@@ -16,9 +16,10 @@ This is a very simple extension that injects an interceptor code to catch Linked
 
 ## Installation (Chrome/Brave/Edge)
 
-1. Open `chrome://extensions/`
-2. Activate "Developer mode"
-3. "Load unpacked" and select this folder
+1. Copy all the files and folders to a permanent folder on your laptop/desktop
+2. Open `chrome://extensions/`
+3. Activate "Developer mode"
+4. Click on "Load unpacked" and select the folder you copied the files at step #1 when prompted
 
 
 ## About this plugin
