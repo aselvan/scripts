@@ -1,0 +1,42 @@
+{
+  "manifest_version": 3,
+  "name": "Extension Telemetry Demo",
+  "version": "1.7",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "description": "Demonstrates how much a browser plugin can read including keyboard, network, and more.",
+  "homepage_url": "https://www.selvansoft.com/tools",
+  "author": "Arul Selvan",
+  "permissions": [
+    "tabs",
+    "history",
+    "bookmarks",
+    "topSites",
+    "storage",
+    "webRequest"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+      "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  }
+}

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      width: 340px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 10px;
+      background-color: #f9f9f9;
+      color: #333;
+    }
+    .header {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 5px;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 5px;
+    }
+    .status-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .toggle-btn {
+      padding: 5px 10px;
+      cursor: pointer;
+      border: 1px solid #999;
+      background-color: #fff;
+      border-radius: 3px;
+    }
+    .toggle-btn.active {
+      background-color: #d4edda;
+      border-color: #c3e6cb;
+    }
+    .toggle-btn.inactive {
+      background-color: #f8d7da;
+      border-color: #f5c6cb;
+    }
+    .data-item {
+      margin: 8px 0;
+      font-size: 13px;
+    }
+    .label {
+      color: #666;
+    }
+    .val {
+      font-family: monospace;
+      float: right;
+    }
+    .box {
+      word-break: break-all;
+      background: #eee;
+      padding: 4px;
+      font-size: 11px;
+      margin-top: 4px;
+      font-family: monospace;
+      min-height: 32px;
+    }
+    .footer {
+      margin-top: 15px;
+      font-size: 11px;
+      color: #777;
+      text-align: center;
+      border-top: 1px solid #ccc;
+      padding-top: 5px;
+    }
+    .footer a {
+      color: #0066cc;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">Extension Telemetry Demo</div>
+  
+  <div class="status-container">
+    <span>Telemetry Collection:</span>
+    <button id="toggleMode" class="toggle-btn">Loading</button>
+  </div>
+
+  <div class="data-item"><span class="label">Tabs Observed:</span><span id="navCount" class="val">0</span></div>
+  <div class="data-item"><span class="label">Network Requests Logged:</span><span id="netCount" class="val">0</span></div>
+  <div class="data-item"><span class="label">DOM Keystrokes Captured:</span><span id="keyCount" class="val">0</span></div>
+  <div class="data-item"><span class="label">History Events:</span><span id="histCount" class="val">0</span></div>
+  <div class="data-item"><span class="label">Bookmarks Inspected:</span><span id="bookCount" class="val">0</span></div>
+  <div class="data-item"><span class="label">Top Sites Accessible:</span><span id="topCount" class="val">0</span></div>
+  
+  <div class="data-item" style="margin-top:12px;">
+    <span class="label">Last Intercepted URL:</span>
+    <div id="lastUrl" class="box">None</div>
+  </div>
+
+  <div class="data-item" style="margin-top:8px;">
+    <span class="label">Captured input (64bytes):</span>
+    <div id="typedBuffer" class="box">None</div>
+  </div>
+
+  <div class="footer">
+    Developed by Arul Selvan | <a href="https://www.selvansoft.com" target="_blank">selvansoft.com</a>
+  </div>
+
+  <script src="src/popup.js"></script>
+</body>
+</html>
