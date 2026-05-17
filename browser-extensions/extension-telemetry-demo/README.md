@@ -13,6 +13,9 @@ This is a very simple extension that injects a set of interceptor code that can 
 3. Activate "Developer mode"
 4. Click on "Load unpacked" and select the folder you copied the files at step #1 when prompted
 
+## Working demonstration
+The screenshot below is from this extension running in my Chrome browser, showing what it captured, including the username and password I typed while browsing a website. You will notice it also captures live network data, form fill data, and more.
+![Working Demo Screenshot](demo_screenshot.png)
 
 ## About this plugin
 
