@@ -10,13 +10,13 @@
 #
 # Version History: (original & last 3)
 #   Aug 25, 2024 --- Original version
-#   Apr 18, 2026 --- Added dasd to kill list, modified to use killall vs. kill
 #   Apr 23, 2026 --- Made kill command to require root
 #   Apr 26, 2026 --- Added mac command to show macaddress
+#   May 23, 2026 --- Refactor mem,disk to freemem,freespace,ram,disk
 ################################################################################
 
 # version format YY.MM.DD
-version=26.04.26
+version=26.05.23
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Misl tools for macOS all in one place"
@@ -32,7 +32,7 @@ options="c:l:a:d:r:p:n:i:kvh?M"
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 arg=""
 command_name=""
-supported_commands="airplay|allpids|app|appspace|arch|battery|bta|btc|bundle|cleanup|cpu|cputemp|disablesl|disk|enablesl|fan|ftype|hw|kext|kill|kmutil|la|lap|lcpids|ld|log|lsbom|mac|mdm|mem|monitor|orphan|power|procinfo|rmusercache|serial|showmounts|sl|spaceused|speed|swap|sysext|system|system|txthandler|usb|user|users|verify|version|vmstat|volume|wifi"
+supported_commands="airplay|allpids|app|appspace|arch|battery|bta|btc|bundle|cleanup|cpu|cputemp|disablesl|disk|enablesl|fan|freespace|freemem|ftype|hw|kext|kill|kmutil|la|lap|lcpids|ld|log|lsbom|mac|mdm|monitor|orphan|power|procinfo|rmusercache|ram|serial|showmounts|sl|spaceused|speed|swap|sysext|system|system|txthandler|usb|user|users|verify|version|vmstat|volume|wifi"
 
 # if -h argument comes after specifiying a valid command to provide specific command help
 command_help=0
@@ -126,6 +126,8 @@ cputemp     Shows cpu temperature
 disk        Show disk size, usage, automount volume etc
 txthandler  reset txt file handler i.e. org.vim.MacVim for all .txt etc
 fan         Show fanspeed in rpm
+freespace   Show available disk space
+freemem     Show available memory
 ftype       Show file type
 hw          Show mac model,processor serial memory etc
 kext        Show all kernel Extention stats (excluding OS built-in)
@@ -138,7 +140,7 @@ ld          List LaunchDaemons task details
 log         Search for string in system log
 mac         Show mac address of wifi device. Use -i <device> for specific device
 mdm         Show MDM enrollment
-mem         Show physical memory, free memory, memory slots, size etc.
+ram         Show physical memory hadware info like slots, size etc.
 monitor     Monitor netowrk,fs, disk, file desc etc continually (ctrl+c to stop)
 orphan      Check orphaned container space to cleanup after app is deleted.
 lcpids      Show launchd managed process pid,usename, & processname.
@@ -167,18 +169,9 @@ wifi        Show all wifi device information, channel, mode etc
 
 NOTE: Many commands take additional arg with '-a'. To get the syntax of how 
 it works, run wit a -h which will show details on what to pass for arg.
-  example: sudo macos.sh -cmonitor -h
+example: sudo macos.sh -cmonitor -h
 EOF
   exit 0
-}
-
-showmem() {
-  hwmemsize=$(sysctl -n hw.memsize)
-  ramsize=$(expr $hwmemsize / $((1024**3)))
-  free_percent=$(memory_pressure|grep percentage|awk '{print $5;}')
-  log.stat "  Physical Memory: ${ramsize}GB" $green
-  log.stat "  Free Memory    : ${free_percent}" $green
-  system_profiler SPMemoryDataType |awk '!/Memory:|Memory Slots:/'
 }
 
 showvmstat() {
@@ -221,15 +214,9 @@ showswap() {
   fi
 }
 
-showdisk() {
+do_disk() {
   log.stat "Storage type details:"
   system_profiler SPStorageDataType SPNetworkVolumeDataType
-  local df_output=`df -h /System/Volumes/Data/|tail -1`
-  
-  log.stat "Overall Disk Usage:"
-  log.stat "`echo $df_output|awk '{print "  Total: ",$2,"\n  Used:  ",$3,"(",$5,")","\n  Free:  ",$4,"\n  Inode: ",$8, "(metadata)"}'`"
-  log.stat "\nNote: If inode usage reaches 100% you can't create files even if you have ton of free space."
-  log.stat "      If it is large, typically, it is indicative of millions of tiny files."
 }
 
 showbundle () {
@@ -1075,6 +1062,29 @@ do_mdm() {
   profiles status -type enrollment
 }
 
+do_freespace() {
+  local df_output=`df -h /System/Volumes/Data/|tail -1`
+  log.stat "Overall Disk Usage:"
+  log.stat "`echo $df_output|awk '{print "  Total: ",$2,"\n  Used:  ",$3,"(",$5,")","\n  Free:  ",$4,"\n  *Inode: ",$8, "(metadata)"}'`"
+  log.stat "\n* If inode reach 100%, you can't save anything even if you have ton of free space! (too many tiny files)"
+}
+
+do_freemem() {
+  hwmemsize=$(sysctl -n hw.memsize)
+  ramsize=$(expr $hwmemsize / $((1024**3)))
+  free_percent=$(memory_pressure|grep percentage|awk '{print $5;}')
+  log.stat "  Physical Memory: ${ramsize}GB" $green
+  log.stat "  Free Memory    : ${free_percent}" $green
+}
+
+do_ram() {
+  hwmemsize=$(sysctl -n hw.memsize)
+  ramsize=$(expr $hwmemsize / $((1024**3)))
+  free_percent=$(memory_pressure|grep percentage|awk '{print $5;}')
+  system_profiler SPMemoryDataType |awk '!/Memory:|Memory Slots:/'
+  log.stat "\tTotal: ${ramsize}GB" $green
+}
+
 do_ftype() {
  if [ $command_help -eq 1 ] ; then
     log.stat "Usage: $my_name -c $command_name -a <filename>"
@@ -1258,9 +1268,6 @@ IFS=',' read -ra commands <<< "$command_name"
 for item in "${commands[@]}"; do
   cmd=$(echo "$item" | xargs)
   case $cmd in 
-    mem)
-      showmem
-      ;;
     cpu)
       showcpu
       ;;
@@ -1283,7 +1290,7 @@ for item in "${commands[@]}"; do
       showswap
       ;;
     disk)
-      showdisk
+      do_disk
       ;;
     bundle)
       showbundle
@@ -1399,6 +1406,15 @@ for item in "${commands[@]}"; do
       ;;
     ftype)
       do_ftype
+      ;;
+    freespace)
+      do_freespace
+      ;;
+    freemem)
+      do_freemem
+      ;;
+    ram)
+      do_ram
       ;;
     showmounts)
       do_showmounts
