@@ -72,6 +72,7 @@ alias selvansip='dig +short selvans.net'
 # utils
 alias srm='rm -P'
 alias pp_jason='cat $* |python3 -m json.tool'
+alias pp_js='deno fmt $*'
 alias du_sort='du -xh -d 1 | sort -hr'
 alias vscan='sudo ${HOME}/src/scripts.github/security/clamscan.sh -f $*'
 alias play='ffplay -hide_banner -nodisp -autoexit $*'
