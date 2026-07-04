@@ -32,7 +32,7 @@ options="c:l:a:d:r:p:n:i:kvh?M"
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
 arg=""
 command_name=""
-supported_commands="airplay|allpids|app|appspace|arch|battery|bta|btc|bundle|cleanup|cpu|cputemp|disablesl|disk|enablesl|fan|freespace|freemem|ftype|hw|kext|kill|kmutil|la|lap|lcpids|ld|log|lsbom|mac|mdm|monitor|orphan|power|procinfo|rmusercache|ram|serial|showmounts|sl|spaceused|speed|swap|sysext|system|system|txthandler|usb|user|users|verify|version|vmstat|volume|wifi"
+supported_commands="airplay|allpids|app|appspace|arch|battery|bta|btc|bundle|cleanup|cpu|cputemp|disablesl|disk|enablesl|fan|freespace|freemem|ftype|hw|kext|kill|kmutil|la|lap|lcpids|ld|log|lsbom|mac|mdm|monitor|orphan|power|procinfo|rmusercache|ram|serial|showmounts|sl|spaceused|speed|swap|sysext|system|txthandler|usb|user|users|verify|version|vmstat|volume|wifi"
 
 # if -h argument comes after specifiying a valid command to provide specific command help
 command_help=0
@@ -472,9 +472,9 @@ id2model() {
 }
 
 show_system() {
-  local id=`system_profiler SPHardwareDataType|grep "Model Identifier"|awk '{print $3}'`
+  local id=`system_profiler SPHardwareDataType 2>/dev/null|grep "Model Identifier"|awk '{print $3}'`
   log.stat "      Model Year: $(id2model $id)"
-  log.stat "`system_profiler SPHardwareDataType | tail +5`"
+  log.stat "`system_profiler SPHardwareDataType 2>/dev/null | tail +5`"
 }
 
 show_app() {
@@ -1308,7 +1308,7 @@ for item in "${commands[@]}"; do
       do_kill
       ;;
     arch)
-      log.stat "MacOS CPU Architecture: `macos_arch`"
+      log.stat "\tMacOS CPU Architecture: `macos_arch`"
       ;;
     cputemp)
       show_cpu_temp
