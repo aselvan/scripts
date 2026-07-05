@@ -44,7 +44,7 @@ Usage: $my_name [options]
 
 Examples: 
   $my_name -l file.gpg
-  $my_name -r <recepient1> -e <recepient2>  -e file
+  $my_name -r <recepient1> -r <recepient2> -e file
   $my_name -o file.out -d file.enc
 EOF
   exit 0
