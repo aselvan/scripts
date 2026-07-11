@@ -44,6 +44,17 @@ EOF
   exit 0
 }
 
+check_random_mac() {
+  # Strip formatting and convert to uppercase
+  local clean_mac=$(echo "$1" | tr -d ':-' | tr '[:lower:]' '[:upper:]')
+
+  # Match the second character against 2, 6, A, or E
+  if [[ ${clean_mac:1:1} =~ [26AE] ]]; then
+    log.error "${mac_address}: is a randomized mac"
+    exit 1
+  fi
+}
+
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
 if [ ! -z "$scripts_github" ] && [ -d $scripts_github ] ; then
@@ -76,6 +87,9 @@ if [ -z $mac_address ] ; then
   log.error "Missing required argument MAC address"
   usage
 fi
+
+# make sure it is not randomized mac
+check_random_mac $mac_address
 
 response=$(curl -s ${oui_lookup_api}/$mac_address/pipe)
 if [ -z "$response" ] ; then
