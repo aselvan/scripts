@@ -232,7 +232,7 @@ function get_ip_and_network() {
       # note grab the second one which is realip, the first one is link-local
       my_ip=`hostname -I | awk '{print $2}'`
       ;;
-    *)int
+    *)
       not_implemented
       ;;
   esac
@@ -352,7 +352,7 @@ function testsvc() {
   host="${host_port%%:*}"
   port="${host_port##*:}"
   log.debug "Checking service on $host at port $port ..."
-  result=$(nc -zv -w10 -G10 $host $port 2>&1)
+  result=$(nc -zv -w10 $host $port 2>&1)
   log.stat "\t$result" $green
 }
 
