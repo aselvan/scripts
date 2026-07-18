@@ -12,10 +12,11 @@
 ###############################################################################
 # Version History: (original and last 3)
 #   Jul 15, 2026 --- Original version
+#   Jul 18, 2026 --- Added status command and fixed to run in Linux
 ###############################################################################
 
 # version format YY.MM.DD
-version=26.07.15
+version=26.07.18
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Search for googlehome devices and get information"
@@ -25,17 +26,19 @@ my_logfile="/tmp/$(echo $my_name|cut -d. -f1).log"
 default_scripts_github=$HOME/src/scripts.github
 scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 arp_entries="/tmp/$(echo $my_name|cut -d. -f1)_arp.txt"
+info_file="/tmp/$(echo $my_name|cut -d. -f1)_info.txt"
 
 # commandline options
 options="c:s:vh?"
 
 command_name=""
-supported_commands="info|scan"
+supported_commands="info|scan|status"
 iface=""
 my_ip=""
 my_net="192.168.1.0/24"
 ghome_host=""
 ghome_port=8008
+nc_opt="-zv -w10 -G5"
 
 usage() {
   cat << EOF
@@ -60,14 +63,13 @@ EOF
   exit 0
 }
 
-function not_implemented() {
+not_implemented() {
   log.warn "Not implemented for $os_name OS yet, exiting..."
   exit 99
 }
 
 # get current IP and network CIDR
-function get_my_network() {
-
+get_my_network() {
   case $os_name in 
     Darwin)
       my_ip=`ipconfig getifaddr $iface`
@@ -75,10 +77,12 @@ function get_my_network() {
         log.error "Unable to find IP!"
         exit 1
       fi
+      nc_opt="-zv -w10 -G5"
       ;;
     Linux)
       # note grab the second one which is realip, the first one is link-local
       my_ip=`hostname -I | awk '{print $2}'`
+      nc_opt="-zv -w10"
       ;;
     *)
       not_implemented
@@ -87,7 +91,7 @@ function get_my_network() {
   my_net=`echo $my_ip |awk -F. '{print $1"."$2"."$3".0/24"; }'` 
 }
 
-function get_interface_linux() {
+get_interface_linux() {
   # Loop through each interface
   for i in $(ls /sys/class/net); do
     local mac_addr=$(cat /sys/class/net/"$i"/address)
@@ -106,7 +110,7 @@ function get_interface_linux() {
 }
 
 # detect active, IP assigned interface. The first one is returned
-function get_interface_mac() {
+get_interface_mac() {
   local ipaddr
   for iface in `ipconfig getiflist` ; do
     ipaddr=`ipconfig getifaddr $iface`
@@ -119,7 +123,7 @@ function get_interface_mac() {
   log.debug "Using interface: $iface"
 }
 
-function get_interface() {
+get_interface() {
   case $os_name in 
     Darwin)
       get_interface_mac
@@ -133,7 +137,7 @@ function get_interface() {
   esac
 }
 
-function check_ghome_host() {
+check_ghome_host() {
   if [ -z "$ghome_host" ] ; then
     log.error "Missing google home IP, a required argument, see usage"
     log.stat "usage: $my_name -c info -s <googlehome_ip>"
@@ -141,17 +145,17 @@ function check_ghome_host() {
   fi
 }
 
-function do_info() {
-  check_ghome_host
-  log.stat "Google Home Info for host: $ghome_host"
-  curl -s http://$ghome_host:$ghome_port/setup/eureka_info | jq
-}
-
-function do_scan() {
+do_scan() {
+  log.stat "Scanning ... (may take a min or two, be patient)"
+  log.stat "  Scanning network for hosts ... "
+  SECONDS=0
   nmap --host-timeout 10 -T5 $my_net >/dev/null 2>&1
   arp -an|egrep -v 'incomplete|ff:ff:ff:ff|169.254|224.|239.|.255)'> $arp_entries
+  log.stat "  Host search completed in $SECONDS seconds"
 
   # loop through each IP and check if google home port is listening
+  SECONDS=0
+  log.stat "  Scanning for Google devices ..."
   cat $arp_entries | while read -r line ; do
     ip=$(echo $line|awk -F '[()]|at | on ' '{print $2}')
     host=`dig +short +timeout=1 +retry=0 +nostats -x $ip|sed -e 's/\.$//'`
@@ -159,17 +163,67 @@ function do_scan() {
       # skip this invalid entry
       continue
     fi
-    log.debug "Checking host: $ip ..."
-    nc -zv -w10 $host $ghome_port >/dev/null 2>&1
+    log.debug "  running 'nc $nc_opt $ip $ghome_port'"
+    nc $nc_opt $ip $ghome_port >/dev/null 2>&1
     if [ $? -ne 0 ] ; then 
       # This is not google home device, skip
       continue
     fi
     # This is a ghome device
-    log.stat "    $ip ($host) is a google home device." $green
+    log.stat "  $ip ($host) is a google home device." $green
   done
+  log.stat "  Google device search completed in $SECONDS seconds"
 }
 
+create_info_file() {
+  check_ghome_host
+  curl -s http://$ghome_host:$ghome_port/setup/eureka_info -o $info_file
+  if [ $? -ne 0 ] ; then
+    log.error "eureka_info call failed! Likely $ghome_host is not a google home device"
+    exit 2
+  fi
+}
+
+do_info() {
+  log.stat "Google Home device details at host: $ghome_host"
+  create_info_file
+  cat $info_file |jq
+}
+
+do_status() {
+  log.stat "Google Home device status at host: $ghome_host"
+  create_info_file
+  log.stat "  Name:   `cat $info_file |jq -r '.name'`"
+  log.stat "  IP:     `cat $info_file |jq -r '.ip_address'`"
+  log.stat "  SSID:   `cat $info_file |jq -r '.hotspot_bssid'` (likely randomized)"
+  log.stat "  Active: `cat $info_file |jq -r '.connected'`"
+  local state=`cat $info_file |jq -r '.setup_state'`
+  case $state in
+    0)
+      log.stat "  State:  Factory Default/Out of the box" $red
+      ;;
+    1)
+      log.stat "  State:  Wi-Fi Configuration in Progress" $yellow
+      ;;
+    2)
+      log.stat "  State:  Wi-Fi Connected / Awaiting Association" $yellow
+      ;;
+    52)
+      log.stat "  State:  WAN or DNS failure!" $yellow
+      log.stat "  WARNING: This is a dangereous state since the device is wide open!" $red
+      log.stat "           Recomendation: turn it off immediately!" $red
+      ;;
+    60)
+      log.stat "  State:  Fully Provisioned and Operational" $green
+      ;;
+    63)
+      log.stat "  State:  Fully Provisioned and Operational (Gen 4 series)" $yellow
+      ;;
+    *)
+      log.stat "  State:  Unknown" $red
+      ;;
+  esac
+}
 
 # -------------------------------  main -------------------------------
 # First, make sure scripts root path is set, we need it to include files
@@ -186,6 +240,8 @@ fi
 # init logs
 log.init $my_logfile
 
+# check if jq present
+check_installed jq
 
 # parse commandline options
 while getopts $options opt ; do
@@ -215,18 +271,20 @@ if [ -z "$command_name" ] ; then
   usage
 fi
 
-if [ -z $iface ] ; then
-  get_interface
-fi
-get_my_network
-
 # run different wrappes depending on the command requested
 case $command_name in
   info)
     do_info
     ;;
   scan)
+    if [ -z $iface ] ; then
+      get_interface
+    fi
+    get_my_network
     do_scan
+    ;;
+  status)
+    do_status
     ;;
   *)
     log.error "Invalid command: $command_name"
