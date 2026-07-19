@@ -8,7 +8,7 @@
 #
 
 # version format YY.MM.DD
-version=23.11.15
+version=26.19.19
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Sample script"
@@ -106,14 +106,22 @@ log.error() {
 }
 
 write_std_readme() {
-  cat << EOF > $dir/README.txt
-  selvans.net --- file/directory cleanup
+  cat << EOF > $dir/README.html
+<!DOCTYPE html>
+<head>
+  <title>selvans.net - cleanup</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+<pre style="white-space: pre-wrap; font-family: monospace; padding: 10px;">
+<h2>selvans.net - file/directory cleanup </h2>
 
-  This directory is wiped periodically to avoid log and other files piling up 
-  since it is not part of system logrotate daemon ... so anything here will be 
-  removed after specific time to conserve space.
+This directory is wiped periodically to avoid log and other files piling up since it is not part of system logrotate daemon ... so anything here will be removed after specific time to conserve space.
 
-  Last cleanup run: `date`
+<b>Last cleanup run:</b> `date`
+</pre>
+</body>
+</html>
 EOF
   # relink the php files on $share_dir 
   # (for now just the top level until figout how to recurse)
@@ -123,27 +131,29 @@ EOF
 }
 
 write_download_readme() {
-  cat << EOF > $dir/README.txt
-  selvans.net --- download/temporary storage
+  cat << EOF > $dir/README.html
+<!DOCTYPE html>
+<head>
+  <title>selvans.net - downloads area</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"> 
+</head>
+<body>
+<pre style="white-space: pre-wrap; font-family: monospace; padding: 10px;">
+<h2>selvans.net - download/temporary storage </h2>
 
-  This directory contains files shared between family/friends and is a transient 
-  storage area. You can store files here by uploading your it via the following
-  upload URL: https://upload.selvans.net 
+This directory contains files shared between family/friends and is a transient storage area. You can store files here by uploading your it via the following upload URL: https://upload.selvans.net 
+
+<b>DISCLAIMER:</b>
+Though this storage area protected w/ basic HTTP authentication, by no means it is secure so do not upload anything that may contain information you may not want to share. I take no responsibility whatsoever on the security of the file and its contents.
+
+<b>NOTE:</b>
+This directory is wiped periodically (every 30 days) so anything you upload to this directory via the URL https://upload.selvans.net does not stay here forever.
 
 
-  DISCLAIMER:
-  ----------
-  Though this storage area protected w/ basic HTTP authentication, by no means it 
-  is secure so do not upload anything that may contain information you may not want 
-  to share. I take no responsibility whatsoever on the security of the file and 
-  its contents.
-
-  NOTE:
-  -----
-  This directory is wiped periodically (every 30 days) so anything you upload to 
-  this directory via the URL https://upload.selvans.net does not stay here forever.
-
-  Last cleanup run: `date`
+<b>Last cleanup run:</b> `date`
+</pre>
+</body>
+</html>
 EOF
 }
 
