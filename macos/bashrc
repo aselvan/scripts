@@ -168,6 +168,13 @@ ytvideo() {
   fi
 }
 
+shodan_check() {
+  if [ -z $1 ] ; then
+    echo "Usage: shodan_check <ip>"
+    return
+  fi
+  curl -s https://internetdb.shodan.io/$1 | jq
+}
 
 # ----------------------- custom entries ----------------------------
 # Finally, include any custom local bashrc if present that may include 
