@@ -71,7 +71,7 @@ iface=""
 # doing risky things like deleting or moving files in root '/' partition to 
 # get rid of the corresponding launchctl plist files. The only thing you can 
 # do is kill these hogs every few minutes w/ cron job.
-kill_list="mediaanalysisd mediaanalysisd-access photoanalysisd photolibraryd cloudphotod Stocks StocksKitService StocksWidget StocksDetailIntents com.apple.Photos.Migration siriactionsd sirittsd ShortcutsViewService contactsd Spotlight corespotlightd"
+kill_list="mediaanalysisd mediaanalysisd-access photoanalysisd photolibraryd cloudphotod Stocks StocksKitService StocksWidget StocksDetailIntents com.apple.Photos.Migration siriactionsd sirittsd ShortcutsViewService contactsd Spotlight corespotlightd VTEncoderXPCService VTDecoderXPCService"
 
 usage() {
   cat << EOF
