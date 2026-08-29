@@ -21,6 +21,9 @@ export PS1='\[\033]0;\u@\h: \w\007\]\u@\H$ '
 export EDITOR=vi
 export DATA_HOME="$HOME/data"
 
+# identity file for age encryptor tool i.e. usbC key
+export AGE_IDENTITY_FILE="$HOME/data/personal/keys/age/yubikey_usbc_age.id"
+
 # brew path --- setup old or new brew path
 if [ -d /opt/homebrew ] ; then
   BREW_HOME="/opt/homebrew"
