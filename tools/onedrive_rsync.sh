@@ -53,7 +53,7 @@ videos_src="/var/www/video"
 scrapbooks_src="/var/www/scrapbooks"
 yt_videos="/data/videos4youtube"
 debbie_backup="/data/debbie-backup"
-ollie_videos="/data2/ollie-video"
+ollie_videos="/data2/ollie-videos"
 src_dirs="$photos_src $videos_src $scrapbooks_src $yt_videos $debbie_backup $ollie_videos"
 
 onedrive_label="onedrive"
