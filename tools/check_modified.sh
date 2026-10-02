@@ -135,13 +135,13 @@ check_path() {
   # consider file as not changed since this there is nothing to compare
   if [ ! -e "$checksum_file" ] ; then
     # create file and exit
-    ls -lR $path | egrep -v "$checksum_ignore" | sha256sum > $checksum_file
+    ls -lR $path | egrep -v "${checksum_ignore}|total" | sha256sum > $checksum_file
     exit 3
   fi
   
   # create a new checksum and compare with old
   cur_checksum_file="${checksum_file}.current"
-  ls -lR $path | egrep -v "$checksum_ignore" | sha256sum > $cur_checksum_file
+  ls -lR $path | egrep -v "${checksum_ignore}|total" | sha256sum > $cur_checksum_file
   diff -q $checksum_file $cur_checksum_file 2>&1 >/dev/null
   if [ $? -ne 0 ] ; then
     # changed, save new file, mail (if needed) and exit w/ 0 indicating change
