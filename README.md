@@ -12,6 +12,7 @@ While many of these can run standalone, I started requiring common functions loc
 * If you are a homebrew user, you can use brew to install which is the easiest of all. Keep in mind you have to add the environment variable to your ~/.bashrc manually as brew does not recomend modifying users settings. With that said, run the following to commands install via brew package manager.
 
   - ```brew tap aselvan/formulas```
+  - ```brew trust aselvan/formulas```
   - ```brew install aselvan-scripts```
 
 #### Method#2: Install script
