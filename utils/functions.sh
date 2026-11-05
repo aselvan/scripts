@@ -317,6 +317,12 @@ macos_code_name() {
     26)
       echo "Tahoe"
       ;;
+    27)
+      echo "Golden Gate"
+      ;;
+    28)
+      echo "Poppy"  # "Poppy" just a rumor for now; change it when it is official
+      ;;
     *)
       echo "Unknown v$major_version"
       ;;
