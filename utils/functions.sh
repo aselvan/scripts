@@ -296,8 +296,14 @@ macos_arch() {
   fi
 }
 
-macos_code_name() {
+macos_major_version() {
   local major_version=`sw_vers --productVersion|awk -F. '{print $1}'`
+  echo $major_version
+}
+
+macos_code_name() {
+  local major_version=$(macos_major_version)
+
   case $major_version in 
     11)
       echo "Big Sur"
@@ -324,7 +330,7 @@ macos_code_name() {
       echo "Poppy"  # "Poppy" just a rumor for now; change it when it is official
       ;;
     *)
-      echo "Unknown v$major_version"
+      echo "Unknown v${major_version}"
       ;;
   esac
 }
