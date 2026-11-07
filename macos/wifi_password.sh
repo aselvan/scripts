@@ -26,9 +26,10 @@ default_scripts_github=$HOME/src/scripts.github
 scripts_github=${SCRIPTS_GITHUB:-$default_scripts_github}
 
 # commandline options
-options="s:lvh?"
+options="s:lrvh?"
 ssid=""
-airport="/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport"
+remove=0
+ventura_major_version=13
 
 # ensure path for cron runs
 export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:$PATH"
@@ -49,6 +50,11 @@ example:
 EOF
   exit 0
 }
+
+remove_password() {
+  log.stat "Removing password for network $ssid"
+}
+
 
 list_ssids() {
   # need to find out the WiFi device first as they are not always en0
@@ -91,6 +97,9 @@ while getopts $options opt ; do
     l)
       list_ssids
       ;;
+    r)
+      remove=1
+      ;;
     v)
       verbose=1
       ;;
@@ -110,8 +119,25 @@ if [ -z $ssid ] ; then
   log.stat "Using SSID: '$ssid'..."
 fi
 
+# see if this call is to remove
+if [ $remove -ne 0 ] ; then
+  check_root
+  confirm_action "WARNING: Removing credentials for SSID ($ssid)"
+  if [ $? -eq 0 ] ; then
+    log.warn "skipping removal"
+    exit 10
+  fi
+  security delete-generic-password -l $ssid
+fi
+
+# this must be reading password call. Check if the version is less than ventura
+if [  $(macos_major_version) -gt $ventura_major_version ] ; then
+  log.warn "Sorry, reading passoword is depreciated on macOs $(macos_code_name), exiting..."
+  exit 11
+fi
+
 log.stat "Enter your MacOS username and password when prompted ..."
-password=$(security find-generic-password -ga $ssid 2>&1 >/dev/null|awk '/password:/ {print $2;}'|tr -d '"')
+password=$(security find-generic-password -ga $ssid -w 2>&1)
 log.stat "SSID ($ssid) password: $password"
 
 # copy password to paste buffer
