@@ -70,7 +70,7 @@ scan_path="$default_linux_scan_path"
 # that is not writeable anyway (unless SIP disabled) so dont bother scanning
 default_macos_scanpath="/Applications /Library /Users /usr/local /opt"
 my_host=`hostname`
-urlhaus_sig_file="urlhaus.ndb"
+urlhaus_sig_file="/tmp/urlhaus.ndb"
 abuse_ch_url_base="https://urlhaus-api.abuse.ch/v2/files/exports/"
 abuse_ch_api_key="none"
 
@@ -157,10 +157,7 @@ scan_single_file() {
 # get the urlhaus clamv signature to scan for virus website, compromised hosts etc.
 # updated to download the signature from abuse.ch with API key, old way no longer works - Nov 12, 2026
 get_urlhaus_sig() {
-  if [ -f $urlhaus_sig_file ]; then
-    rm -f $urlhaus_sig_file
-  fi
-
+  
   # get api-key
   get_abuse_ch_key
   if [ $abuse_ch_api_key = "none" ] ; then
@@ -182,7 +179,6 @@ get_urlhaus_sig() {
   if [ $? -ne 0 ] ; then
     log.error "Scan failed for $urlhaus_sig_file, so ignoring the file"
     exit_code=13
-    rm -f ${urlhaus_sig_file}
     return
   fi
  
