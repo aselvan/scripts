@@ -16,10 +16,11 @@
 #   Jan 26, 2024 --- Refactored to use logger, function includes, exclude large files.
 #   Feb 11, 2024 --- Added code to write html file optionally.
 #   Jul 28, 2025 --- Added additional excludes and changed default path on macOS
+#   Nov 12, 2026 --- Changed to use API for downloading urlhaus.ndb as it is manated.
 #
 
 # version format YY.MM.DD
-version=25.07.28
+version=26.11.12
 my_name="`basename $0`"
 my_version="`basename $0` v$version"
 my_title="Sample script"
@@ -70,7 +71,9 @@ scan_path="$default_linux_scan_path"
 default_macos_scanpath="/Applications /Library /Users /usr/local /opt"
 my_host=`hostname`
 urlhaus_sig_file="urlhaus.ndb"
-urlhaus_sig_url="https://urlhaus.abuse.ch/downloads"
+abuse_ch_url_base="https://urlhaus-api.abuse.ch/v2/files/exports/"
+abuse_ch_api_key="none"
+
 clamscan_bin=`which clamscan`
 freshclam_bin=`which freshclam`
 sha256sum_bin=`which sha256sum`
@@ -99,6 +102,14 @@ Usage: $my_name [options]
   
 EOF
   exit 0
+}
+
+get_abuse_ch_key() {
+  if [ -n "${ABUSE_CH_API_KEY:-}" ]; then
+    abuse_ch_api_key="$ABUSE_CH_API_KEY"
+  elif [ -f ~/.abuse_ch_api_key.txt ]; then
+    abuse_ch_api_key=$(cat ~/.abuse_ch_api_key.txt)
+  fi
 }
 
 # optional function to write html file to show on our website for easy review from anywhere
@@ -144,46 +155,40 @@ scan_single_file() {
 }
 
 # get the urlhaus clamv signature to scan for virus website, compromised hosts etc.
+# updated to download the signature from abuse.ch with API key, old way no longer works - Nov 12, 2026
 get_urlhaus_sig() {
   if [ -f $urlhaus_sig_file ]; then
     rm -f $urlhaus_sig_file
   fi
 
-  log.stat "Downloading $urlhaus_sig_url/{$urlhaus_sig_file,$urlhaus_sig_file.sha256} "
-  # download the urlhaus clamv database and sha256sum of the database
-  # note: urlhaus creates these 2 files every minute so we have to get both database
-  #       and sha256sum files at one shot otherwise, they will be mismatched.
-  curl -s -O "$urlhaus_sig_url/{$urlhaus_sig_file,$urlhaus_sig_file.sha256}"
+  # get api-key
+  get_abuse_ch_key
+  if [ $abuse_ch_api_key = "none" ] ; then
+    log.warn "No abuse.ch API key to download ${urlhaus_sig_file}, skipping..."
+    return
+  fi
+
+  log.stat "Downloading signature file from $abuse_ch_url_base ... "
+  curl -so $urlhaus_sig_file "${abuse_ch_url_base}/${abuse_ch_api_key}/urlhaus_clamav.ndb"
   if [ $? -ne 0 ]; then
     log.error "Failed to download urlhaus signature file '$urlhaus_sig_file'" >> $my_logfile
     exit_code=11
     return
   fi
 
-  # check if the sha256sum matches
-  log.stat "Matching sha256sum: `cat $urlhaus_sig_file.sha256` $urlhaus_sig_file|$sha256sum_bin -c" 
-  echo "`cat $urlhaus_sig_file.sha256` $urlhaus_sig_file" | $sha256sum_bin -c >> $my_logfile 2>&1
-  if [ $? -ne 0 ] ; then
-    log.warn "MD5 sum does not match for '$urlhaus_sig_file', skiping urlhaus signature..."
-    exit_code=12
-    rm -f ${urlhaus_sig_file}.sha256
-    return
-  fi
-  
   # finally scan it before adding to clamscan lib
-  log.stat "sha256sum matched, scanning $urlhaus_sig_file "
+  log.stat "scanning $urlhaus_sig_file "
   $clamscan_bin $urlhaus_sig_file >/dev/null 2>&1
   if [ $? -ne 0 ] ; then
     log.error "Scan failed for $urlhaus_sig_file, so ignoring the file"
     exit_code=13
-    rm -f ${urlhaus_sig_file}.sha256
+    rm -f ${urlhaus_sig_file}
     return
   fi
  
   # all checked out, move file to clamav lib
   log.stat "Updating urlhaus signature file '$urlhaus_sig_file' in clamav lib ($clamav_lib_path)"
   mv $urlhaus_sig_file $clamav_lib_path/.
-  rm -f ${urlhaus_sig_file}.sha256
 }
 
 setup_pua() {
